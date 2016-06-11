@@ -1,6 +1,8 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 git pull
+git submodule sync --recursive
+git submodule update --recursive --remote --init
 function doIt() {
 	rsync --exclude ".git/" --exclude ".DS_Store" --exclude "bootstrap.sh" --exclude "README.md" -av . ~
 }
