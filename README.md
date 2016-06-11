@@ -1,4 +1,4 @@
-# Mathias’s dotfiles
+# Crumley's dotfiles
 
 ## Installation
 

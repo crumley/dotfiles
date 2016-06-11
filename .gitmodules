@@ -1,0 +1,3 @@
+[submodule ".hammerspoon"]
+	path = .hammerspoon
+	url = https://github.com/crumley/hamerspoon.git
