@@ -4,702 +4,278 @@
         "show_in_menu_bar": true,
         "show_profile_name_in_menu_bar": false
     },
-    "profiles": [
-        {
-            "complex_modifications": {
-                "parameters": {
-                    "basic.simultaneous_threshold_milliseconds": 50,
-                    "basic.to_delayed_action_delay_milliseconds": 500,
-                    "basic.to_if_alone_timeout_milliseconds": 1000,
-                    "basic.to_if_held_down_threshold_milliseconds": 500,
-                    "mouse_motion_to_scroll.speed": 100
-                },
-                "rules": [
-                    {
-                        "manipulators": [
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "right_shift pressed",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
+    "profiles": [{
+        "complex_modifications": {
+            "parameters": {
+                "basic.simultaneous_threshold_milliseconds": 50,
+                "basic.to_delayed_action_delay_milliseconds": 500,
+                "basic.to_if_alone_timeout_milliseconds": 1000,
+                "basic.to_if_held_down_threshold_milliseconds": 500,
+                "mouse_motion_to_scroll.speed": 100
+            },
+            "rules": [{
+                "manipulators": [{
+                        "description": "Change caps+j to down",
+                        "from": {
+                            "key_code": "j",
+                            "modifiers": {
+                                "mandatory": [
+                                    "fn"
                                 ],
-                                "from": {
-                                    "key_code": "right_shift",
-                                    "modifiers": {
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "mission_control"
-                                    }
-                                ],
-                                "type": "basic"
-                            },
-                            {
-                                "from": {
-                                    "key_code": "right_shift",
-                                    "modifiers": {
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "set_variable": {
-                                            "name": "right_shift pressed",
-                                            "value": 1
-                                        }
-                                    },
-                                    {
-                                        "key_code": "right_shift"
-                                    }
-                                ],
-                                "to_delayed_action": {
-                                    "to_if_canceled": [
-                                        {
-                                            "set_variable": {
-                                                "name": "right_shift pressed",
-                                                "value": 0
-                                            }
-                                        }
-                                    ],
-                                    "to_if_invoked": [
-                                        {
-                                            "set_variable": {
-                                                "name": "right_shift pressed",
-                                                "value": 0
-                                            }
-                                        }
-                                    ]
-                                },
-                                "type": "basic"
-                            },
-                            {
-                                "from": {
-                                    "modifiers": {
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    },
-                                    "simultaneous": [
-                                        {
-                                            "key_code": "equal_sign"
-                                        },
-                                        {
-                                            "key_code": "delete_or_backspace"
-                                        }
-                                    ]
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "delete_forward"
-                                    }
-                                ],
-                                "type": "basic"
-                            },
-                            {
-                                "description": "Change caps+j to down",
-                                "from": {
-                                    "key_code": "j",
-                                    "modifiers": {
-                                        "mandatory": [
-                                            "fn"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "down_arrow"
-                                    }
-                                ],
-                                "type": "basic"
-                            },
-                            {
-                                "description": "Change caps+k to up",
-                                "from": {
-                                    "key_code": "k",
-                                    "modifiers": {
-                                        "mandatory": [
-                                            "fn"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "up_arrow"
-                                    }
-                                ],
-                                "type": "basic"
-                            },
-                            {
-                                "description": "Change caps+h to left",
-                                "from": {
-                                    "key_code": "h",
-                                    "modifiers": {
-                                        "mandatory": [
-                                            "fn"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "left_arrow"
-                                    }
-                                ],
-                                "type": "basic"
-                            },
-                            {
-                                "description": "Change caps+l to right",
-                                "from": {
-                                    "key_code": "l",
-                                    "modifiers": {
-                                        "mandatory": [
-                                            "fn"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "right_arrow"
-                                    }
-                                ],
-                                "type": "basic"
+                                "optional": [
+                                    "any"
+                                ]
                             }
-                        ]
+                        },
+                        "to": [{
+                            "key_code": "down_arrow"
+                        }],
+                        "type": "basic"
+                    },
+                    {
+                        "description": "Change caps+k to up",
+                        "from": {
+                            "key_code": "k",
+                            "modifiers": {
+                                "mandatory": [
+                                    "fn"
+                                ],
+                                "optional": [
+                                    "any"
+                                ]
+                            }
+                        },
+                        "to": [{
+                            "key_code": "up_arrow"
+                        }],
+                        "type": "basic"
+                    },
+                    {
+                        "description": "Change caps+h to left",
+                        "from": {
+                            "key_code": "h",
+                            "modifiers": {
+                                "mandatory": [
+                                    "fn"
+                                ],
+                                "optional": [
+                                    "any"
+                                ]
+                            }
+                        },
+                        "to": [{
+                            "key_code": "left_arrow"
+                        }],
+                        "type": "basic"
+                    },
+                    {
+                        "description": "Change caps+l to right",
+                        "from": {
+                            "key_code": "l",
+                            "modifiers": {
+                                "mandatory": [
+                                    "fn"
+                                ],
+                                "optional": [
+                                    "any"
+                                ]
+                            }
+                        },
+                        "to": [{
+                            "key_code": "right_arrow"
+                        }],
+                        "type": "basic"
                     }
                 ]
-            },
-            "devices": [
-                {
-                    "disable_built_in_keyboard_if_exists": false,
-                    "fn_function_keys": [],
-                    "identifiers": {
-                        "is_keyboard": true,
-                        "is_pointing_device": false,
-                        "product_id": 61199,
-                        "vendor_id": 1204
-                    },
-                    "ignore": false,
-                    "manipulate_caps_lock_led": false,
-                    "simple_modifications": [
-                        {
-                            "from": {
-                                "key_code": "left_command"
-                            },
-                            "to": {
-                                "key_code": "left_option"
-                            }
-                        },
-                        {
-                            "from": {
-                                "key_code": "left_option"
-                            },
-                            "to": {
-                                "key_code": "left_command"
-                            }
-                        }
-                    ]
-                },
-                {
-                    "disable_built_in_keyboard_if_exists": false,
-                    "fn_function_keys": [],
-                    "identifiers": {
-                        "is_keyboard": true,
-                        "is_pointing_device": false,
-                        "product_id": 628,
-                        "vendor_id": 1452
-                    },
-                    "ignore": false,
-                    "manipulate_caps_lock_led": true,
-                    "simple_modifications": []
-                },
-                {
-                    "disable_built_in_keyboard_if_exists": false,
-                    "fn_function_keys": [],
-                    "identifiers": {
-                        "is_keyboard": true,
-                        "is_pointing_device": false,
-                        "product_id": 40962,
-                        "vendor_id": 1241
-                    },
-                    "ignore": false,
-                    "manipulate_caps_lock_led": false,
-                    "simple_modifications": [
-                        {
-                            "from": {
-                                "key_code": "left_command"
-                            },
-                            "to": {
-                                "key_code": "left_option"
-                            }
-                        },
-                        {
-                            "from": {
-                                "key_code": "left_option"
-                            },
-                            "to": {
-                                "key_code": "left_command"
-                            }
-                        }
-                    ]
-                }
-            ],
-            "fn_function_keys": [
-                {
-                    "from": {
-                        "key_code": "f1"
-                    },
-                    "to": {
-                        "key_code": "display_brightness_decrement"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f2"
-                    },
-                    "to": {
-                        "key_code": "display_brightness_increment"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f3"
-                    },
-                    "to": {
-                        "key_code": "mission_control"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f4"
-                    },
-                    "to": {
-                        "key_code": "launchpad"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f5"
-                    },
-                    "to": {
-                        "key_code": "illumination_decrement"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f6"
-                    },
-                    "to": {
-                        "key_code": "illumination_increment"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f7"
-                    },
-                    "to": {
-                        "key_code": "rewind"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f8"
-                    },
-                    "to": {
-                        "key_code": "play_or_pause"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f9"
-                    },
-                    "to": {
-                        "key_code": "fastforward"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f10"
-                    },
-                    "to": {
-                        "key_code": "mute"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f11"
-                    },
-                    "to": {
-                        "key_code": "volume_decrement"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f12"
-                    },
-                    "to": {
-                        "key_code": "volume_increment"
-                    }
-                }
-            ],
-            "name": "Interal",
-            "parameters": {
-                "delay_milliseconds_before_open_device": 1000
-            },
-            "selected": true,
-            "simple_modifications": [
-                {
-                    "from": {
-                        "key_code": "caps_lock"
-                    },
-                    "to": {
-                        "key_code": "fn"
-                    }
-                }
-            ],
-            "virtual_hid_keyboard": {
-                "caps_lock_delay_milliseconds": 0,
-                "country_code": 0,
-                "keyboard_type": "ansi",
-                "mouse_key_xy_scale": 100
-            }
+            }]
         },
-        {
-            "complex_modifications": {
-                "parameters": {
-                    "basic.simultaneous_threshold_milliseconds": 50,
-                    "basic.to_delayed_action_delay_milliseconds": 500,
-                    "basic.to_if_alone_timeout_milliseconds": 1000,
-                    "basic.to_if_held_down_threshold_milliseconds": 500,
-                    "mouse_motion_to_scroll.speed": 100
+        "devices": [{
+                "disable_built_in_keyboard_if_exists": false,
+                "fn_function_keys": [],
+                "identifiers": {
+                    "is_keyboard": true,
+                    "is_pointing_device": false,
+                    "product_id": 61199,
+                    "vendor_id": 1204
                 },
-                "rules": [
+                "ignore": false,
+                "manipulate_caps_lock_led": false,
+                "simple_modifications": [{
+                        "from": {
+                            "key_code": "left_command"
+                        },
+                        "to": {
+                            "key_code": "left_option"
+                        }
+                    },
                     {
-                        "manipulators": [
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "right_shift pressed",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "right_shift",
-                                    "modifiers": {
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "mission_control"
-                                    }
-                                ],
-                                "type": "basic"
-                            },
-                            {
-                                "from": {
-                                    "key_code": "right_shift",
-                                    "modifiers": {
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "set_variable": {
-                                            "name": "right_shift pressed",
-                                            "value": 1
-                                        }
-                                    },
-                                    {
-                                        "key_code": "right_shift"
-                                    }
-                                ],
-                                "to_delayed_action": {
-                                    "to_if_canceled": [
-                                        {
-                                            "set_variable": {
-                                                "name": "right_shift pressed",
-                                                "value": 0
-                                            }
-                                        }
-                                    ],
-                                    "to_if_invoked": [
-                                        {
-                                            "set_variable": {
-                                                "name": "right_shift pressed",
-                                                "value": 0
-                                            }
-                                        }
-                                    ]
-                                },
-                                "type": "basic"
-                            },
-                            {
-                                "from": {
-                                    "modifiers": {
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    },
-                                    "simultaneous": [
-                                        {
-                                            "key_code": "equal_sign"
-                                        },
-                                        {
-                                            "key_code": "delete_or_backspace"
-                                        }
-                                    ]
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "delete_forward"
-                                    }
-                                ],
-                                "type": "basic"
-                            },
-                            {
-                                "description": "Change caps+j to down",
-                                "from": {
-                                    "key_code": "j",
-                                    "modifiers": {
-                                        "mandatory": [
-                                            "fn"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "down_arrow"
-                                    }
-                                ],
-                                "type": "basic"
-                            },
-                            {
-                                "description": "Change caps+k to up",
-                                "from": {
-                                    "key_code": "k",
-                                    "modifiers": {
-                                        "mandatory": [
-                                            "fn"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "up_arrow"
-                                    }
-                                ],
-                                "type": "basic"
-                            },
-                            {
-                                "description": "Change caps+h to left",
-                                "from": {
-                                    "key_code": "h",
-                                    "modifiers": {
-                                        "mandatory": [
-                                            "fn"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "left_arrow"
-                                    }
-                                ],
-                                "type": "basic"
-                            },
-                            {
-                                "description": "Change caps+l to right",
-                                "from": {
-                                    "key_code": "l",
-                                    "modifiers": {
-                                        "mandatory": [
-                                            "fn"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "right_arrow"
-                                    }
-                                ],
-                                "type": "basic"
-                            }
-                        ]
+                        "from": {
+                            "key_code": "left_option"
+                        },
+                        "to": {
+                            "key_code": "left_command"
+                        }
                     }
                 ]
             },
-            "devices": [],
-            "fn_function_keys": [
-                {
-                    "from": {
-                        "key_code": "f1"
-                    },
-                    "to": {
-                        "key_code": "display_brightness_decrement"
-                    }
+            {
+                "disable_built_in_keyboard_if_exists": false,
+                "fn_function_keys": [],
+                "identifiers": {
+                    "is_keyboard": true,
+                    "is_pointing_device": false,
+                    "product_id": 628,
+                    "vendor_id": 1452
                 },
-                {
-                    "from": {
-                        "key_code": "f2"
-                    },
-                    "to": {
-                        "key_code": "display_brightness_increment"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f3"
-                    },
-                    "to": {
-                        "key_code": "mission_control"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f4"
-                    },
-                    "to": {
-                        "key_code": "launchpad"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f5"
-                    },
-                    "to": {
-                        "key_code": "illumination_decrement"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f6"
-                    },
-                    "to": {
-                        "key_code": "illumination_increment"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f7"
-                    },
-                    "to": {
-                        "key_code": "rewind"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f8"
-                    },
-                    "to": {
-                        "key_code": "play_or_pause"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f9"
-                    },
-                    "to": {
-                        "key_code": "fastforward"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f10"
-                    },
-                    "to": {
-                        "key_code": "mute"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f11"
-                    },
-                    "to": {
-                        "key_code": "volume_decrement"
-                    }
-                },
-                {
-                    "from": {
-                        "key_code": "f12"
-                    },
-                    "to": {
-                        "key_code": "volume_increment"
-                    }
-                }
-            ],
-            "name": "External",
-            "parameters": {
-                "delay_milliseconds_before_open_device": 1000
+                "ignore": false,
+                "manipulate_caps_lock_led": true,
+                "simple_modifications": []
             },
-            "selected": false,
-            "simple_modifications": [
-                {
-                    "from": {
-                        "key_code": "caps_lock"
-                    },
-                    "to": {
-                        "key_code": "fn"
-                    }
+            {
+                "disable_built_in_keyboard_if_exists": false,
+                "fn_function_keys": [],
+                "identifiers": {
+                    "is_keyboard": true,
+                    "is_pointing_device": false,
+                    "product_id": 40962,
+                    "vendor_id": 1241
                 },
-                {
-                    "from": {
-                        "key_code": "left_command"
+                "ignore": false,
+                "manipulate_caps_lock_led": false,
+                "simple_modifications": [{
+                        "from": {
+                            "key_code": "left_command"
+                        },
+                        "to": {
+                            "key_code": "left_option"
+                        }
                     },
-                    "to": {
-                        "key_code": "left_option"
+                    {
+                        "from": {
+                            "key_code": "left_option"
+                        },
+                        "to": {
+                            "key_code": "left_command"
+                        }
                     }
-                },
-                {
-                    "from": {
-                        "key_code": "left_option"
-                    },
-                    "to": {
-                        "key_code": "left_command"
-                    }
-                }
-            ],
-            "virtual_hid_keyboard": {
-                "caps_lock_delay_milliseconds": 0,
-                "country_code": 0,
-                "keyboard_type": "ansi",
-                "mouse_key_xy_scale": 100
+                ]
             }
+        ],
+        "fn_function_keys": [{
+                "from": {
+                    "key_code": "f1"
+                },
+                "to": {
+                    "key_code": "display_brightness_decrement"
+                }
+            },
+            {
+                "from": {
+                    "key_code": "f2"
+                },
+                "to": {
+                    "key_code": "display_brightness_increment"
+                }
+            },
+            {
+                "from": {
+                    "key_code": "f3"
+                },
+                "to": {
+                    "key_code": "mission_control"
+                }
+            },
+            {
+                "from": {
+                    "key_code": "f4"
+                },
+                "to": {
+                    "key_code": "launchpad"
+                }
+            },
+            {
+                "from": {
+                    "key_code": "f5"
+                },
+                "to": {
+                    "key_code": "illumination_decrement"
+                }
+            },
+            {
+                "from": {
+                    "key_code": "f6"
+                },
+                "to": {
+                    "key_code": "illumination_increment"
+                }
+            },
+            {
+                "from": {
+                    "key_code": "f7"
+                },
+                "to": {
+                    "key_code": "rewind"
+                }
+            },
+            {
+                "from": {
+                    "key_code": "f8"
+                },
+                "to": {
+                    "key_code": "play_or_pause"
+                }
+            },
+            {
+                "from": {
+                    "key_code": "f9"
+                },
+                "to": {
+                    "key_code": "fastforward"
+                }
+            },
+            {
+                "from": {
+                    "key_code": "f10"
+                },
+                "to": {
+                    "key_code": "mute"
+                }
+            },
+            {
+                "from": {
+                    "key_code": "f11"
+                },
+                "to": {
+                    "key_code": "volume_decrement"
+                }
+            },
+            {
+                "from": {
+                    "key_code": "f12"
+                },
+                "to": {
+                    "key_code": "volume_increment"
+                }
+            }
+        ],
+        "name": "Default",
+        "parameters": {
+            "delay_milliseconds_before_open_device": 1000
+        },
+        "selected": true,
+        "simple_modifications": [{
+            "from": {
+                "key_code": "caps_lock"
+            },
+            "to": {
+                "key_code": "fn"
+            }
+        }],
+        "virtual_hid_keyboard": {
+            "caps_lock_delay_milliseconds": 0,
+            "country_code": 0,
+            "keyboard_type": "ansi",
+            "mouse_key_xy_scale": 100
         }
-    ]
+    }]
 }

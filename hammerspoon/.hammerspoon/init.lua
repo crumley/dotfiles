@@ -5,7 +5,37 @@ import.clear_cache()
 
 config = import('config')
 
-require("hyper")
+hs.loadSpoon("SpoonInstall")
+spoon.SpoonInstall.use_syncinstall = true
+
+
+-- Load those Spoons
+for _, v in pairs(config.spoons) do
+    spoon.SpoonInstall:andUse(v, {
+        start = false,
+    })
+end
+
+if spoon.ReloadConfiguration then
+    spoon.ReloadConfiguration:start()
+end
+
+
+local function catcher(event)
+    if event:getFlags()['fn'] then
+        keys = event:getCharacters()
+        if(keys) then
+            cb = config.fn_bindings[string.upper(keys)]
+            if(cb) then
+                cb()
+                return true
+            end
+        end
+    end
+    return false
+end
+hs.eventtap.new({hs.eventtap.event.types.keyDown}, catcher):start()
+
 
 function config:get(key_path, default)
     local root = self

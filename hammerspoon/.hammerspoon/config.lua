@@ -1,6 +1,8 @@
+local app = import('modules/app')
+
 local config = {}
 
-local mash = {"ctrl", "cmd", "option"};
+local mash = {"ctrl", "cmd", "option", "shift"};
 
 -- TODO
 -- make iterm toggle button over current app
@@ -10,13 +12,24 @@ local mash = {"ctrl", "cmd", "option"};
 -- Map caps lock to mash
 -- create support for second level key mappings (mash k + <KEY>)
 
+config.spoons = {
+    "ReloadConfiguration",  -- https://www.hammerspoon.org/Spoons/ReloadConfiguration.html
+    "AClock", -- https://www.hammerspoon.org/Spoons/AClock.html
+    "Calendar", -- https://www.hammerspoon.org/Spoons/Calendar.html
+    "CircleClock", -- https://www.hammerspoon.org/Spoons/CircleClock.html
+    "ClipShow", -- https://www.hammerspoon.org/Spoons/ClipShow.html
+    "CountDown", -- https://www.hammerspoon.org/Spoons/CountDown.html
+    "HCalendar", -- https://www.hammerspoon.org/Spoons/HCalendar.html
+    "HSearch", -- https://www.hammerspoon.org/Spoons/HSearch.html
+    "KSheet", -- https://www.hammerspoon.org/Spoons/KSheet.html
+    "WinWin", -- https://www.hammerspoon.org/Spoons/WinWin.html
+}
+
 config.modules = {
     "app_selector",
-    "app_jumper",
     "arrangement",
     "monitors",
     "repl",
-    "reload",
     "arrows",
     "lock",
     "fullscreen",
@@ -67,10 +80,25 @@ config.app_selector = {
     key = "Z"
 }
 
+config.metas = {
+    MASH = {"ctrl", "cmd", "option"},
+    SMASH = {"ctrl", "cmd", "option", "shift"},
+}
+
+config.fn_bindings = {
+    V = function() app.jump("Code") end,
+    D = function() app.jump("iTerm") end,
+    F = function() app.jump("Finder") end,
+    S = function() app.jump("Spotify") end,
+    C = function() app.jump("Chrome") end,
+    Q = function() app.jump("Slack") end,
+    ['3'] = function() app.jump("1Password") end
+}
+
 config.app_jumper = {
   mash = mash,
   keys = {
-    A = "Atom",
+    V = "Code",
     E = "Eclipse",
     D = "iTerm2",
     F = "Finder",
