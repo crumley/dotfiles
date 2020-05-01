@@ -26,8 +26,4 @@ end
 alias r="ripgrep"
 alias ports "sudo lsof -i -n -P | grep TCP"
 
-set fisher_home ~/.local/share/fisherman
-set fisher_config ~/.config/fisherman
-source $fisher_home/config.fish
-
 source ~/.iterm2_shell_integration.fish
