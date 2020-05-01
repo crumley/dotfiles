@@ -9,6 +9,8 @@ set -x AWS_IAM_HOME /usr/local/opt/aws-iam-tools/libexec
 set -x AWS_CREDENTIAL_FILEs ~/.aws-credentials-master
 set -x GOPATH ~/.go
 
+set -x PATH $PATH ~/bin ~/.go/bin /usr/local/opt/go/libexec/bin
+
 function p4merge -d "merge two things"
     /opt/homebrew-cask/Caskroom/p4merge/2014.1/p4merge.app/Contents/Resources/launchp4merge $argv &
 end
