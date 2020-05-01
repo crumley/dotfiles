@@ -9,7 +9,7 @@ local find = {
     audio_device = {}
 }
 
-local geom = import('utils/geometry')
+local geom = require('utils/geometry')
 
 function find.window.by_title(title)
     return fnutils.find(window.allWindows(), function(window)

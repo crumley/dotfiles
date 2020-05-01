@@ -14,12 +14,12 @@ echo "Setting blazing fast keyrepeat..."
 defaults write -g InitialKeyRepeat -int 15 # normal minimum is 15 (225 ms)
 defaults write -g KeyRepeat -int 1 # normal minimum is 2 (30 ms)
 
-echo "Installing brews..."
-brew install stow tmux
+echo "Installing brews from Brewfile..."
+brew bundle
 
+# https://www.theguild.nl/how-to-manage-dotfiles-with-gnu-stow/
 echo "Stowing configs..."
-stow hammerspoon
-stow karabiner
+stow --dotfiles bash fish git hammerspoon home karabiner term vim
 
 echo "Install gems..."
 gem install tmuxinator
