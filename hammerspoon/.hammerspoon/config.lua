@@ -33,6 +33,68 @@ config.modules = {
 hyper = {"ctrl", "cmd", "option"}
 hyperShift = {"ctrl", "cmd", "option", "shift"}
 
+hs.window.animationDuration = 0
+hs.grid.setGrid({ w = 2, h = 2 })
+hs.grid.setMargins({ w = 0, h = 0 })
+
+
+-- create auto layout that does good things for iTerm, p4merge, chrome?
+-- create manual layout that cycles current two windows (maybe per monitor?)
+
+-- auto_layout = hs.window.layout.new({
+--     {"iTerm2", "tile [12,12,80,80] 0,0 | tile all [0,0,100,100] 0,0" },
+-- })
+-- auto_layout:start()
+
+
+window_layout = hs.window.layout.new({
+    -- { hs.window.filter.new({ Slack = { allowRoles = "AXStandardWindow" } }), "fit 1 [0,0,50,100] 0,0 | min" },
+    -- { hs.window.filter.new(false):setAppFilter("Google Chrome", { visible = true, allowRoles = "AXStandardWindow"}), "tile 2 focused 1x2 [0,0,100,100] 0,0 | tile all [0,0,100,100] 0,0" },
+    {"Google Chrome", "tile 2 focused 1x2 [0,0,100,100] 0,0 | tile all [0,0,100,100] 0,0" },
+
+    -- Comms Screen (-1,0=left)
+    -- Maximized
+    -- { hs.window.filter.new({ Calendar = { allowRoles = "AXStandardWindow" } }), "move all focused [50,0,50,100] 1,0 | min" },
+    -- { hs.window.filter.new(false):setAppFilter("Google Chrome", { visible = true, allowRoles = "AXStandardWindow", allowTitles = "Hangouts" }), "tile 2 focused 1x2 [0,0,100,100] 1,0 | min" },
+
+    -- Left 50%
+    -- { hs.window.filter.new({ Mail = { allowRoles = "AXStandardWindow" } }), "tile 2 focused 2x1 [0,0,50,100] 0,0 | min" },
+    -- { hs.window.filter.new({ Spotify = { allowRoles = "AXStandardWindow" } }), "tile 2 focused 2x1 [0,0,50,100] 0,0 | min" },
+    -- { hs.window.filter.new({ WhatsApp = { allowRoles = "AXStandardWindow" } }), "tile 2 focused 2x1 [0,0,50,100] 0,0 | min" },
+
+    -- Right 50%
+    -- { hs.window.filter.new({ iTunes = { allowRoles = "AXStandardWindow", rejectTitles = "MiniPlayer" } }), "fit 1 [50,0,100,100] -1,0 | min" },
+    -- { hs.window.filter.new({ Slack = { allowRoles = "AXStandardWindow" } }), "fit 1 [50,0,100,100] 0,0 | min" },
+
+    -- Top 60%
+    -- Bottom 40%
+    -- { hs.window.filter.new({ Messages = { allowRoles = "AXStandardWindow" } }), "fit 1 [50,60,100,100] -1,0 | min" },
+
+
+    -- Tools Screen (0,0=center)
+    -- Left 65%
+    -- { hs.window.filter.new(false):setAppFilter("Google Chrome", { visible = true, allowRoles = "AXStandardWindow", rejectTitles = { "DevTools", "Lucidchart", "Hangouts" } }), "tile 2 focused 2x1 [0,0,70,100] 1,0 | min" },
+    -- { hs.window.filter.new({ SourceTree = { allowRoles = "AXStandardWindow" } }), "tile 2 focused 2x1 [0,0,50,100] 0,0 | min" },
+    -- { hs.window.filter.new(false):setAppFilter("Pulse SMS", { visible = true, allowRoles = "AXStandardWindow" }), "tile 2 focused 2x1 [0,50,50,100] 0,0 | min" },
+    --{ hs.window.filter.new({ MySQLWorkbench = { allowRoles = "AXStandardWindow" } }), "tile 2 focused 2x1 [0,0,65,100] 0,0 | min" },
+
+    -- Right 35%
+    -- { hs.window.filter.new({ Terminal = { allowRoles = "AXStandardWindow" } }), "tile 4 focused 2x1 [70.0,0.0,100.0,100.0] 1,0 | min" },
+    -- { hs.window.filter.new({ Firefox = { visible = true, allowRoles = "AXStandardWindow" } }), "tile 2 focused 2x1 [0,0,70,100] -1,-1 | min" },
+    -- { hs.window.filter.new(false):setAppFilter("Google Chrome", { visible = true, allowRoles = "AXStandardWindow", allowTitles = "DevTools" }), "tile 2 focused 2x1 [70,0,100,100] 1,0 | min" },
+    -- { hs.window.filter.new(false):setAppFilter("Google Chrome", { visible = true, allowRoles = "AXStandardWindow", allowTitles = "Developer Tools" }), "tile 2 focused 2x1 [70,0,100,100] 1,0 | min" },
+    -- { hs.window.filter.new({ python = { allowRoles = "AXStandardWindow" } }), "tile 2 focused 2x1 [0,0,70,100] -1,-1 | min" },
+
+    -- Code Screen (1,0=right)
+    -- { hs.window.filter.new({ PyCharm = { allowRoles = "AXStandardWindow", allowTitles = "/Documents/GitHub", rejectTitles = "Replace Usage" } }), "move all focused [0,0,100,100] 0,-1" },
+
+    -- { hs.window.filter.new({ GoLand = { allowRoles = "AXStandardWindow", allowTitles = "/", rejectTitles = "Replace Usage" } }), "move all focused [0,0,100,100] 2,0" },
+
+    -- { hs.window.filter.new(false):setAppFilter("Google Chrome", { visible = true, allowRoles = "AXStandardWindow", allowTitles = "Lucidchart" }), "move all focused [0,0,100,100] 1,0" },
+})
+
+
+
 config.key_bindings = {}
 
 config.key_bindings[hyper] = {
@@ -53,6 +115,10 @@ config.key_bindings[hyper] = {
 
     X = function() hs.openConsole() end,
     R = function() hs.reload() end,
+    F12 = function() hs.caffeinate.startScreensaver() end,
+
+    RETURN = function() hs.grid.show() end,
+    ['\\'] = function() hs.grid.maximizeWindow(hs.window.focusedWindow()) end,
 }
 
 config.key_bindings[hyperShift] = {
@@ -64,6 +130,7 @@ config.key_bindings[hyperShift] = {
     T = function() spoon.KSheet:hide() end,
 
     M = function() spoon.MicMute:toggleMicMute() end,
+    RETURN = function() window_layout:apply() end,
 }
 
 return config
