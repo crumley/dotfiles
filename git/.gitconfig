@@ -26,6 +26,15 @@
 	# Undo a `git push`
 	undopush = push -f origin HEAD^:master
 	up = pull --rebase --autostash
+	co = checkout
+    cob = checkout -b
+    rename = branch -m
+    pu = ! git fetch upstream && git rebase upstream/master
+	# Open browser to create a new PR
+    prc = ! open "https://bitbucket.org/atlassian/jsd-slack-integration/pull-requests/new"
+    undo = checkout --
+    unstage = reset HEAD --
+    last = checkout -
 
 [apply]
 	# Detect whitespace errors when applying a patch
