@@ -1,15 +1,13 @@
 # Path to your oh-my-fish.
 set --erase fish_greeting
 
-set -x EDITOR 'gvim --nofork'
+set -x EDITOR 'vim --nofork'
 set -x SHELL '/usr/local/bin/fish'
-set -x JAVA_HOME /Library/Java/JavaVirtualMachines/jdk1.8.0_11.jdk/Contents/Home
-set -x MAVEN_OPTS '-Xmx512m'
 set -x AWS_IAM_HOME /usr/local/opt/aws-iam-tools/libexec
 set -x AWS_CREDENTIAL_FILEs ~/.aws-credentials-master
 set -x GOPATH ~/.go
 
-set -x PATH $PATH ~/bin ~/.go/bin /usr/local/opt/go/libexec/bin
+set -x PATH $PATH ~/bin ~/.go/bin /usr/local/opt/go/libexec/bin /usr/local/opt/util-linux/bin
 
 function p4merge -d "merge two things"
     /opt/homebrew-cask/Caskroom/p4merge/2014.1/p4merge.app/Contents/Resources/launchp4merge $argv &

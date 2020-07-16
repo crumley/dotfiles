@@ -8,7 +8,7 @@
 	# `git di $number` shows the diff between the state `$number` revisions ago and the current state
 	di = !"d() { git diff --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
 	# Pull in remote changes for the current repository and all its submodules
-	p = !"git pull; git submodule foreach git pull origin master"
+	ps = !"git pull; git submodule foreach git pull origin master"
 	# Clone a repository including all submodules
 	c = clone --recursive
 	# Commit all changes
@@ -35,6 +35,8 @@
     undo = checkout --
     unstage = reset HEAD --
     last = checkout -
+	pf = push -f origin HEAD
+	p = push origin HEAD
 
 [apply]
 	# Detect whitespace errors when applying a patch
@@ -118,3 +120,5 @@
 	trustExitCode = true
 [pull]
 	rebase = true
+[commit]
+	template = /Users/rcrumley/.stCommitMsg
