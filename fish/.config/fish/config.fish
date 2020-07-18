@@ -24,6 +24,7 @@ end
 alias r="ripgrep"
 alias ports "sudo lsof -i -n -P | grep TCP"
 
+source (brew --prefix asdf)/asdf.fish
 source ~/.iterm2_shell_integration.fish
 
 if not functions -q fisher

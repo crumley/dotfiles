@@ -122,6 +122,7 @@ config.key_bindings[hyper] = {
 }
 
 config.key_bindings[hyperShift] = {
+    A = function() app.jump("IDEA") end,
     Y = function() hs.spotify.pause() end,
     U = function() hs.spotify.playpause() end,
     I = function() hs.spotify.previous() end,
