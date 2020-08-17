@@ -110,10 +110,11 @@ config.key_bindings[hyper] = {
     N = function() app.jump("Notes") end,
     M = function() app.jump("Messages") end,
     T = function() app.jump("Trello") end,
+    X = function() app.jump("dendron") end,
 
     P = function() spoon.KSheet:show() end,
 
-    X = function() hs.openConsole() end,
+    V = function() hs.openConsole() end,
     R = function() hs.reload() end,
     F12 = function() hs.caffeinate.startScreensaver() end,
 
@@ -123,6 +124,7 @@ config.key_bindings[hyper] = {
 
 config.key_bindings[hyperShift] = {
     A = function() app.jump("IDEA") end,
+    S = function() app.jump("Google Chrome Canary") end,
     Y = function() hs.spotify.pause() end,
     U = function() hs.spotify.playpause() end,
     I = function() hs.spotify.previous() end,
