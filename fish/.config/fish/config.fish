@@ -13,7 +13,7 @@ set -gx GPG_TTY (tty)
 set -x AWS_IAM_HOME /usr/local/opt/aws-iam-tools/libexec
 set -x AWS_CREDENTIAL_FILEs ~/.aws-credentials-master
 set -U fish_user_paths /usr/local/opt/openssl/bin $HOME/bin $HOME/.asdf/shims $HOME/.asdf/bin $HOME/.fzf/bin
-set -x PATH $PATH ~/.bin ~/.go/bin /usr/local/opt/go/libexec/bin /usr/local/opt/util-linux/bin
+set -x PATH $PATH ~/.bin ~/.go/bin /usr/local/opt/go/libexec/bin /usr/local/opt/util-linux/bin /opt/homebrew/bin
 # }}}
 
 # Abbreviations {{{

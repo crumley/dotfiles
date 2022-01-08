@@ -8,6 +8,8 @@ if hash brew 2>/dev/null; then
    echo "Skipping brew install"
 else
    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+   echo "brew has been installed. Follow steps above to fully enable brew on the path before proceeding. Exiting."
+   exit 1
 fi
 
 echo "Setting blazing fast keyrepeat..."
