@@ -5,15 +5,20 @@ local prev_win = nil
 
 local function jump2(name)
     curr_app = application.frontmostApplication()
-    curr_win = curr_app:focusedWindow()
+    curr_win = nil
+    if curr_app ~= nil then
+        curr_win = curr_app:focusedWindow()
+    end
 
     new_app = application(name)
-    new_win = new_app:focusedWindow()
+    new_win = nil
 
     -- Is new_app really a hs.window?
     if new_app["focus"] ~= nil then
         new_win = new_app
         new_app = new_win:application()
+    else
+        new_win = new_app:focusedWindow()
     end
 
     logger.i('Switcher start', name)

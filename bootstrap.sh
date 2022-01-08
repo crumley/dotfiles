@@ -21,7 +21,7 @@ brew bundle
 
 # https://www.theguild.nl/how-to-manage-dotfiles-with-gnu-stow/
 echo "Stowing configs..."
-stow --dotfiles bash fish git hammerspoon home karabiner vim asdf rg
+stow --dotfiles bash fish git hammerspoon home karabiner vim asdf rg ssh rclone tmux
 
 echo "Install gems..."
 sudo gem install tmuxinator

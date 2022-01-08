@@ -1,3 +1,6 @@
+# Ensure filename+linenumber is clickable for vscode + iterm
+--no-heading
+
 --max-columns=150
 --max-columns-preview
 

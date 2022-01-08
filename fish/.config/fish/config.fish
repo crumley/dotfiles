@@ -5,7 +5,7 @@ set -gx FZF_DEFAULT_COMMAND 'rg --files --no-ignore-vcs --hidden'
 set -gx FZF_CTRL_T_COMMAND $FZF_DEFAULT_COMMAND
 set -gx FZF_DEFAULT_COMMAND 'fd'
 set -x ENHANCD_FILTER fzy:fzf:peco
-set -x EDITOR 'vim --nofork'
+set -x EDITOR '/usr/local/bin/vim'
 set -x SHELL '/usr/local/bin/fish'
 set -x GOPATH ~/.go
 set -gx EVENT_NOKQUEUE 1
@@ -14,6 +14,7 @@ set -x AWS_IAM_HOME /usr/local/opt/aws-iam-tools/libexec
 set -x AWS_CREDENTIAL_FILEs ~/.aws-credentials-master
 set -U fish_user_paths /usr/local/opt/openssl/bin $HOME/bin $HOME/.asdf/shims $HOME/.asdf/bin $HOME/.fzf/bin
 set -x PATH $PATH ~/.bin ~/.go/bin /usr/local/opt/go/libexec/bin /usr/local/opt/util-linux/bin /opt/homebrew/bin
+set -x fish_user_paths "/usr/local/sbin" $fish_user_paths
 # }}}
 
 # Abbreviations {{{
@@ -29,19 +30,30 @@ abbr gco 'git checkout'
 abbr ggo 'git checkout (git branch | grep -v "^*" | sed -E "s/^ +//" | fzf)'
 abbr gd 'git diff'
 abbr gl 'git log'
-abbr gp 'git push'
 abbr gpl 'git pull'
 abbr gg 'git status'
-abbr gs 'git stash'
+abbr gs 'git status'
 abbr gsp 'git stash pop'
-abbr gph 'git push origin HEAD'
+abbr gp 'git push origin HEAD'
+abbr gpf 'git push -f origin HEAD'
+abbr grom 'git rebase origin/master'
 abbr gu 'git up'
+abbr mt 'git mergetool'
 
 abbr r "rg --no-heading"
-abbr rt "rg --no-heading -tjs"
+abbr rt "rg --no-heading -tjs -tts"
 abbr rf "rg --files | r"
 
+abbr t "tmux"
+abbr ta "tmux a -t"
+abbr tls "tmux ls"
+abbr tn "tmux new -t"
+
 abbr ports "sudo lsof -i -n -P | grep TCP"
+
+abbr fe 'open -a "Google Chrome Canary" --args --profile-directory=dev-profile --no-first-run --no-default-browser-check --user-data-dir=/Users/rcrumley/.chrome-debug-user-dir --remote-debugging-port=9222'
+
+abbr mux "tmuxinator"
 
 # vim / vim-isms
 abbr v "$EDITOR ."
@@ -58,6 +70,14 @@ end
 
 function ts -d "Unix timestamp to localtime"
     echo $argv | perl -nE 'say scalar localtime $_'
+end
+
+function jfeup -d "Update latest jfe -- execute from jfe dir"
+    watchman watch-del-all
+    killall flow
+    git stash save "jfeup"
+    git co master
+    git up
 end
 
 function kp --description "Kill processes"
@@ -119,13 +139,23 @@ function bcp --description "Remove brew plugins"
     end
 end
 
-function fish_prompt
+function posix-source
+    for i in (cat $argv)
+        set arr (string match -r '([A-Za-z0-9_]+)\=(.*)' $i)
+        if test -n "$arr"
+            set -gx $arr[2] $arr[3]
+        end
+    end
+end
+
+function fish_prompt_deprecated_for_starship
     # based on isacikgoz/sashimi
     set -l last_status $status
     set -l cyan (set_color -o cyan)
     set -l yellow (set_color -o yellow)
     set -g red (set_color -o red)
     set -g blue (set_color -o blue)
+    set -g dblue (set_color -d -i blue)
     set -l green (set_color -o green)
     set -g normal (set_color normal)
 
@@ -153,45 +183,18 @@ function fish_prompt
         set -g __fish_git_prompt_showcolorhints true
         set -g __fish_git_prompt_char_stateseparator ' '
         set -g __fish_git_prompt_color_branch blue
-        set prompt_git (fish_git_prompt | string trim -c ' ()')
-        set git_info "$normal git:($prompt_git$normal)"
+        set prompt_git_branch (git branch --show-current)
+        # if test (git diff --no-ext-diff --quiet --exit-code) = 0
+        #     set prompt_git_dirty " $red*"
+        # else
+        #     set prompt_git_dirty ""
+        # end
+        # set prompt_git (fish_git_prompt | string trim -c ' ()')
+        set git_info "$normal git:($dblue$prompt_git_branch$prompt_git_dirty$normal)"
     end
 
     echo -n -s $initial_indicator $whitespace $cwd $git_info $whitespace $status_indicator $whitespace
 end
-
-# function fish_prompt --description 'Write out the prompt'
-#     switch $status
-#         case 0
-#             set_color green
-#         case 127
-#             set_color yellow
-#         case '*'
-#             set_color red
-#     end
-
-#     set_color -od
-#     echo -n '• '
-#     set_color blue
-#     echo -n (prompt_pwd)
-
-#     if test (git rev-parse --git-dir 2>/dev/null)
-#         set_color yellow
-#         echo -n " on "
-#         set_color green
-#         echo -n (git status | head -1 | string split ' ')[-1]
-
-#         if test -n (echo (git status -s))
-#             set_color magenta
-#         end
-
-#         echo -n ' ⚑'
-#     end
-
-#     set_color yellow
-#     echo ' ❯ '
-#     set_color -normal
-# end
 
 if not functions -q fisher
     set -q XDG_CONFIG_HOME; or set XDG_CONFIG_HOME ~/.config
@@ -215,10 +218,20 @@ end
 [ -f /usr/local/share/fish/vendor_completions.d/docker-compose.fish ]; and source /usr/local/share/fish/vendor_completions.d/docker-compose.fish
 [ -f /usr/local/share/fish/vendor_completions.d/fd.fish ]; and source /usr/local/share/fish/vendor_completions.d/fd.fish
 [ -f /usr/local/share/fish/vendor_completions.d/rg.fish ]; and source /usr/local/share/fish/vendor_completions.d/rg.fish
+# }}}
 
-# iTerm shell integration
+# asdf {{{
+[ -f (brew --prefix asdf)/libexec/asdf.fish ]; and source (brew --prefix asdf)/libexec/asdf.fish
+[ -f ~/.asdf/plugins/java/set-java-home.fish ]; and . ~/.asdf/plugins/java/set-java-home.fish
+#}}}
+
+# iTerm shell integration {{{
 [ -f $HOME/.iterm2_shell_integration.fish ]; and source $HOME/.iterm2_shell_integration.fish
 # }}}
+
+# starship {{{
+starship init fish | source
+#}}}
 
 # TMUX {{{
 # if status --is-interactive

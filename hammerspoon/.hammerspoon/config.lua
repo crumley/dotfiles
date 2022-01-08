@@ -93,14 +93,29 @@ window_layout = hs.window.layout.new({
     -- { hs.window.filter.new(false):setAppFilter("Google Chrome", { visible = true, allowRoles = "AXStandardWindow", allowTitles = "Lucidchart" }), "move all focused [0,0,100,100] 1,0" },
 })
 
-
+local function doit(name)
+    -- so tab, tab, down, enter, tab, down, enter, tab, down, enter, tab, enter
+    hs.eventtap.keyStroke(nil, "tab", 1000)
+    hs.eventtap.keyStroke(nil, "tab", 1000)
+    hs.eventtap.keyStroke(nil, "tab", 1000)
+    hs.eventtap.keyStroke(nil, "tab", 1000)
+    hs.eventtap.keyStroke(nil, "return", 1000)
+    hs.eventtap.keyStroke(nil, "return", 10000)
+    hs.eventtap.keyStroke(nil, "return", 10000)
+    hs.eventtap.keyStroke(nil, "tab", 1000)
+    hs.eventtap.keyStroke(nil, "return", 1000)
+    hs.eventtap.keyStroke(nil, "return", 10000)
+    hs.eventtap.keyStroke(nil, "return", 10000)
+    hs.eventtap.keyStroke(nil, "tab", 1000)
+    hs.eventtap.keyStroke(nil, "return", 1000)
+end
 
 config.key_bindings = {}
 
 config.key_bindings[hyper] = {
+    G = function() doit() end,
     A = function() app.jump("Code") end,
     D = function() app.jump("iTerm") end,
-    F = function() app.jump("Finder") end,
     E = function() app.jump("Spotify") end,
     S = function() app.jump("Google Chrome") end,
     W = function() app.jump("Slack") end,
@@ -117,6 +132,8 @@ config.key_bindings[hyper] = {
     V = function() hs.openConsole() end,
     R = function() hs.reload() end,
     F12 = function() hs.caffeinate.startScreensaver() end,
+
+    F = function() spoon.MicMute:toggleMicMute() end,
 
     RETURN = function() hs.grid.show() end,
     ['\\'] = function() hs.grid.maximizeWindow(hs.window.focusedWindow()) end,

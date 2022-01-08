@@ -1,0 +1,59 @@
+# ./.tmuxinator.yml
+
+name: ivy
+root: ~/pi/ivy
+
+# Optional tmux socket
+# socket_name: foo
+
+# Note that the pre and post options have been deprecated and will be replaced by
+# project hooks.
+
+# Project hooks
+
+# Runs on project start, always
+# on_project_start: command
+
+# Run on project start, the first time
+# on_project_first_start: command
+
+# Run on project start, after the first time
+# on_project_restart: command
+
+# Run on project exit ( detaching from tmux session )
+# on_project_exit: command
+on_project_exit: tmux -CC attach
+
+# Run on project stop
+# on_project_stop: command
+
+# Runs in each window and pane before window/pane specific commands. Useful for setting up interpreter versions.
+# pre_window: rbenv shell 2.0.0-p247
+
+# Pass command line options to tmux. Useful for specifying a different tmux.conf.
+# tmux_options: -f ~/.tmux.mac.conf
+
+# Change the command to call tmux.  This can be used by derivatives/wrappers like byobu.
+# tmux_command: byobu
+
+# Specifies (by name or index) which window will be selected on project startup. If not set, the first window is used.
+# startup_window: editor
+
+# Specifies (by index) which pane of the specified window will be selected on project startup. If not set, the first pane is used.
+# startup_pane: 1
+
+# Controls whether the tmux session should be attached to automatically. Defaults to true.
+attach: false
+
+windows:
+  - fe:
+      # Taken from `tmux list-windows` after adjusting in iterm2
+      layout: 4afb,127x50,0,0[127x17,0,0{65x17,0,0[65x8,0,0,0,65x8,0,9,1],21x17,66,0,2,39x17,88,0,4},127x11,0,18{63x11,0,18,3,63x11,64,18,5},127x20,0,30,6]
+      panes:
+        - yarn start:fe
+        - yarn storybook
+        - yarn tunnel
+        - cd packages/frontend
+        - yarn start:be
+        - cd packages/backend
+        - echo "yarn ivy --help"
