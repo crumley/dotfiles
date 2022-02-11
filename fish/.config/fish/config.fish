@@ -60,6 +60,12 @@ abbr v "$EDITOR ."
 # }}}
 
 # Utility functions {{{
+function upall -d "Upgrades all the things"
+    brew upgrade
+    fisher update
+    atlas upgrade
+end
+
 function p4merge -d "merge two things"
     /opt/homebrew-cask/Caskroom/p4merge/2014.1/p4merge.app/Contents/Resources/launchp4merge $argv &
 end
@@ -70,14 +76,6 @@ end
 
 function ts -d "Unix timestamp to localtime"
     echo $argv | perl -nE 'say scalar localtime $_'
-end
-
-function jfeup -d "Update latest jfe -- execute from jfe dir"
-    watchman watch-del-all
-    killall flow
-    git stash save "jfeup"
-    git co master
-    git up
 end
 
 function kp --description "Kill processes"
@@ -148,54 +146,6 @@ function posix-source
     end
 end
 
-function fish_prompt_deprecated_for_starship
-    # based on isacikgoz/sashimi
-    set -l last_status $status
-    set -l cyan (set_color -o cyan)
-    set -l yellow (set_color -o yellow)
-    set -g red (set_color -o red)
-    set -g blue (set_color -o blue)
-    set -g dblue (set_color -d -i blue)
-    set -l green (set_color -o green)
-    set -g normal (set_color normal)
-
-    set -g whitespace ' '
-
-    if test $last_status = 0
-        set initial_indicator "$green◆"
-        set status_indicator "$normal❯$cyan❯$green❯"
-    else
-        set initial_indicator "$red✖ $last_status"
-        set status_indicator "$red❯$red❯$red❯"
-    end
-    set -l cwd $cyan(basename (prompt_pwd))
-
-    # Notify if a command took more than 1 minute
-    if [ "$CMD_DURATION" -gt 60000 ]
-        echo The last command took (math "$CMD_DURATION/1000") seconds.
-    end
-
-    if test -d .git
-        # git config --local bash.showInformativeStatus false
-        # set -g __fish_git_prompt_show_informative_status true
-        set -g __fish_git_prompt_show_informative_status false
-        set -g __fish_git_prompt_showupstream auto
-        set -g __fish_git_prompt_showcolorhints true
-        set -g __fish_git_prompt_char_stateseparator ' '
-        set -g __fish_git_prompt_color_branch blue
-        set prompt_git_branch (git branch --show-current)
-        # if test (git diff --no-ext-diff --quiet --exit-code) = 0
-        #     set prompt_git_dirty " $red*"
-        # else
-        #     set prompt_git_dirty ""
-        # end
-        # set prompt_git (fish_git_prompt | string trim -c ' ()')
-        set git_info "$normal git:($dblue$prompt_git_branch$prompt_git_dirty$normal)"
-    end
-
-    echo -n -s $initial_indicator $whitespace $cwd $git_info $whitespace $status_indicator $whitespace
-end
-
 if not functions -q fisher
     set -q XDG_CONFIG_HOME; or set XDG_CONFIG_HOME ~/.config
     curl https://git.io/fisher --create-dirs -sLo $XDG_CONFIG_HOME/fish/functions/fisher.fish
@@ -218,11 +168,13 @@ end
 [ -f /usr/local/share/fish/vendor_completions.d/docker-compose.fish ]; and source /usr/local/share/fish/vendor_completions.d/docker-compose.fish
 [ -f /usr/local/share/fish/vendor_completions.d/fd.fish ]; and source /usr/local/share/fish/vendor_completions.d/fd.fish
 [ -f /usr/local/share/fish/vendor_completions.d/rg.fish ]; and source /usr/local/share/fish/vendor_completions.d/rg.fish
+[ -f /usr/local/share/fish/vendor_completions.d/starship.fish ]; and source /usr/local/share/fish/vendor_completions.d/starship.fish
 # }}}
 
 # asdf {{{
 [ -f (brew --prefix asdf)/libexec/asdf.fish ]; and source (brew --prefix asdf)/libexec/asdf.fish
 [ -f ~/.asdf/plugins/java/set-java-home.fish ]; and . ~/.asdf/plugins/java/set-java-home.fish
+direnv hook fish | source
 #}}}
 
 # iTerm shell integration {{{

@@ -133,11 +133,33 @@ config.key_bindings[hyper] = {
     R = function() hs.reload() end,
     F12 = function() hs.caffeinate.startScreensaver() end,
 
-    F = function() spoon.MicMute:toggleMicMute() end,
+    F = function() toggleMicMute() end,
 
     RETURN = function() hs.grid.show() end,
     ['\\'] = function() hs.grid.maximizeWindow(hs.window.focusedWindow()) end,
 }
+
+function toggleMicMute()
+	local mic = hs.audiodevice.defaultEffectDevice()
+	local zoom = hs.application'Zoom'
+	logger.i('zo')
+    if zoom then
+        local ok = zoom:selectMenuItem'Unmute Audio'
+        if not ok then
+            hs.timer.doAfter(0.5, function()
+                zoom:selectMenuItem'Unmute Audio'
+            end)
+        end
+        if zoom then
+			local ok = zoom:selectMenuItem'Mute Audio'
+			if not ok then
+				hs.timer.doAfter(0.5, function()
+					zoom:selectMenuItem'Mute Audio'
+				end)
+			end
+		end
+    end
+end
 
 config.key_bindings[hyperShift] = {
     A = function() app.jump("IDEA") end,
