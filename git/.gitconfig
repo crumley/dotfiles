@@ -69,6 +69,7 @@
 	# Include summaries of merged commits in newly created merge commit messages
 	log = true
 	tool = p4mergetool
+	conflictstyle = diff3
 
 # URL shorthands
 [url "git@github.com:"]
@@ -92,7 +93,7 @@
 	name = Ryan Crumley
 	email = crumley@gmail.com
 [rerere]
-	enabled = true
+	enabled = 1
 	autoupdate = true
 [filter "lfs"]
 	clean = git-lfs clean -- %f
