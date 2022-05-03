@@ -1,5 +1,5 @@
-python 2.7.18
-python 3.8.5
-nodejs 14.15.2
-direnv 2.30.3
-java adoptopenjdk-11.0.12+7
+python 3.10.4
+direnv 2.31.0
+java adoptopenjdk-17.0.2+8
+nodejs 16.14.0
+yarn 1.22.18

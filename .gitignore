@@ -6,3 +6,6 @@ fish/.config/fish/completions
 fish/.config/fish/conf.d
 fish/.config/fish/functions
 vim/.vim/swaps
+ssh/.ssh/known_hosts*
+ssh/.ssh/asap
+direnv/.config/direnv/lib

@@ -5,16 +5,17 @@ set -gx FZF_DEFAULT_COMMAND 'rg --files --no-ignore-vcs --hidden'
 set -gx FZF_CTRL_T_COMMAND $FZF_DEFAULT_COMMAND
 set -gx FZF_DEFAULT_COMMAND 'fd'
 set -x ENHANCD_FILTER fzy:fzf:peco
-set -x EDITOR '/usr/local/bin/vim'
+set -x EDITOR '/usr/bin/vim'
 set -x SHELL '/usr/local/bin/fish'
 set -x GOPATH ~/.go
 set -gx EVENT_NOKQUEUE 1
 set -gx GPG_TTY (tty)
 set -x AWS_IAM_HOME /usr/local/opt/aws-iam-tools/libexec
 set -x AWS_CREDENTIAL_FILEs ~/.aws-credentials-master
+set -x PATH $PATH ~/.bin ~/.go/bin /usr/local/opt/go/libexec/bin /usr/local/opt/util-linux/bin /opt/homebrew/bin /opt/atlassian/bin
 set -U fish_user_paths /usr/local/opt/openssl/bin $HOME/bin $HOME/.asdf/shims $HOME/.asdf/bin $HOME/.fzf/bin
-set -x PATH $PATH ~/.bin ~/.go/bin /usr/local/opt/go/libexec/bin /usr/local/opt/util-linux/bin /opt/homebrew/bin
-set -x fish_user_paths "/usr/local/sbin" $fish_user_paths
+set -x fish_user_paths "/usr/local/sbin" "/usr/local/bin" $fish_user_paths
+set -x SSH_AUTH_SOCK /Users/rcrumley/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
 # }}}
 
 # Abbreviations {{{
@@ -158,37 +159,42 @@ function fish_user_key_bindings
 end
 # }}}
 
+if status --is-interactive
+    # Sourcing {{{
+    # macOS homebrew installs into /usr/local/share, apt uses /usr/share
+    [ -f /usr/local/share/autojump/autojump.fish ]; and source /usr/local/share/autojump/autojump.fish
+    [ -f /usr/local/share/fish/vendor_completions.d/asdf.fish ]; and source /usr/local/share/fish/vendor_completions.d/asdf.fish
+    [ -f /usr/local/share/fish/vendor_completions.d/brew.fish ]; and source /usr/local/share/fish/vendor_completions.d/brew.fish
+    [ -f /usr/local/share/fish/vendor_completions.d/brew-cask.fish ]; and source /usr/local/share/fish/vendor_completions.d/brew-cask.fish
+    [ -f /usr/local/share/fish/vendor_completions.d/docker-compose.fish ]; and source /usr/local/share/fish/vendor_completions.d/docker-compose.fish
+    [ -f /usr/local/share/fish/vendor_completions.d/fd.fish ]; and source /usr/local/share/fish/vendor_completions.d/fd.fish
+    [ -f /usr/local/share/fish/vendor_completions.d/rg.fish ]; and source /usr/local/share/fish/vendor_completions.d/rg.fish
+    [ -f /usr/local/share/fish/vendor_completions.d/starship.fish ]; and source /usr/local/share/fish/vendor_completions.d/starship.fish
+    # }}}
 
-# Sourcing {{{
-# macOS homebrew installs into /usr/local/share, apt uses /usr/share
-[ -f /usr/local/share/autojump/autojump.fish ]; and source /usr/local/share/autojump/autojump.fish
-[ -f /usr/local/share/fish/vendor_completions.d/asdf.fish ]; and source /usr/local/share/fish/vendor_completions.d/asdf.fish
-[ -f /usr/local/share/fish/vendor_completions.d/brew.fish ]; and source /usr/local/share/fish/vendor_completions.d/brew.fish
-[ -f /usr/local/share/fish/vendor_completions.d/brew-cask.fish ]; and source /usr/local/share/fish/vendor_completions.d/brew-cask.fish
-[ -f /usr/local/share/fish/vendor_completions.d/docker-compose.fish ]; and source /usr/local/share/fish/vendor_completions.d/docker-compose.fish
-[ -f /usr/local/share/fish/vendor_completions.d/fd.fish ]; and source /usr/local/share/fish/vendor_completions.d/fd.fish
-[ -f /usr/local/share/fish/vendor_completions.d/rg.fish ]; and source /usr/local/share/fish/vendor_completions.d/rg.fish
-[ -f /usr/local/share/fish/vendor_completions.d/starship.fish ]; and source /usr/local/share/fish/vendor_completions.d/starship.fish
-# }}}
+    # asdf {{{
+    [ -f (brew --prefix asdf)/libexec/asdf.fish ]; and source (brew --prefix asdf)/libexec/asdf.fish
+    [ -f ~/.asdf/plugins/java/set-java-home.fish ]; and . ~/.asdf/plugins/java/set-java-home.fish
+    direnv hook fish | source
+    #}}}
 
-# asdf {{{
-[ -f (brew --prefix asdf)/libexec/asdf.fish ]; and source (brew --prefix asdf)/libexec/asdf.fish
-[ -f ~/.asdf/plugins/java/set-java-home.fish ]; and . ~/.asdf/plugins/java/set-java-home.fish
-direnv hook fish | source
-#}}}
+    # iTerm shell integration {{{
+    [ -f $HOME/.iterm2_shell_integration.fish ]; and source $HOME/.iterm2_shell_integration.fish
+    # }}}
 
-# iTerm shell integration {{{
-[ -f $HOME/.iterm2_shell_integration.fish ]; and source $HOME/.iterm2_shell_integration.fish
-# }}}
+    # starship {{{
+    starship init fish | source
+    #}}}
 
-# starship {{{
-starship init fish | source
-#}}}
+    # atuin {{{
+    set -gx ATUIN_NOBIND "true"
+    atuin init fish | source
+    bind \cr _atuin_search
+    #}}}
 
-# TMUX {{{
-# if status --is-interactive
-#     and command -s tmux >/dev/null
-#     and not set -q TMUX
-#     exec tmux new -A -s (whoami)
-# end
-# }}}
+    # TMUX {{{
+    #     and command -s tmux >/dev/null
+    #     and not set -q TMUX
+    #     exec tmux new -A -s (whoami)
+    # }}}
+end

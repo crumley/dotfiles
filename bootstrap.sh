@@ -7,7 +7,7 @@ git submodule update --recursive --remote --init
 if hash brew 2>/dev/null; then
    echo "Skipping brew install"
 else
-   /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
    echo "brew has been installed. Follow steps above to fully enable brew on the path before proceeding. Exiting."
    exit 1
 fi
@@ -21,7 +21,7 @@ brew bundle
 
 # https://www.theguild.nl/how-to-manage-dotfiles-with-gnu-stow/
 echo "Stowing configs..."
-stow --dotfiles bash fish git hammerspoon home karabiner vim asdf rg ssh rclone tmux direnv
+stow --dotfiles bash fish git hammerspoon home karabiner vim asdf rg ssh rclone tmux direnv atuin
 
 echo "Install gems..."
 sudo gem install tmuxinator

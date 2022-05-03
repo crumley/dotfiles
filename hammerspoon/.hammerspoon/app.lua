@@ -1,17 +1,19 @@
-local application = require 'hs.application'
-
 local prev_app = nil
 local prev_win = nil
 
 local function jump2(name)
-    curr_app = application.frontmostApplication()
+    curr_app = hs.application.frontmostApplication()
     curr_win = nil
     if curr_app ~= nil then
         curr_win = curr_app:focusedWindow()
     end
 
-    new_app = application(name)
+    new_app = hs.application(name)
     new_win = nil
+
+    if new_app == nil then
+        new_app = find(name)
+    end
 
     -- Is new_app really a hs.window?
     if new_app["focus"] ~= nil then
@@ -41,6 +43,14 @@ local function jump2(name)
     end
 end
 
+function find(name)
+    return hs.fnutils.find(
+        hs.window.filter.new(true):getWindows(hs.window.sortByFocusedLast),
+        function (w) return string.find(w:title(), name) ~= nil end
+    )
+end
+
 return {
     jump = jump2
 }
+
