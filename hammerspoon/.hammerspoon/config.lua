@@ -4,11 +4,14 @@ local spaces = require('spaces')
 spaces.enableHideDock()
 
 hs.window.animationDuration = 0
-hs.grid.setGrid({ w = 2, h = 2 })
+hs.grid.setGrid({ w = 8, h = 4 })
 hs.grid.setMargins({ w = 0, h = 0 })
 
 hyper = {"ctrl", "cmd", "option"}
 hyperShift = {"ctrl", "cmd", "option", "shift"}
+
+local wm = require('wm')
+wm:init()
 
 local config = {}
 config.spoons = {
@@ -18,8 +21,10 @@ config.spoons = {
 config.key_bindings = {}
 config.key_bindings[hyper] = {
     G = function() spaces:focusCurrentWindow() end,
-    ["3"] = function() spaces:manage() end,
-
+    ["1"] = function() wm:action("rotate") end,
+    ["2"] = function() wm:action("mirror_y") end,
+    ["3"] = function() wm:showMenu() end,
+    
     A = function() app.jump("Code") end,
     D = function() app.jump("iTerm") end,
     E = function() app.jump("Spotify") end,
@@ -31,47 +36,33 @@ config.key_bindings[hyper] = {
     M = function() app.jump("Messages") end,
     T = function() app.jump("Trello") end,
     X = function() app.jump("dendron") end,
-
+    
     P = function() hs.spaces.toggleMissionControl() end,
-
+    
     V = function() hs.openConsole() end,
     R = function() hs.reload() end,
     F12 = function() hs.caffeinate.startScreensaver() end,
-
+    
     F = function() toggleMicMute() end,
-
+    
     B = function() spoon.Hammerdora:toggle() end,
     Y = function() spoon.SerenityNow:enable("25") end,
-
+    
     RETURN = function() hs.grid.show() end,
     ['\\'] = function() hs.grid.maximizeWindow(hs.window.focusedWindow()) end,
 }
 
--- Resize window for chunk of screen.
--- For x and y: use 0 to expand fully in that dimension, 0.5 to expand halfway
--- For w and h: use 1 for full, 0.5 for half
-function push(x, y, w, h)
-	local win = hs.window.focusedWindow()
-	local f = win:frame()
-	local screen = win:screen()
-	local max = screen:frame()
-
-	f.x = max.x + (max.w*x)
-	f.y = max.y + (max.h*y)
-	f.w = max.w*w
-	f.h = max.h*h
-	win:setFrame(f)
-end
-
 config.key_bindings[hyperShift] = {
-    A = function() app.jump("IDEA") end,
     S = function() app.jump("Google Chrome Canary") end,
-
+    
     Y = function() hs.spotify.pause() end,
     U = function() hs.spotify.playpause() end,
     I = function() hs.spotify.previous() end,
     O = function() hs.spotify.next() end,
     P = function() hs.spotify.displayCurrentTrack() end,
+    
+    N = function() wm:action("left") end,
+    M = function() wm:action("right") end,
 
     -- RETURN = function() hs.window.focusedWindow():centerOnScreen(nil, true) end,
     RETURN = function() push(0.05, 0.05, 0.9, 0.9) end,
@@ -83,14 +74,15 @@ config.focus = {
         subText = "Curate Email Inbox",
         apps = { 'Gmail', 'Arc' },
         layout = {
-            {"Gmail", nil, nil, hs.layout.left50, 0, 0},
-            {"Arc", nil, nil, hs.layout.right50, 0, 0}
+            {"Gmail", nil, nil, hs.layout.left70, 0, 0},
+            {"Arc", nil, nil, hs.layout.right30, 0, 0}
         },
         space = true,
         setup = function ()
             -- Create Arc window with new tab
             hs.osascript.applescript(string.format([[
                 tell application "Arc"
+                    make new window
                     tell front window
                         tell space "Daily" to focus
                     end tell
@@ -102,7 +94,7 @@ config.focus = {
     PullRequests = {
         text = "Pull Requests",
         subText = "Review Pull Requests",
-        apps = { 'Slack', 'Arc', 'Spotify' },
+        apps = { 'Slack', 'Spotify' },
         layout = {
             {"Slack", nil, nil, hs.layout.left30, 0, 0},
             {"Arc", nil, nil, hs.layout.right70, 0, 0}
@@ -121,9 +113,9 @@ config.focus = {
             ]], nil))
         end
     },
-    Focus1 = {
-        text = "Focus",
-        subText = "Focus",
+    Focus = {
+        text = "Focus Arc",
+        subText = "Created a space with a single (new) Arc window",
         apps = { 'Arc' },
         layout = {
             {"Arc", nil, nil, hs.layout.right70, 0, 0}
@@ -136,6 +128,46 @@ config.focus = {
                     make new window
                     tell front window
                         tell space "Focus" to focus
+                    end tell
+                end tell
+            ]], nil))
+        end
+    },
+    Meeting = {
+        text = "Have a Meeting",
+        subText = "Zoom + Arc",
+        apps = { 'Zoom', 'Arc' },
+        layout = {
+            {"Arc", nil, nil, hs.layout.right70, 0, 0}
+        },
+        space = true,
+        setup = function ()
+            -- Create chrome window with new tab
+            hs.osascript.applescript(string.format([[
+                tell application "Arc"
+                    make new window
+                    tell front window
+                        tell space "Atlassian" to focus
+                    end tell
+                end tell
+            ]], nil))
+        end
+    },
+    Interview = {
+        text = "Give an Interview",
+        subText = "Zoom + Arc + Dendron",
+        apps = { 'Zoom', 'Arc', 'Dendron' },
+        layout = {
+            {"Arc", nil, nil, hs.layout.right70, 0, 0}
+        },
+        space = true,
+        setup = function ()
+            -- Create chrome window with new tab
+            hs.osascript.applescript(string.format([[
+                tell application "Arc"
+                    make new window
+                    tell front window
+                        tell space "Atlassian" to focus
                     end tell
                 end tell
             ]], nil))

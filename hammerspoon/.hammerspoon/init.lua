@@ -5,7 +5,6 @@ hs.loadSpoon("DoNotDisturb")
 hs.loadSpoon("Hammerdora")
 hs.loadSpoon("SpoonInstall")
 
-
 -- todo
 -- fix not finding dendron when not on current space
 -- make space management keyboard shortcuts just to get started
@@ -21,6 +20,24 @@ hs.loadSpoon("SpoonInstall")
 -- 08142023
 -- empty space close
 -- github prep + commit
+
+-- 09052023
+-- Cycle current space through various grid layouts
+-- Activity to close current space (if not on primary space)
+-- Alternativly a close activity action that can remove the extra Arc window.
+
+-- 09062023
+-- Ability for activity to select a specific window of an app (like Dendron)
+-- Fix bug where app(v) doesn't exist... e.g. zoom is closed. May be similar area to feature above
+
+-- 09082023
+-- Doing mash-b when melon is paused resets to a new 25m instead of unpausing
+
+-- Common layouts 70 30 etc
+-- Common spaces with windows already on it. use activities for "working spaces" to reconfigure as needed
+-- Terminal on each space, arc on each space?
+-- Keystroke to bring app to space from anywhere... e.g get calendar here, then put it back?
+
 
 spoon.SpoonInstall.use_syncinstall = true
 
@@ -38,10 +55,6 @@ smgr:init(spaces)
 
 hs.hotkey.bind({"ctrl", "cmd", "option"}, "5", function ()
     activities:start()
-end)
-
-hs.hotkey.bind({"ctrl", "cmd", "option"}, "4", function ()
-    smgr:show()
 end)
 
 -- Load those Spoons

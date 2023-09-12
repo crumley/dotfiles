@@ -16,6 +16,13 @@ echo "Setting blazing fast keyrepeat..."
 defaults write -g InitialKeyRepeat -int 15 # normal minimum is 15 (225 ms)
 defaults write -g KeyRepeat -int 1 # normal minimum is 2 (30 ms)
 
+defaults write com.apple.dock launchanim -bool false
+defaults write com.apple.dock autohide-delay -float 0
+defaults write com.apple.dock autohide-time-modifier -float 0
+defaults write com.apple.dock launchanim -bool false
+defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
+
+
 echo "Installing brews from Brewfile..."
 brew bundle
 

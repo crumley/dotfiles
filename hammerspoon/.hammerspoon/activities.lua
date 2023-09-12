@@ -13,8 +13,10 @@ end
 
 function m:setActivities(activities)
     m.chooser = chooser.new(function (activity) 
-        m.logger.i('select', hs.inspect(activity))
-        m:startActivity(activities[activity["uuid"]])
+        if activity then
+            m.logger.i('select', hs.inspect(activity))
+            m:startActivity(activities[activity["uuid"]])
+        end
     end)
     local choices = {}
     for k, activity in pairs(activities) do
@@ -34,6 +36,7 @@ end
 
 function m:startActivity(activity)
     m.logger.i('startActivity', activity)
+
     if activity["setup"] ~= nil then
         activity["setup"]()
     end
@@ -46,11 +49,14 @@ function m:startActivity(activity)
         activitySpace = spaces[#spaces]
         hs.spaces.gotoSpace(activitySpace)
     end
-    
+
     for _, v in ipairs( activity["apps"] ) do
         local activityApp = app(v)
-        hs.spaces.moveWindowToSpace(activityApp:focusedWindow(), activitySpace)
-        activityApp:activate()
+        if activitySpace ~= nil then
+            hs.spaces.moveWindowToSpace(activityApp:focusedWindow(), activitySpace)
+        else
+            activityApp:activate()
+        end
     end
 
     hs.layout.apply( activity["layout"] )

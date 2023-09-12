@@ -2,14 +2,14 @@ local prev_app = nil
 local prev_win = nil
 
 local function jump2(name)
-    curr_app = hs.application.frontmostApplication()
-    curr_win = nil
+    local curr_app = hs.application.frontmostApplication()
+    local curr_win = nil
     if curr_app ~= nil then
         curr_win = curr_app:focusedWindow()
     end
 
-    new_app = hs.application(name)
-    new_win = nil
+    local new_app = hs.application(name)
+    local new_win = nil
 
     if new_app == nil then
         new_app = find(name)
