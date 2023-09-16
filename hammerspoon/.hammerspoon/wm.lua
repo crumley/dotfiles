@@ -36,7 +36,7 @@ local actions = {
     end,
 
     right = function ()
-        yabaish("/opt/homebrew/bin/yabai yabai -m window --resize right:20:0 || /opt/homebrew/bin/yabai -m window --resize left:20:0")
+        yabaish("/opt/homebrew/bin/yabai -m window --resize right:20:0 || /opt/homebrew/bin/yabai -m window --resize left:20:0")
     end,
 }
 

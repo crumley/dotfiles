@@ -1,6 +1,6 @@
 # Crumley's dotfiles
 
-Inspired by https://github.com/thnukid/dotfiles and https://www.theguild.nl/how-to-manage-dotfiles-with-gnu-stow/
+Inspired by <https://github.com/thnukid/dotfiles> and <https://www.theguild.nl/how-to-manage-dotfiles-with-gnu-stow/>
 
 ## Installation
 
@@ -66,26 +66,11 @@ git config --global user.email "$GIT_AUTHOR_EMAIL"
 
 You could also use `~/.extra` to override settings, functions and aliases from my dotfiles repository. It’s probably better to [fork this repository](https://github.com/mathiasbynens/dotfiles/fork_select) instead, though.
 
-### Sensible OS X defaults
+### Brew
 
-When setting up a new Mac, you may want to set some sensible OS X defaults:
+Update Brewfile with latest:
 
-```bash
-./.osx
-```
-
-### Install Homebrew formulae
-
-When setting up a new Mac, you may want to install some common Homebrew formulae (after installing Homebrew, of course):
-
-```bash
-./.brew
-```
-
-## Feedback
-
-Suggestions/improvements
-[welcome](https://github.com/mathiasbynens/dotfiles/issues)!
+`brew bundle dump > Brewfile`
 
 ## Thanks to…
 
