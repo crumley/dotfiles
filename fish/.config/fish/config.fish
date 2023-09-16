@@ -12,10 +12,16 @@ set -gx EVENT_NOKQUEUE 1
 set -gx GPG_TTY (tty)
 set -x AWS_IAM_HOME /usr/local/opt/aws-iam-tools/libexec
 set -x AWS_CREDENTIAL_FILEs ~/.aws-credentials-master
-set -x PATH $PATH ~/.bin ~/.go/bin /usr/local/opt/go/libexec/bin /usr/local/opt/util-linux/bin /opt/homebrew/bin /opt/atlassian/bin
-set -U fish_user_paths /usr/local/opt/openssl/bin $HOME/bin $HOME/.asdf/shims $HOME/.asdf/bin $HOME/.fzf/bin
-set -x fish_user_paths "/usr/local/sbin" "/usr/local/bin" $fish_user_paths
 set -x SSH_AUTH_SOCK /Users/rcrumley/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+# }}}
+
+# PATH {{{
+fish_add_path /usr/local/bin
+fish_add_path /usr/local/sbin
+fish_add_path /opt/homebrew/bin
+fish_add_path /opt/atlassian/bin
+fish_add_path $HOME/bin
+fish_add_path $HOME/.asdf/shims
 # }}}
 
 # Abbreviations {{{

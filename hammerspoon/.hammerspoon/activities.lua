@@ -50,6 +50,19 @@ function m:startActivity(activity)
         hs.spaces.gotoSpace(activitySpace)
     end
 
+    -- 2023-09-13 09:51:21: 09:51:21 activities: select {
+    --     subText = "Zoom + Arc + Dendron",
+    --     text = "Give an Interview",
+    --     uuid = "Interview"
+    --   }
+    --   2023-09-13 09:51:21:          activities: startActivity table: 0x600003577940
+    --   2023-09-13 09:51:22: 09:51:22 ERROR:   LuaSkin: hs.chooser:completionCallback: ...merspoon.app/Contents/Resources/extensions/hs/spaces.lua:592: ERROR: incorrect type 'nil' for argument 1 (expected number or integer)
+    --   stack traceback:
+    --       [C]: in upvalue '_moveWindowToSpace'
+    --       ...merspoon.app/Contents/Resources/extensions/hs/spaces.lua:592: in function 'hs.spaces.moveWindowToSpace'
+    --       /Users/rcrumley/.hammerspoon/activities.lua:56: in function 'activities.startActivity'
+    --       /Users/rcrumley/.hammerspoon/activities.lua:18: in function </Users/rcrumley/.hammerspoon/activities.lua:15>
+
     for _, v in ipairs( activity["apps"] ) do
         local activityApp = app(v)
         if activitySpace ~= nil then
