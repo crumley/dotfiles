@@ -22,7 +22,6 @@ fish_add_path /opt/homebrew/bin
 fish_add_path /opt/homebrew/sbin
 fish_add_path /opt/atlassian/bin
 fish_add_path $HOME/bin
-fish_add_path $HOME/.asdf/shims
 # }}}
 
 # Abbreviations {{{
@@ -180,8 +179,15 @@ if status --is-interactive
     # }}}
 
     # asdf {{{
-    [ -f (brew --prefix asdf)/libexec/asdf.fish ]; and source (brew --prefix asdf)/libexec/asdf.fish
-    [ -f ~/.asdf/plugins/java/set-java-home.fish ]; and . ~/.asdf/plugins/java/set-java-home.fish
+    # [ -f (brew --prefix asdf)/libexec/asdf.fish ]; and source (brew --prefix asdf)/libexec/asdf.fish
+    # [ -f ~/.asdf/plugins/java/set-java-home.fish ]; and . ~/.asdf/plugins/java/set-java-home.fish
+    #}}}
+
+    # rtx {{{
+    rtx activate fish | source
+    #}}}
+
+    # direnv {{{
     direnv hook fish | source
     #}}}
 
