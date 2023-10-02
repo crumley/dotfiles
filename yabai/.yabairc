@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+echo $PATH
+
 yabai -m config window_placement second_child
 yabai -m config mouse_follows_focus off
 yabai -m config focus_follows_mouse off
@@ -13,38 +15,41 @@ yabai -m config right_padding 20
 yabai -m config auto_balance off
 yabai -m config split_ratio 0.50
 
-# yabai -m config window_border off
 yabai -m config window_border_radius 2
 yabai -m config window_border_width 24
-yabai -m config active_window_border_color   0xffe1e3e4
-yabai -m config normal_window_border_color   0xff494d64
-yabai -m config insert_feedback_color        0xff9dd274
+yabai -m config window_border off
+# yabai -m config active_window_border_color   0xffe1e3e4
+# yabai -m config normal_window_border_color   0xff494d64
+# yabai -m config insert_feedback_color        0xff9dd274
 
 yabai -m rule --add app="^System Settings$" manage=off
 yabai -m rule --add app="^Calculator$" manage=off
-yabai -m rule --add app="^Karabiner-Elements$" manage=off
-yabai -m rule --add app="^WhatsApp$" manage=off
-
 yabai -m rule --add app="^Cisco Secure Client$" manage=off
 yabai -m rule --add app="^1Password$" manage=off
 yabai -m rule --add app="^Docker Desktop$" manage=off
 yabai -m rule --add app="^Karabiner-Elements$" manage=off
 yabai -m rule --add app="^Karabiner-EventViewer$" manage=off
+
+yabai -m rule --add title="^Hammerspoon Console$" manage=off
+yabai -m rule --add app="^zoom.us$" title="^Zoom$" manage=off
+# yabai -m rule --add app="^zoom.us$" title="^Zoom Meeting$" manage=off
+
+# Don't manage little arc
+yabai -m rule --add app="^Arc$" title="^Space [0-9]+" manage=off
+
+yabai -m rule --add app="^WhatsApp$" manage=off
+
 # yabai -m rule --add app="^Discord$" manage=off
 # yabai -m rule --add app="^Messages$" manage=off
 # yabai -m rule --add app="^Calendar$" manage=off
 # yabai -m rule --add app="^Activity Monitor$" manage=off
 
 # This isnt matching for some reason
-yabai -m rule --add app="^iTerm2$" manage=off
+# yabai -m rule --add app="^iTerm2$" manage=off
 yabai -m rule --add app="^Trello (Beta)$" manage=off
 
-# signals
-# yabai -m signal --add event=window_focused action="hs -c \"yabaidirectcall.window_focused(\`printenv YABAI_WINDOW_ID\`)\""
-# yabai -m signal --add event=application_activated action="hs -c \"yabaidirectcall.application_activated(\`printenv YABAI_PROCESS_ID\`)\""
-# yabai -m signal --add event=window_resized action="hs -c \"yabaidirectcall.window_resized(\`printenv YABAI_WINDOW_ID\`)\""
-# yabai -m signal --add event=window_moved action="hs -c \"yabaidirectcall.window_moved(\`printenv YABAI_WINDOW_ID\`)\""
-# yabai -m signal --add event=window_destroyed action="hs -c \"yabaidirectcall.window_destroyed(\`printenv YABAI_WINDOW_ID\`)\""
-
+# Space 1 doesnt mess with windows (e.g. they float)
 yabai -m config --space 1 layout float
+
+# Every other space uses bsp
 yabai -m config layout bsp
