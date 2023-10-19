@@ -1,5 +1,6 @@
 python 3.10.4
 direnv 2.31.0
-java adoptopenjdk-17.0.2+8
+java   temurin-21.0.0+35.0.LTS
 nodejs 16.14.0
-yarn 1.22.18
+yarn   1.22.18
+bun    latest
