@@ -1,17 +1,17 @@
 local app = require('app')
-local spaces = require('spaces')
 
+local spaces = require('spaces')
+spaces:init()
 spaces.enableHideDock()
 
-hs.window.animationDuration = 0
-hs.grid.setGrid({ w = 8, h = 4 })
-hs.grid.setMargins({ w = 0, h = 0 })
-
-hyper = {"ctrl", "cmd", "option"}
-hyperShift = {"ctrl", "cmd", "option", "shift"}
+local hammerdora = require('Hammerdora')
+hammerdora:init()
 
 local wm = require('wm')
 wm:init()
+
+local hyper = {"ctrl", "cmd", "option"}
+local hyperShift = {"ctrl", "cmd", "option", "shift"}
 
 local config = {}
 config.spoons = {
@@ -46,8 +46,7 @@ config.key_bindings[hyper] = {
     
     F = function() toggleMicMute() end,
     
-    B = function() spoon.Hammerdora:toggle() end,
-    Y = function() spoon.SerenityNow:enable("25") end,
+    B = function() hammerdora:toggle() end,
     
     RETURN = function() hs.grid.show() end,
     ['\\'] = function() hs.grid.maximizeWindow(hs.window.focusedWindow()) end,

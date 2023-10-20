@@ -68,8 +68,13 @@ function yabaish(cli)
 end
 
 function m:init()
+    hs.window.animationDuration = 0
+    hs.grid.setGrid({ w = 6, h = 4 })
+    hs.grid.setMargins({ w = 0, h = 0 })
+
     m.horizontal_ratios = { 0.1, 0.3, 0.5, 0.7, 0.9 }
     m.horizontal_index = 3
+    
     m.chooser = chooser.new(function ( selection ) 
         if selection ~= nil then
             m:action(selection["uuid"])

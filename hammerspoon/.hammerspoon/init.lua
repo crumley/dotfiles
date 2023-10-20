@@ -1,8 +1,6 @@
 
 logger = hs.logger.new('crumlee.config','debug')
 
-hs.loadSpoon("DoNotDisturb")
-hs.loadSpoon("Hammerdora")
 hs.loadSpoon("SpoonInstall")
 
 -- todo
