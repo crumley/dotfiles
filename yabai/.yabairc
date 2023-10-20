@@ -32,6 +32,8 @@ yabai -m rule --add app="^Karabiner-EventViewer$" manage=off
 
 yabai -m rule --add title="^Hammerspoon Console$" manage=off
 yabai -m rule --add app="^zoom.us$" title="^Zoom$" manage=off
+
+# This targets the Zoom Meeting window itself
 # yabai -m rule --add app="^zoom.us$" title="^Zoom Meeting$" manage=off
 
 # Don't manage little arc
