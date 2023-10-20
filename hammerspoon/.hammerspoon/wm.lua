@@ -68,6 +68,8 @@ function yabaish(cli)
 end
 
 function m:init()
+    m.horizontal_ratios = { 0.1, 0.3, 0.5, 0.7, 0.9 }
+    m.horizontal_index = 3
     m.chooser = chooser.new(function ( selection ) 
         if selection ~= nil then
             m:action(selection["uuid"])
@@ -97,6 +99,11 @@ end
 
 function m:showMenu()
     m.chooser:show()
+end
+
+function m:horizontal_cycle()
+    yabai(string.format("-m window --ratio abs:%s", m.horizontal_ratios[m.horizontal_index]))
+    m.horizontal_index = (m.horizontal_index % #(m.horizontal_ratios)) + 1
 end
 
 return m

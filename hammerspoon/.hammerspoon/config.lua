@@ -21,7 +21,8 @@ config.spoons = {
 config.key_bindings = {}
 config.key_bindings[hyper] = {
     G = function() spaces:focusCurrentWindow() end,
-    ["1"] = function() wm:action("rotate") end,
+    ["1"] = function() wm:horizontal_cycle() end,
+    -- ["1"] = function() wm:action("rotate") end,
     ["2"] = function() wm:action("mirror_y") end,
     ["3"] = function() wm:showMenu() end,
     
