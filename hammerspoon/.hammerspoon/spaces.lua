@@ -98,12 +98,17 @@ function m:removeAllSpaces()
     local screenId = hs.screen.primaryScreen():getUUID()
     local firstSpaceId = hs.spaces.allSpaces()[screenId][1]
 
-    hs.spaces.gotoSpace(firstSpaceId)
+    if not m:isPrimarySpace() then 
+        hs.spaces.gotoSpace(firstSpaceId)
+    end
 
-    hs.fnutils.ieach( hs.spaces.allSpaces()[screenId], function (s) 
-        if s ~= firstSpaceId then
-            hs.spaces.removeSpace(s)
-        end
+    hs.timer.doAfter(2, function()  
+        hs.fnutils.ieach( hs.spaces.allSpaces()[screenId], function (s) 
+            if s ~= firstSpaceId then
+                r = hs.spaces.removeSpace(s, false)
+            end
+        end)
+        hs.spaces.closeMissionControl()
     end)
 end
 
