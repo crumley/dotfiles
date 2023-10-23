@@ -1,6 +1,4 @@
 
-local chooser = require('hs.chooser')
-
 local m = {}
 m.logger = hs.logger.new('crumlee.space', 'debug')
 

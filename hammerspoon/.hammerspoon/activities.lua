@@ -4,8 +4,19 @@ local fnutils = require('hs.fnutils')
 local logger = require('hs.logger')
 local app = require('hs.application')
 
+-- TODO: refactor use of spaces
+local spaces = require('spaces')
+spaces:init()
+
 local m = {}
 m.logger = logger.new('activities', 'debug')
+
+local actions = {
+    implode = function (x) 
+        -- Do the thing
+        spaces:removeAllSpaces()
+    end,
+}
 
 function m:init()
     
@@ -14,19 +25,37 @@ end
 function m:setActivities(activities)
     m.chooser = chooser.new(function (activity) 
         if activity then
-            m.logger.i('select', hs.inspect(activity))
-            m:startActivity(activities[activity["uuid"]])
+            local activityRecord = activities[activity["uuid"]]
+            if activityRecord ~= nil then
+                m.logger.i('Select activity', hs.inspect(activityRecord))
+                m:startActivity(activityRecord)
+            end
+            
+            local actionName = activity["uuid"]
+            if actionName ~= nil then 
+                m.logger.i('Select action', actionName)
+                actions[actionName]()
+            end
         end
     end)
+
     local choices = {}
     for k, activity in pairs(activities) do
         table.insert( choices, {
             text = activity["text"],
             subText = activity["subText"],
             uuid = k
-        }
-    )
+        })
     end
+
+    table.insert( choices, 
+        {
+        ["text"] = "Implode Spaces",
+        ["subText"] = "",
+        ["uuid"] = "implode"
+       }
+    )
+
     m.chooser:choices( choices )
 end
 

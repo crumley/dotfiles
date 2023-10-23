@@ -28,7 +28,7 @@ local actions = {
     end,
 
     mirror_y = function (x) 
-        yabai("-m space --mirror y-axis")
+        yabaish("/opt/homebrew/bin/yabai -m space --mirror y-axis")
     end,
 
     left = function ()
@@ -74,7 +74,7 @@ function m:init()
 
     m.horizontal_ratios = { 0.1, 0.3, 0.5, 0.7, 0.9 }
     m.horizontal_index = 3
-    
+
     m.chooser = chooser.new(function ( selection ) 
         if selection ~= nil then
             m:action(selection["uuid"])
