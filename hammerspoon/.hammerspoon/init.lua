@@ -1,6 +1,6 @@
 local logger = hs.logger.new('crumley', 'debug')
 
-package.path = package.path .. ";" .. "/Users/rcrumley/code/hammerspoon/?.spoon/init.lua"
+package.path = package.path .. ";" .. os.getenv("HOME") .. "/Documents/code/hammerspoon/?.spoon/init.lua"
 
 logger.i('Starting...', hs.inspect(package.path))
 
