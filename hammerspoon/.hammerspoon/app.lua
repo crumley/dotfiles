@@ -1,6 +1,8 @@
 local prev_app = nil
 local prev_win = nil
 
+local logger = hs.logger.new('jump2','debug')
+
 local function jump2(name)
     local curr_app = hs.application.frontmostApplication()
     local curr_win = nil
@@ -13,6 +15,11 @@ local function jump2(name)
 
     if new_app == nil then
         new_app = find(name)
+    end
+
+    if new_app == nil then
+        logger.e( 'Unable to find new app', name)
+        return
     end
 
     -- Is new_app really a hs.window?

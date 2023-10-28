@@ -1,7 +1,43 @@
+local logger = hs.logger.new('crumley', 'debug')
 
-logger = hs.logger.new('crumlee.config','debug')
+package.path = package.path .. ";" .. "/Users/rcrumley/code/hammerspoon/?.spoon/init.lua"
+
+logger.i('Starting...', hs.inspect(package.path))
+
+local config = require('config')
 
 hs.loadSpoon("SpoonInstall")
+spoon.SpoonInstall.use_syncinstall = true
+spoon.SpoonInstall:andUse('ReloadConfiguration', {
+    start = false,
+})
+
+hs.loadSpoon('Hammerdora')
+hs.loadSpoon('SpaceManager')
+
+spoon.SpaceManager.dockOnPrimaryOnly = true
+spoon.SpaceManager.desktopLozenge = true
+spoon.SpaceManager:start()
+
+-- Load those Spoons
+-- for _, spoonName in pairs(config.spoons) do
+
+--     -- if hs.spoons.isInstalled(name) == nil then
+--     --
+--     --     if spoon[v] ~= nil and spoon[spoonName].start ~= nil then
+--     --         spoon[v]:start()
+--     --     end
+--     -- else
+--     --     hs.loadSpoon(spoonName)
+--     -- end
+-- end
+
+-- Make key bindings
+for modifier, modifierTable in pairs(config.key_bindings) do
+    for key, cb in pairs(modifierTable) do
+        hs.hotkey.bind(modifier, key, cb)
+    end
+end
 
 -- todo
 -- fix not finding dendron when not on current space
@@ -14,7 +50,7 @@ hs.loadSpoon("SpoonInstall")
 
 -- 08082023
 -- b:closing all spaces but one doesnt unhide the dock
--- f:space chooser (new/set focus) and remove auto focus, 
+-- f:space chooser (new/set focus) and remove auto focus,
 -- 08142023
 -- empty space close
 -- github prep + commit
@@ -37,40 +73,21 @@ hs.loadSpoon("SpoonInstall")
 -- Keystroke to bring app to space from anywhere... e.g get calendar here, then put it back?
 
 
-spoon.SpoonInstall.use_syncinstall = true
+-- hs.application.enableSpotlightForNameSearches(true)
 
-hs.application.enableSpotlightForNameSearches(true)
+-- local spaces = require('spaces')
+-- spaces:init()
 
-local config = require('config')
-local activities = require('activities')
-local spaces = require('spaces')
-local smgr = require('smgr')
+-- local activities = require('activities')
+-- activities:init()
+-- activities:setActivities( config.focus )
 
-activities:setActivities( config.focus )
+-- local smgr = require('smgr')
+-- smgr:init(spaces)
 
-spaces:init()
-smgr:init(spaces)
-
-hs.hotkey.bind({"ctrl", "cmd", "option"}, "5", function ()
-    activities:start()
-end)
-
--- Load those Spoons
-for _, v in pairs(config.spoons) do
-    spoon.SpoonInstall:andUse(v, {
-        start = false,
-    })
-    if spoon[v] ~= nil and spoon[v].start ~= nil then
-        spoon[v]:start()
-    end
-end
-
--- Make key bindings
-for modifier, modifierTable in pairs(config.key_bindings) do
-    for key, cb in pairs(modifierTable) do
-        hs.hotkey.bind(modifier, key, cb)
-    end
-end
+-- -- hs.hotkey.bind({"ctrl", "cmd", "option"}, "5", function ()
+-- --     activities:start()
+-- -- end)
 
 -- Move Window
 -- hotkey.bind(mod_move, 'j', grid.pushWindowDown)

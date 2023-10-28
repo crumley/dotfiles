@@ -1,23 +1,16 @@
-local app = require('app')
-
-local spaces = require('spaces')
-spaces:init()
-spaces.enableHideDock()
-
-local hammerdora = require('Hammerdora')
-hammerdora:init()
-
 local wm = require('wm')
+local app = require('app')
+local spaces = require('spaces')
+local activities = require('activities')
+
+activities:init()
+spaces:init()
 wm:init()
 
 local hyper = {"ctrl", "cmd", "option"}
 local hyperShift = {"ctrl", "cmd", "option", "shift"}
 
 local config = {}
-config.spoons = {
-    "ReloadConfiguration",  -- https://www.hammerspoon.org/Spoons/ReloadConfiguration.html
-}
-
 config.key_bindings = {}
 config.key_bindings[hyper] = {
     G = function() spaces:focusCurrentWindow() end,
@@ -25,6 +18,7 @@ config.key_bindings[hyper] = {
     ["2"] = function() wm:action("mirror_y") end,
     ["3"] = function() wm:showMenu() end,
     ["4"] = function() wm:action("rotate") end,
+    ["5"] = function() activities:start() end,
     
     A = function() app.jump("Code") end,
     D = function() app.jump("iTerm") end,
@@ -46,7 +40,7 @@ config.key_bindings[hyper] = {
     
     F = function() toggleMicMute() end,
     
-    B = function() hammerdora:toggle() end,
+    B = function() spoon.Hammerdora:toggle() end,
     
     RETURN = function() hs.grid.show() end,
     ['\\'] = function() hs.grid.maximizeWindow(hs.window.focusedWindow()) end,
@@ -175,8 +169,10 @@ config.focus = {
     },
 }
 
+-- TODO this doesn't belong here...
+activities:setActivities( config.focus )
+
 function toggleMicMute()
-	local mic = hs.audiodevice.defaultEffectDevice()
 	local zoom = hs.application'Zoom'
     if zoom then
         local ok = zoom:selectMenuItem'Unmute Audio'
