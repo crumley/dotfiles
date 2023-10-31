@@ -1,44 +1,3 @@
-local logger = hs.logger.new('crumley', 'debug')
-
-package.path = package.path .. ";" .. os.getenv("HOME") .. "/Documents/code/hammerspoon/?.spoon/init.lua"
-
-logger.i('Starting...', hs.inspect(package.path))
-
-local config = require('config')
-
-hs.loadSpoon("SpoonInstall")
-spoon.SpoonInstall.use_syncinstall = true
-spoon.SpoonInstall:andUse('ReloadConfiguration', {
-    start = false,
-})
-
-hs.loadSpoon('Hammerdora')
-hs.loadSpoon('SpaceManager')
-
-spoon.SpaceManager.dockOnPrimaryOnly = true
-spoon.SpaceManager.desktopLozenge = true
-spoon.SpaceManager:start()
-
--- Load those Spoons
--- for _, spoonName in pairs(config.spoons) do
-
---     -- if hs.spoons.isInstalled(name) == nil then
---     --
---     --     if spoon[v] ~= nil and spoon[spoonName].start ~= nil then
---     --         spoon[v]:start()
---     --     end
---     -- else
---     --     hs.loadSpoon(spoonName)
---     -- end
--- end
-
--- Make key bindings
-for modifier, modifierTable in pairs(config.key_bindings) do
-    for key, cb in pairs(modifierTable) do
-        hs.hotkey.bind(modifier, key, cb)
-    end
-end
-
 -- todo
 -- fix not finding dendron when not on current space
 -- make space management keyboard shortcuts just to get started
@@ -73,30 +32,37 @@ end
 -- Keystroke to bring app to space from anywhere... e.g get calendar here, then put it back?
 
 
--- hs.application.enableSpotlightForNameSearches(true)
+local logger = hs.logger.new('crumley', 'debug')
 
--- local spaces = require('spaces')
--- spaces:init()
+package.path = package.path .. ";" .. os.getenv("HOME") .. "/Documents/code/hammerspoon/?.spoon/init.lua"
 
--- local activities = require('activities')
--- activities:init()
--- activities:setActivities( config.focus )
+logger.i('Starting...', hs.inspect(package.path))
 
--- local smgr = require('smgr')
--- smgr:init(spaces)
+local config = require('config')
 
--- -- hs.hotkey.bind({"ctrl", "cmd", "option"}, "5", function ()
--- --     activities:start()
--- -- end)
+-- Configigure SpaceManager
+hs.loadSpoon("SpoonInstall")
+spoon.SpoonInstall.use_syncinstall = true
+spoon.SpoonInstall:andUse('ReloadConfiguration', {
+    start = false,
+})
 
--- Move Window
--- hotkey.bind(mod_move, 'j', grid.pushWindowDown)
--- hotkey.bind(mod_move, 'k', grid.pushWindowUp)
--- hotkey.bind(mod_move, 'h', grid.pushWindowLeft)
--- hotkey.bind(mod_move, 'l', grid.pushWindowRight)
+-- Configure Hammerdora
+hs.loadSpoon('Hammerdora')
 
--- -- Resize Window
--- hotkey.bind(mod_resize, 'k', grid.resizeWindowShorter)
--- hotkey.bind(mod_resize, 'j', grid.resizeWindowTaller)
--- hotkey.bind(mod_resize, 'l', grid.resizeWindowWider)
--- hotkey.bind(mod_resize, 'h', grid.resizeWindowThinner)
+-- Configigure SpaceManager
+hs.loadSpoon('SpaceManager')
+spoon.SpaceManager.dockOnPrimaryOnly = true
+spoon.SpaceManager.desktopLozenge = true
+spoon.SpaceManager:setActivities(config.activities)
+spoon.SpaceManager:start()
+
+-- Make key bindings
+for modifier, modifierTable in pairs(config.key_bindings) do
+    for key, cb in pairs(modifierTable) do
+        hs.hotkey.bind(modifier, key, cb)
+    end
+end
+
+-- Uncomment to generate new annotations
+-- hs.loadSpoon('EmmyLua')

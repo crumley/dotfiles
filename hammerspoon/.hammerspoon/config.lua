@@ -1,75 +1,70 @@
 local wm = require('wm')
 local app = require('app')
-local spaces = require('spaces')
-local activities = require('activities')
-
-activities:init()
-spaces:init()
 wm:init()
 
-local hyper = {"ctrl", "cmd", "option"}
-local hyperShift = {"ctrl", "cmd", "option", "shift"}
+local hyper = { "ctrl", "cmd", "option" }
+local hyperShift = { "ctrl", "cmd", "option", "shift" }
 
 local config = {}
 config.key_bindings = {}
 config.key_bindings[hyper] = {
-    G = function() spaces:focusCurrentWindow() end,
-    ["1"] = function() wm:horizontal_cycle() end,
-    ["2"] = function() wm:action("mirror_y") end,
-    ["3"] = function() wm:showMenu() end,
-    ["4"] = function() wm:action("rotate") end,
-    ["5"] = function() activities:start() end,
-    
-    A = function() app.jump("Code") end,
-    D = function() app.jump("iTerm") end,
-    E = function() app.jump("Spotify") end,
-    S = function() app.jump("Arc") end,
-    W = function() app.jump("Slack") end,
-    Q = function() app.jump("1Password") end,
-    Z = function() app.jump("Zoom") end,
-    C = function() app.jump("Calendar") end,
-    M = function() app.jump("Messages") end,
-    T = function() app.jump("Trello") end,
-    X = function() app.jump("dendron") end,
-    
-    P = function() hs.spaces.toggleMissionControl() end,
-    
-    V = function() hs.openConsole() end,
-    R = function() hs.reload() end,
-    F12 = function() hs.caffeinate.startScreensaver() end,
-    
-    F = function() toggleMicMute() end,
-    
-    B = function() spoon.Hammerdora:toggle() end,
-    
-    RETURN = function() hs.grid.show() end,
-    ['\\'] = function() hs.grid.maximizeWindow(hs.window.focusedWindow()) end,
+    G = function () spoon.SpaceManager:focusCurrentWindow() end,
+    ["1"] = function () wm:horizontal_cycle() end,
+    ["2"] = function () wm:action("mirror_y") end,
+    ["3"] = function () wm:showMenu() end,
+    ["4"] = function () wm:action("rotate") end,
+    ["5"] = function () spoon.SpaceManager:show() end,
+
+    A = function () app.jump("Code") end,
+    D = function () app.jump("iTerm") end,
+    E = function () app.jump("Spotify") end,
+    S = function () app.jump("Arc") end,
+    W = function () app.jump("Slack") end,
+    Q = function () app.jump("1Password") end,
+    Z = function () app.jump("Zoom") end,
+    C = function () app.jump("Calendar") end,
+    M = function () app.jump("Messages") end,
+    T = function () app.jump("Trello") end,
+    X = function () app.jump("dendron") end,
+
+    P = function () hs.spaces.toggleMissionControl() end,
+
+    V = function () hs.openConsole() end,
+    R = function () hs.reload() end,
+    F12 = function () hs.caffeinate.startScreensaver() end,
+
+    F = function () toggleMicMute() end,
+
+    B = function () spoon.Hammerdora:toggle() end,
+
+    RETURN = function () hs.grid.show() end,
+    ['\\'] = function () hs.grid.maximizeWindow(hs.window.focusedWindow()) end,
 }
 
 config.key_bindings[hyperShift] = {
-    S = function() app.jump("Google Chrome Canary") end,
-    
-    Y = function() hs.spotify.pause() end,
-    U = function() hs.spotify.playpause() end,
-    I = function() hs.spotify.previous() end,
-    O = function() hs.spotify.next() end,
-    P = function() hs.spotify.displayCurrentTrack() end,
-    
-    N = function() wm:action("left") end,
-    M = function() wm:action("right") end,
+    S = function () app.jump("Google Chrome Canary") end,
+
+    Y = function () hs.spotify.pause() end,
+    U = function () hs.spotify.playpause() end,
+    I = function () hs.spotify.previous() end,
+    O = function () hs.spotify.next() end,
+    P = function () hs.spotify.displayCurrentTrack() end,
+
+    N = function () wm:action("left") end,
+    M = function () wm:action("right") end,
 
     -- RETURN = function() hs.window.focusedWindow():centerOnScreen(nil, true) end,
-    RETURN = function() push(0.05, 0.05, 0.9, 0.9) end,
+    RETURN = function () push(0.05, 0.05, 0.9, 0.9) end,
 }
 
-config.focus = {
+config.activities = {
     Mail = {
         text = "Gmail",
         subText = "Curate Email Inbox",
         apps = { 'Gmail', 'Arc' },
         layout = {
-            {"Gmail", nil, nil, hs.layout.left70, 0, 0},
-            {"Arc", nil, nil, hs.layout.right30, 0, 0}
+            { "Gmail", nil, nil, hs.layout.left70,  0, 0 },
+            { "Arc",   nil, nil, hs.layout.right30, 0, 0 }
         },
         space = true,
         setup = function ()
@@ -90,8 +85,8 @@ config.focus = {
         subText = "Review Pull Requests",
         apps = { 'Slack', 'Spotify' },
         layout = {
-            {"Slack", nil, nil, hs.layout.left30, 0, 0},
-            {"Arc", nil, nil, hs.layout.right70, 0, 0}
+            { "Slack", nil, nil, hs.layout.left30,  0, 0 },
+            { "Arc",   nil, nil, hs.layout.right70, 0, 0 }
         },
         space = true,
         setup = function ()
@@ -112,7 +107,7 @@ config.focus = {
         subText = "Created a space with a single (new) Arc window",
         apps = { 'Arc' },
         layout = {
-            {"Arc", nil, nil, hs.layout.right70, 0, 0}
+            { "Arc", nil, nil, hs.layout.right70, 0, 0 }
         },
         space = true,
         setup = function ()
@@ -132,7 +127,7 @@ config.focus = {
         subText = "Zoom + Arc",
         apps = { 'Zoom', 'Arc' },
         layout = {
-            {"Arc", nil, nil, hs.layout.right70, 0, 0}
+            { "Arc", nil, nil, hs.layout.right70, 0, 0 }
         },
         space = true,
         setup = function ()
@@ -152,7 +147,7 @@ config.focus = {
         subText = "Zoom + Arc + Dendron",
         apps = { 'Zoom', 'Arc', 'Dendron' },
         layout = {
-            {"Arc", nil, nil, hs.layout.right70, 0, 0}
+            { "Arc", nil, nil, hs.layout.right70, 0, 0 }
         },
         space = true,
         setup = function ()
@@ -168,27 +163,23 @@ config.focus = {
         end
     },
 }
-
--- TODO this doesn't belong here...
-activities:setActivities( config.focus )
-
 function toggleMicMute()
-	local zoom = hs.application'Zoom'
+    local zoom = hs.application 'Zoom'
     if zoom then
-        local ok = zoom:selectMenuItem'Unmute Audio'
+        local ok = zoom:selectMenuItem 'Unmute Audio'
         if not ok then
-            hs.timer.doAfter(0.5, function()
-                zoom:selectMenuItem'Unmute Audio'
+            hs.timer.doAfter(0.5, function ()
+                zoom:selectMenuItem 'Unmute Audio'
             end)
         end
         if zoom then
-			local ok = zoom:selectMenuItem'Mute Audio'
-			if not ok then
-				hs.timer.doAfter(0.5, function()
-					zoom:selectMenuItem'Mute Audio'
-				end)
-			end
-		end
+            local ok = zoom:selectMenuItem 'Mute Audio'
+            if not ok then
+                hs.timer.doAfter(0.5, function ()
+                    zoom:selectMenuItem 'Mute Audio'
+                end)
+            end
+        end
     end
 end
 
