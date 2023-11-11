@@ -30,7 +30,7 @@ fish_add_path $HOME/bin
 abbr zx ". ~/.config/fish/config.fish"
 
 # git
-abbr ls 'exa --icons -F -H --group-directories-first --git -1'
+abbr ls 'eza -FH1 --icons --group-directories-first'
 abbr g. 'git add .'
 abbr gam 'git commit -am'
 abbr gc 'git commit -m'
