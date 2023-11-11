@@ -1,9 +1,23 @@
 local wm = require('wm')
-local app = require('app')
+local filter = require('hs.window.filter')
 wm:init()
 
 local hyper = { "ctrl", "cmd", "option" }
 local hyperShift = { "ctrl", "cmd", "option", "shift" }
+
+local appFilters = {
+    Code = filter.new(false):setAppFilter('Code', { rejectTitles='dendron'}),
+    Arc = filter.new('Arc'),
+    iTerm = filter.new('iTerm'),
+    Spotify = filter.new('Spotify'),
+    Slack = filter.new('Slack'),
+    ["1Password"] = filter.new('1Password'),
+    Zoom = filter.new('Zoom'),
+    Calendar = filter.new('Calendar'),
+    Messages = filter.new('Messages'),
+    Dendron = filter.new(false):setAppFilter('Code', {allowTitles='dendron', currentSpace=nil}),
+    ChromeCanary = filter.new('Google Chrome Canary'),
+}
 
 local config = {}
 config.key_bindings = {}
@@ -15,17 +29,16 @@ config.key_bindings[hyper] = {
     ["4"] = function () wm:action("rotate") end,
     ["5"] = function () spoon.SpaceManager:show() end,
 
-    A = function () app.jump("Code") end,
-    D = function () app.jump("iTerm") end,
-    E = function () app.jump("Spotify") end,
-    S = function () app.jump("Arc") end,
-    W = function () app.jump("Slack") end,
-    Q = function () app.jump("1Password") end,
-    Z = function () app.jump("Zoom") end,
-    C = function () app.jump("Calendar") end,
-    M = function () app.jump("Messages") end,
-    T = function () app.jump("Trello") end,
-    X = function () app.jump("dendron") end,
+    A = function () spoon.AppJump:jump(appFilters.Code) end,
+    D = function () spoon.AppJump:jump(appFilters.iTerm) end,
+    E = function () spoon.AppJump:jump(appFilters.Spotify) end,
+    S = function () spoon.AppJump:jump(appFilters.Arc) end,
+    W = function () spoon.AppJump:jump(appFilters.Slack) end,
+    Q = function () spoon.AppJump:jump(appFilters["1Password"]) end,
+    Z = function () spoon.AppJump:jump(appFilters.Zoom) end,
+    C = function () spoon.AppJump:jump(appFilters.Calendar) end,
+    M = function () spoon.AppJump:jump(appFilters.Messages) end,
+    X = function () spoon.AppJump:jump(appFilters.Dendron) end,
 
     P = function () hs.spaces.toggleMissionControl() end,
 
@@ -35,14 +48,14 @@ config.key_bindings[hyper] = {
 
     F = function () toggleMicMute() end,
 
-    B = function () spoon.Hammerdora:toggle() end,
+    B = function () spoon.Watermelon:toggle() end,
 
     RETURN = function () hs.grid.show() end,
     ['\\'] = function () hs.grid.maximizeWindow(hs.window.focusedWindow()) end,
 }
 
 config.key_bindings[hyperShift] = {
-    S = function () app.jump("Google Chrome Canary") end,
+    S = function () spoon.AppJump:jump(appFilters.ChromeCanary) end,
 
     Y = function () hs.spotify.pause() end,
     U = function () hs.spotify.playpause() end,

@@ -40,7 +40,7 @@ logger.i('Starting...', hs.inspect(package.path))
 
 local config = require('config')
 
--- Configigure SpaceManager
+-- Configigure SpoonInstall (todo am I even using this?)
 hs.loadSpoon("SpoonInstall")
 spoon.SpoonInstall.use_syncinstall = true
 spoon.SpoonInstall:andUse('ReloadConfiguration', {
@@ -48,14 +48,17 @@ spoon.SpoonInstall:andUse('ReloadConfiguration', {
 })
 
 -- Configure Hammerdora
-hs.loadSpoon('Hammerdora')
+hs.loadSpoon('Watermelon')
+spoon.Watermelon.logFilePath = os.getenv("HOME") .. "/Documents/brain2/vault/watermelons.md"
 
 -- Configigure SpaceManager
 hs.loadSpoon('SpaceManager')
 spoon.SpaceManager.dockOnPrimaryOnly = true
 spoon.SpaceManager.desktopLozenge = true
-spoon.SpaceManager:setActivities(config.activities)
+spoon.SpaceManager.activities = config.activities
 spoon.SpaceManager:start()
+
+hs.loadSpoon('AppJump')
 
 -- Make key bindings
 for modifier, modifierTable in pairs(config.key_bindings) do
