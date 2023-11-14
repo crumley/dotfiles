@@ -6,13 +6,13 @@ local hyper = { "ctrl", "cmd", "option" }
 local hyperShift = { "ctrl", "cmd", "option", "shift" }
 
 local appFilters = {
-    Code = filter.new(false):setAppFilter('Code', { rejectTitles='dendron'}),
+    Code = filter.new(false):setAppFilter('Code', { rejectTitles='dendron' }),
     Arc = filter.new('Arc'),
-    iTerm = filter.new('iTerm'),
+    iTerm = filter.new('iTerm2'),
     Spotify = filter.new('Spotify'),
     Slack = filter.new('Slack'),
     ["1Password"] = filter.new('1Password'),
-    Zoom = filter.new('Zoom'),
+    Zoom = filter.new('zoom.us'),
     Calendar = filter.new('Calendar'),
     Messages = filter.new('Messages'),
     Dendron = filter.new(false):setAppFilter('Code', {allowTitles='dendron', currentSpace=nil}),
