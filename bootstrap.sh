@@ -9,7 +9,8 @@ if hash brew 2>/dev/null; then
 else
    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
    echo "brew has been installed. Follow steps above to fully enable brew on the path before proceeding. Exiting."
-   exit 1
+   (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> /Users/rcrumley/.zprofile
+   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
 echo "Setting blazing fast keyrepeat..."

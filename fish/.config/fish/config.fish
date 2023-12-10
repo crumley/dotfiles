@@ -71,7 +71,6 @@ abbr v "$EDITOR ."
 function upall -d "Upgrades all the things"
     brew upgrade
     fisher update
-    atlas upgrade
 end
 
 function p4merge -d "merge two things"
