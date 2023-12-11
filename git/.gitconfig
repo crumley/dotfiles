@@ -46,6 +46,7 @@
 	# Use custom `.gitignore` and `.gitattributes`
 	excludesfile = ~/.gitignore_global
 	attributesfile = ~/.gitattributes
+	editor = code -w
 	# Treat spaces before tabs, lines that are indented with 8 or more spaces, and all kinds of trailing whitespace as an error
 	#whitespace = space-before-tab,indent-with-non-tab,trailing-space
 
@@ -88,7 +89,8 @@
 [push]
 	default = current
 [credential]
-	helper = osxkeychain
+	helper = 
+	helper = store --file /opt/dev/var/private/git_credential_store
 [user]
 	name = Ryan Crumley
 	email = crumley@gmail.com

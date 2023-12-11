@@ -68,4 +68,4 @@ for modifier, modifierTable in pairs(config.key_bindings) do
 end
 
 -- Uncomment to generate new annotations
--- hs.loadSpoon('EmmyLua')
+-- spoon.SpoonInstall:andUse('EmmyLua')
