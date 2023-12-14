@@ -35,6 +35,11 @@
 local logger = hs.logger.new('crumley', 'debug')
 
 local localSettings = hs.json.read(".settings.json")
+if localSettings == nil then
+    logger.f("Missing .hammerspoon/.settings.json file.")
+end
+
+hs.settings.set("settings", localSettings)
 
 package.path = package.path .. ";" .. os.getenv("HOME") .. "/Documents/code/hammerspoon/?.spoon/init.lua"
 
@@ -51,7 +56,7 @@ spoon.SpoonInstall:andUse('ReloadConfiguration', {
 
 -- Configure Hammerdora
 hs.loadSpoon('Watermelon')
-spoon.Watermelon.logFilePath = os.getenv("HOME") .. "/Documents/brain2/vault/watermelons.md"
+spoon.Watermelon.logFilePath = localSettings.melonPath
 
 -- Configigure SpaceManager
 hs.loadSpoon('SpaceManager')
@@ -65,7 +70,7 @@ hs.loadSpoon('AppJump')
 hs.loadSpoon('Unsplashed')
 spoon.Unsplashed.clientId = localSettings.unsplashApiKey
 hs.timer.doEvery(3*60*60, function()
-    spoon.Unsplashed:setRandomDesktopFromCollection(localSettings.unsplashCollectionId)
+    spoon.Unsplashed:setRandomDesktopPhotoFromCollection(localSettings.unsplashCollectionId)
 end)
 
 -- Make key bindings
