@@ -34,6 +34,8 @@
 
 local logger = hs.logger.new('crumley', 'debug')
 
+local localSettings = hs.json.read(".settings.json")
+
 package.path = package.path .. ";" .. os.getenv("HOME") .. "/Documents/code/hammerspoon/?.spoon/init.lua"
 
 logger.i('Starting...', hs.inspect(package.path))
@@ -59,6 +61,12 @@ spoon.SpaceManager.activities = config.activities
 spoon.SpaceManager:start()
 
 hs.loadSpoon('AppJump')
+
+hs.loadSpoon('Unsplashed')
+spoon.Unsplashed.clientId = localSettings.unsplashApiKey
+hs.timer.doEvery(3*60*60, function()
+    spoon.Unsplashed:setRandomDesktopFromCollection(localSettings.unsplashCollectionId)
+end)
 
 -- Make key bindings
 for modifier, modifierTable in pairs(config.key_bindings) do
