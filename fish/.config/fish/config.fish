@@ -6,7 +6,6 @@ set -gx FZF_CTRL_T_COMMAND $FZF_DEFAULT_COMMAND
 set -gx FZF_DEFAULT_COMMAND 'fd'
 set -x ENHANCD_FILTER fzy:fzf:peco
 set -x EDITOR '/usr/bin/vim'
-set -x SHELL '/usr/local/bin/fish'
 set -x GOPATH ~/.go
 set -gx EVENT_NOKQUEUE 1
 set -gx GPG_TTY (tty)
