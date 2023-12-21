@@ -1,125 +1,201 @@
 [alias]
-	# View the SHA, description, and history graph of the latest 20 commits
-	l = log --pretty=oneline -n 20 --graph
-	# View the current working tree status using the short format
-	s = status -s
-	# Show the diff between the latest commit and the current state
-	d = !"git diff-index --quiet HEAD -- || clear; git diff --patch-with-stat"
-	# `git di $number` shows the diff between the state `$number` revisions ago and the current state
-	di = !"d() { git diff --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
-	# Pull in remote changes for the current repository and all its submodules
-	ps = !"git pull; git submodule foreach git pull origin master"
+	# Everyday sorta commands
+		p = push origin HEAD
+		up = pull --rebase --autostash
+		co = checkout
+		cob = checkout -b
+		rename = branch -m
+
 	# Clone a repository including all submodules
-	c = clone --recursive
+		c = clone --recursive
+	
 	# Commit all changes
-	ca = !git add -A && git commit -av
+		ca = !git add -A && git commit -av
+	
 	# Switch to a branch, creating it if necessary
-	go = checkout -B
+		go = checkout -B
+
+	# Amend the currently staged files to the latest commit
+		amend = commit --amend --reuse-message=HEAD
+
+	# Append any staged files onto the most recent commit.
+		commend = commit --amend --no-edit
+
+	# Custom log formats
+		ll = !git --no-pager log --graph --all --decorate --pretty=format:'%C(auto)%h%d  %ad %C(red bold)(%ar%C(red bold))%Creset  %Creset%C(magenta)%an %Creset<%ae>  %C(white bold)%<(80,trunc)%s' --date=iso
+		l = !git --no-pager log -n 40 --graph --pretty=format:'%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%cr) %C(blue bold)<%an>%Creset'
+
+	# View the current working tree status using the short format
+		s = status -s
+
 	# Show verbose output about tags, branches or remotes
-	tags = tag -l
-	branches = branch -a
-	remotes = remote -v
+		tags = tag -l
+		branches = branch -av
+		remotes = remote -v
+
+	# Remove branches that have already been merged with master
+		# a.k.a. ‘delete merged’
+		dm = "!git branch --merged | grep -v '\\*' | xargs -n 1 git branch -d"
+
+	# Forcepush, but fail if the remote has been updated since you last pulled.
+	# Prevents clobbering other people's commits on the same branch unless you really, really want to.
+		forcepush = push --force-with-lease
+		pf = push --force-with-lease origin HEAD
+
+	# Show the diff between the latest commit and the current state
+		d = !"git diff-index --quiet HEAD -- || clear; git diff --patch-with-stat"
+	
+	# `git di $number` shows the diff between the state `$number` revisions ago and the current state
+		di = !"d() { git diff --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
+	
+	# Pull in remote changes for the current repository and all its submodules
+		ps = !"git pull; git submodule foreach git pull origin master"
+	
 	# Credit an author on the latest commit
-	credit = "!f() { git commit --amend --author \"$1 <$2>\" -C HEAD; }; f"
+		credit = "!f() { git commit --amend --author \"$1 <$2>\" -C HEAD; }; f"
+	
 	# Interactive rebase with the given number of latest commits
-	reb = "!r() { git rebase -i HEAD~$1; }; r"
-	# Undo a `git push`
-	undopush = push -f origin HEAD^:master
-	up = pull --rebase --autostash
-	co = checkout
-    cob = checkout -b
-    rename = branch -m
-    pu = ! git fetch upstream && git rebase upstream/master
-	# Open browser to create a new PR
-    prc = ! open "https://bitbucket.org/atlassian/jsd-slack-integration/pull-requests/new"
-    undo = checkout --
-    unstage = reset HEAD --
-    last = checkout -
-	pf = push -f origin HEAD
-	p = push origin HEAD
+		reb = "!r() { git rebase -i HEAD~$1; }; r"
+	 
+	# Undo operations
+		undopush = push -f origin HEAD^:master
+		undo = checkout --
+		unstage = reset HEAD --
+		last = checkout -
 
 [apply]
+
 	# Detect whitespace errors when applying a patch
-	#whitespace = fix
+		whitespace = fix
 
 [core]
-	# Use custom `.gitignore` and `.gitattributes`
+
+	# http://adaptivepatchwork.com/2012/03/01/mind-the-end-of-your-line/
+	eol = native
+	autocrlf = input
+	safecrlf = true
+	ignorecase = false
 	excludesfile = ~/.gitignore_global
 	attributesfile = ~/.gitattributes
-	editor = code -w
-	# Treat spaces before tabs, lines that are indented with 8 or more spaces, and all kinds of trailing whitespace as an error
-	#whitespace = space-before-tab,indent-with-non-tab,trailing-space
 
-[color]
-	# Use colors in Git commands that are capable of colored output when outputting to the terminal
-	ui = auto
-[color "branch"]
-	current = yellow reverse
-	local = yellow
-	remote = green
-[color "diff"]
-	meta = yellow bold
-	frag = magenta bold
-	old = red bold
-	new = green bold
-[color "status"]
-	added = yellow
-	changed = green
-	untracked = cyan
+	# Make `git rebase` safer on OS X
+	# More info: <http://www.git-tower.com/blog/make-git-rebase-safe-on-osx/>
+	trustctime = false
+
+	# Prevent showing files whose names contain non-ASCII symbols as unversioned.
+	# http://michael-kuehnel.de/git/2014/11/21/git-mac-osx-and-german-umlaute.html
+	precomposeunicode = false
+
+	# Use custom `.gitignore` and `.gitattributes`
+	editor = code -w
+
 [merge]
+
 	# Include summaries of merged commits in newly created merge commit messages
 	log = true
 	tool = p4mergetool
 	conflictstyle = diff3
 
-# URL shorthands
-[url "git@github.com:"]
-	insteadOf = "gh:"
-	pushInsteadOf = "github:"
-	pushInsteadOf = "git://github.com/"
-[url "git://github.com/"]
-	insteadOf = "github:"
-[url "git@gist.github.com:"]
-	insteadOf = "gst:"
-	pushInsteadOf = "gist:"
-	pushInsteadOf = "git://gist.github.com/"
-[url "git://gist.github.com/"]
-	insteadOf = "gist:"
-
 [push]
 	default = current
+
+[pull]
+	# Prevent automatic creation of merge commits if the pull can't fast forward.
+	# If a pull fails because of this, you can retry it with `git pull --rebase` to rebase onto the new commits.
+	# Shopify prefers to rebase, so this will require you to decide if a rebase is necessary.
+	ff = only
+
+[commit]
+	template = ~/.stCommitMsg
+	
+[init]
+	defaultBranch = main
+
 [credential]
+
 	helper = 
 	helper = store --file /opt/dev/var/private/git_credential_store
+
+[help]
+
+	# Automatically correct and execute mistyped commands. Keep this off unless you enjoy pain.
+	autocorrect = 0
+
 [user]
+
 	name = Ryan Crumley
 	email = crumley@gmail.com
+
 [rerere]
-	enabled = 1
+	# https://git-scm.com/docs/git-rerere
+	# Reuse Recorded Resolution
+	# If you have a merge conflict, this setting will record how that conflict was resolved. If you would then need to
+	# resolve that same conflict in a future rebase, this setting will reuse your previously recorded conflict resolution.
+	enabled = true
 	autoupdate = true
+
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	required = true
 	process = git-lfs filter-process
+
 [mergetool "p4mergetool"]
 	cmd = /Applications/p4merge.app/Contents/Resources/launchp4merge $PWD/$BASE $PWD/$REMOTE $PWD/$LOCAL $PWD/$MERGED
 	trustExitCode = false
+
 [mergetool]
 	keepBackup = false
+
 [diff]
 	tool = p4mergetool
+	# Detect copies as well as renames
+	renames = copies
+	algorithm = patience
+
 [difftool "p4mergetool"]
 	cmd = /Applications/p4merge.app/Contents/Resources/launchp4merge $LOCAL $REMOTE
-[difftool "sourcetree"]
-	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
-	path = 
-[mergetool "sourcetree"]
-	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
-	trustExitCode = true
-[pull]
-	rebase = true
-[commit]
-	template = ~/.stCommitMsg
-[init]
-	defaultBranch = main
+
+[color]
+	# Use colors in Git commands that are capable of colored output when outputting to the terminal
+	ui = auto
+
+[color "branch"]
+
+	current = yellow reverse
+	local = yellow
+	remote = green
+
+[color "diff"]
+
+	meta = yellow bold
+	frag = magenta bold
+	old = red bold
+	new = green bold
+
+[color "status"]
+
+	added = yellow
+	changed = green
+	untracked = cyan
+
+# URL shorthands
+[url "git@github.com:"]
+
+	insteadOf = "gh:"
+	pushInsteadOf = "github:"
+	pushInsteadOf = "git://github.com/"
+
+[url "git://github.com/"]
+
+	insteadOf = "github:"
+
+[url "git@gist.github.com:"]
+
+	insteadOf = "gst:"
+	pushInsteadOf = "gist:"
+	pushInsteadOf = "git://gist.github.com/"
+
+[url "git://gist.github.com/"]
+
+	insteadOf = "gist:"
