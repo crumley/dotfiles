@@ -1,5 +1,6 @@
 # Add `~/bin` to the `$PATH`
 export PATH="$HOME/bin:$PATH:/opt/homebrew/bin:/opt/homebrew/sbin"
+export KUBECONFIG=${KUBECONFIG:+$KUBECONFIG:}$(find ~/.kube -type f -name '*config*' | tr '\n' ':' | sed 's/:$//')
 
 # Load the shell dotfiles, and then some:
 # * ~/.path can be used to extend `$PATH`.
@@ -41,7 +42,3 @@ complete -o "nospace" -W "Contacts Calendar Dock Finder Mail Safari iTunes Syste
 
 # If possible, add tab completion for many more commands
 [ -f /etc/bash_completion ] && source /etc/bash_completion
-
-eval "$(starship init bash)"
-
-if [[ -f /opt/dev/dev.sh ]]; then source /opt/dev/dev.sh; fi

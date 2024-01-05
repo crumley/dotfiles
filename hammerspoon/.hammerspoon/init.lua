@@ -66,10 +66,13 @@ spoon.SpaceManager.activities = config.activities
 spoon.SpaceManager:start()
 
 hs.loadSpoon('AppJump')
+spoon.AppJump.logger.level = "info"
 
 hs.loadSpoon('Unsplashed')
 spoon.Unsplashed.clientId = localSettings.unsplashApiKey
-hs.timer.doEvery(3*60*60, function()
+spoon.Unsplashed:start()
+backgroundTimer = hs.timer.doEvery(15 * 60, function ()
+    logger.i('Rotating background image')
     spoon.Unsplashed:setRandomDesktopPhotoFromCollection(localSettings.unsplashCollectionId)
 end)
 

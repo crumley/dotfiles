@@ -110,12 +110,6 @@
 	
 [init]
 	defaultBranch = main
-
-[credential]
-
-	helper = 
-	helper = store --file /opt/dev/var/private/git_credential_store
-
 [help]
 
 	# Automatically correct and execute mistyped commands. Keep this off unless you enjoy pain.
@@ -151,7 +145,6 @@
 	tool = p4mergetool
 	# Detect copies as well as renames
 	renames = copies
-	algorithm = patience
 
 [difftool "p4mergetool"]
 	cmd = /Applications/p4merge.app/Contents/Resources/launchp4merge $LOCAL $REMOTE
@@ -199,3 +192,5 @@
 [url "git://gist.github.com/"]
 
 	insteadOf = "gist:"
+[include]
+	path = /Users/rcrumley/.config/dev/gitconfig

@@ -12,6 +12,7 @@ set -gx GPG_TTY (tty)
 set -x AWS_IAM_HOME /usr/local/opt/aws-iam-tools/libexec
 set -x AWS_CREDENTIAL_FILEs ~/.aws-credentials-master
 set -x SSH_AUTH_SOCK /Users/rcrumley/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+set -x KUBECONFIG (find ~/.kube -type f -name '*config*' | tr '\n' ':' | sed 's/:$//')
 # }}}
 
 # PATH {{{
@@ -19,7 +20,6 @@ fish_add_path /usr/local/bin
 fish_add_path /usr/local/sbin
 fish_add_path /opt/homebrew/bin
 fish_add_path /opt/homebrew/sbin
-fish_add_path /opt/atlassian/bin
 fish_add_path $HOME/bin
 # }}}
 
@@ -203,6 +203,8 @@ if status --is-interactive
     atuin init fish | source
     bind \cr _atuin_search
     #}}}
+
+    [ -f /opt/dev/dev.fish ]; and source /opt/dev/dev.fish
 
     # TMUX {{{
     #     and command -s tmux >/dev/null
