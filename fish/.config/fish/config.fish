@@ -47,6 +47,8 @@ abbr grom 'git rebase origin/master'
 abbr gu 'git up'
 abbr mt 'git mergetool'
 
+abbr k "kubectl"
+
 abbr r "rg --no-heading"
 abbr rt "rg --no-heading -tjs -tts"
 abbr rf "rg --files | r"
@@ -61,6 +63,7 @@ abbr ports "sudo lsof -i -n -P | grep TCP"
 abbr fe 'open -a "Google Chrome Canary" --args --profile-directory=dev-profile --no-first-run --no-default-browser-check --user-data-dir=/Users/rcrumley/.chrome-debug-user-dir --remote-debugging-port=9222'
 
 abbr mux "tmuxinator"
+
 
 # vim / vim-isms
 abbr v "$EDITOR ."
