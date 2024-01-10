@@ -6,17 +6,29 @@ local hyper = { "ctrl", "cmd", "option" }
 local hyperShift = { "ctrl", "cmd", "option", "shift" }
 
 local appFilters = {
-    Code = filter.new(false):setAppFilter('Code', { rejectTitles='dendron' }),
+    -- Browser
     Arc = filter.new('Arc'),
+    Chrome = filter.new('Google Chrome'),
+    ChromeCanary = filter.new('Google Chrome Canary'),
+
+    -- Nerd
     iTerm = filter.new('iTerm2'),
-    Spotify = filter.new('Spotify'),
+    Code = filter.new('Code'),
+
+    -- Communication/Collab
     Slack = filter.new('Slack'),
-    ["1Password"] = filter.new('1Password'),
+    Meet = filter.new('Google Meet'),
     Zoom = filter.new('zoom.us'),
     Calendar = filter.new('Calendar'),
     Messages = filter.new('Messages'),
-    Dendron = filter.new(false):setAppFilter('Code', {allowTitles='dendron', currentSpace=nil}),
-    ChromeCanary = filter.new('Google Chrome Canary'),
+
+    -- Apps
+    Spotify = filter.new('Spotify'),
+    ["1Password"] = filter.new('1Password'),
+
+    -- Notes
+    Dendron = filter.new(false):setAppFilter('Code', { allowTitles = 'dendron', currentSpace = nil }),
+    Logseq = filter.new('Logseq'),
 }
 
 local config = {}
@@ -38,7 +50,7 @@ config.key_bindings[hyper] = {
     Z = function () spoon.AppJump:jump(appFilters.Zoom) end,
     C = function () spoon.AppJump:jump(appFilters.Calendar) end,
     M = function () spoon.AppJump:jump(appFilters.Messages) end,
-    X = function () spoon.AppJump:jump(appFilters.Dendron) end,
+    X = function () spoon.AppJump:jump(appFilters.Logseq) end,
 
     P = function () hs.spaces.toggleMissionControl() end,
 
@@ -65,6 +77,11 @@ config.key_bindings[hyperShift] = {
 
     N = function () wm:action("left") end,
     M = function () wm:action("right") end,
+
+    R = function ()
+        spoon.Unsplashed:setRandomDesktopPhotoFromCollection(hs.settings.get("settings")
+            .unsplashCollectionId)
+    end,
 
     -- RETURN = function() hs.window.focusedWindow():centerOnScreen(nil, true) end,
     RETURN = function () push(0.05, 0.05, 0.9, 0.9) end,
