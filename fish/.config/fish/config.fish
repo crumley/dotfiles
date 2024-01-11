@@ -185,8 +185,8 @@ if status --is-interactive
     # [ -f ~/.asdf/plugins/java/set-java-home.fish ]; and . ~/.asdf/plugins/java/set-java-home.fish
     #}}}
 
-    # rtx {{{
-    rtx activate fish | source
+    # mise {{{
+    mise activate fish | source
     #}}}
 
     # direnv {{{
