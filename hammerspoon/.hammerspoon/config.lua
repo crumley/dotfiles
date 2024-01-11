@@ -75,6 +75,15 @@ config.key_bindings[hyperShift] = {
     O = function () hs.spotify.next() end,
     P = function () hs.spotify.displayCurrentTrack() end,
 
+    S = function ()
+        hs.osascript.applescript(string.format([[
+            tell application "Google Chrome"
+                make new window
+                activate
+            end tell
+        ]], nil))
+    end,
+
     N = function () wm:action("left") end,
     M = function () wm:action("right") end,
 
