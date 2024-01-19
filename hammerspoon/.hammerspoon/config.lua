@@ -44,10 +44,10 @@ config.key_bindings[hyper] = {
     A = function () spoon.AppJump:jump(appFilters.Code) end,
     D = function () spoon.AppJump:jump(appFilters.iTerm) end,
     E = function () spoon.AppJump:jump(appFilters.Spotify) end,
-    S = function () spoon.AppJump:jump(appFilters.Arc) end,
+    S = function () spoon.AppJump:jump(appFilters.Chrome) end,
     W = function () spoon.AppJump:jump(appFilters.Slack) end,
     Q = function () spoon.AppJump:jump(appFilters["1Password"]) end,
-    Z = function () spoon.AppJump:jump(appFilters.Zoom) end,
+    Z = function () spoon.AppJump:jump(appFilters.Meet) end,
     C = function () spoon.AppJump:jump(appFilters.Calendar) end,
     M = function () spoon.AppJump:jump(appFilters.Messages) end,
     X = function () spoon.AppJump:jump(appFilters.Logseq) end,
@@ -67,13 +67,13 @@ config.key_bindings[hyper] = {
 }
 
 config.key_bindings[hyperShift] = {
-    S = function () spoon.AppJump:jump(appFilters.ChromeCanary) end,
-
     Y = function () hs.spotify.pause() end,
     U = function () hs.spotify.playpause() end,
     I = function () hs.spotify.previous() end,
     O = function () hs.spotify.next() end,
     P = function () hs.spotify.displayCurrentTrack() end,
+
+    X = function () spoon.AppJump:summon(appFilters.Logseq) end,
 
     S = function ()
         hs.osascript.applescript(string.format([[
@@ -100,108 +100,42 @@ config.activities = {
     Mail = {
         text = "Gmail",
         subText = "Curate Email Inbox",
-        apps = { 'Gmail', 'Arc' },
+        apps = { 'Gmail', 'Google Chrome' },
         layout = {
-            { "Gmail", nil, nil, hs.layout.left70,  0, 0 },
-            { "Arc",   nil, nil, hs.layout.right30, 0, 0 }
+            { "Gmail",         nil, nil, hs.layout.left70,  0, 0 },
+            { 'Google Chrome', nil, nil, hs.layout.right30, 0, 0 }
         },
         space = true,
         setup = function ()
             -- Create Arc window with new tab
             hs.osascript.applescript(string.format([[
-                tell application "Arc"
+                tell application "Google Chrome"
                     make new window
-                    tell front window
-                        tell space "Daily" to focus
-                    end tell
                     activate
                 end tell
             ]], nil))
         end
     },
-    PullRequests = {
-        text = "Pull Requests",
-        subText = "Review Pull Requests",
-        apps = { 'Slack', 'Spotify' },
-        layout = {
-            { "Slack", nil, nil, hs.layout.left30,  0, 0 },
-            { "Arc",   nil, nil, hs.layout.right70, 0, 0 }
-        },
-        space = true,
-        setup = function ()
-            -- Create chrome window with new tab
-            hs.osascript.applescript(string.format([[
-                tell application "Arc"
-                    make new window
-                    tell front window
-                        tell space "PR" to focus
-                        make new tab with properties {URL:"https://bitbucket.org/atlassian/workspace/pull-requests"}
-                    end tell
-                end tell
-            ]], nil))
-        end
-    },
     Focus = {
-        text = "Focus Arc",
-        subText = "Created a space with a single (new) Arc window",
-        apps = { 'Arc' },
-        layout = {
-            { "Arc", nil, nil, hs.layout.right70, 0, 0 }
-        },
+        text = "Focus Chrome",
+        subText = "Created a space with a single (new) Chrome window",
+        apps = { 'Google Chrome' },
+        layout = {},
         space = true,
         setup = function ()
             -- Create chrome window with new tab
             hs.osascript.applescript(string.format([[
-                tell application "Arc"
+                tell application "Google Chrome"
                     make new window
                     tell front window
-                        tell space "Focus" to focus
-                    end tell
-                end tell
-            ]], nil))
-        end
-    },
-    Meeting = {
-        text = "Have a Meeting",
-        subText = "Zoom + Arc",
-        apps = { 'Zoom', 'Arc' },
-        layout = {
-            { "Arc", nil, nil, hs.layout.right70, 0, 0 }
-        },
-        space = true,
-        setup = function ()
-            -- Create chrome window with new tab
-            hs.osascript.applescript(string.format([[
-                tell application "Arc"
-                    make new window
-                    tell front window
-                        tell space "Atlassian" to focus
-                    end tell
-                end tell
-            ]], nil))
-        end
-    },
-    Interview = {
-        text = "Give an Interview",
-        subText = "Zoom + Arc + Dendron",
-        apps = { 'Zoom', 'Arc', 'Dendron' },
-        layout = {
-            { "Arc", nil, nil, hs.layout.right70, 0, 0 }
-        },
-        space = true,
-        setup = function ()
-            -- Create chrome window with new tab
-            hs.osascript.applescript(string.format([[
-                tell application "Arc"
-                    make new window
-                    tell front window
-                        tell space "Atlassian" to focus
+                        open location "chrome-extension://edacconmaakjimmfgnblocblbcdcpbko/main.html"
                     end tell
                 end tell
             ]], nil))
         end
     },
 }
+
 function toggleMicMute()
     local zoom = hs.application 'Zoom'
     if zoom then
