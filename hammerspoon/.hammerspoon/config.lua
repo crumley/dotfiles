@@ -19,6 +19,7 @@ local appFilters = {
     Slack = filter.new('Slack'),
     Meet = filter.new('Google Meet'),
     Zoom = filter.new('zoom.us'),
+    Tuple = filter.new('Tuple'),
     Calendar = filter.new('Calendar'),
     Messages = filter.new('Messages'),
 
@@ -73,7 +74,9 @@ config.key_bindings[hyperShift] = {
     O = function () hs.spotify.next() end,
     P = function () hs.spotify.displayCurrentTrack() end,
 
+    W = function () spoon.AppJump:summon(appFilters.Slack) end,
     X = function () spoon.AppJump:summon(appFilters.Logseq) end,
+    Z = function () spoon.AppJump:summon(appFilters.Meet) end,
 
     S = function ()
         hs.osascript.applescript(string.format([[
@@ -97,6 +100,37 @@ config.key_bindings[hyperShift] = {
 }
 
 config.activities = {
+    Inbox = {
+        text = "Inbox",
+        subText = "Windows useful for triaging the day.",
+        apps = { "Slack", "Gmail", "Google Chrome" },
+        space = true,
+        permanent = true,
+        setup = function ()
+            hs.osascript.applescript(string.format([[
+                tell application "Google Chrome"
+                    make new window
+                    activate
+                end tell
+            ]], nil))
+        end
+    },
+    Someday = {
+        text = "Someday",
+        subText = "Windows to make available for someday.",
+        apps = {},
+        layout = {},
+        space = true,
+        permanent = true,
+    },
+    Today = {
+        text = "Today",
+        subText = "Windows to focus on today.",
+        apps = {},
+        layout = {},
+        space = true,
+        permanent = true,
+    },
     Mail = {
         text = "Gmail",
         subText = "Curate Email Inbox",
