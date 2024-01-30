@@ -52,7 +52,8 @@ config.key_bindings[hyper] = {
     ["4"] = function () wm:action("rotate") end,
     ["5"] = function () spoon.SpaceManager:show() end,
 
-    G = function () spoon.SpaceManager:focusCurrentWindow() end,
+    -- nil starts activity with current window
+    G = function () spoon.SpaceManager:startActivity(nil) end,
 
     A = function () spoon.AppJump:jump(appFilters.Code) end,
     D = function () spoon.AppJump:jump(appFilters.iTerm) end,
