@@ -46,10 +46,9 @@ config.key_bindings[""] = {
 }
 
 config.key_bindings[hyper] = {
-    ["1"] = function () wm:horizontal_cycle() end,
-    ["2"] = function () wm:action("rotate") end,
-    ["3"] = function () wm:showMenu() end,
-    ["4"] = function () wm:action("rotate") end,
+    ["1"] = function () wm:action("rotate") end,
+    ["2"] = function () wm:horizontal_cycle() end,
+    ["4"] = function () wm:showMenu() end,
     ["5"] = function () spoon.SpaceManager:show() end,
 
     -- nil starts activity with current window
