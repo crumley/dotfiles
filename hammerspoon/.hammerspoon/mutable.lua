@@ -1,7 +1,9 @@
-local m = {}
-m.__index = obj
+local eventtap = require('hs.eventtap')
 
-m.logger = hs.logger.new('crumlee.space', 'mutable')
+local m = {}
+m.__index = m
+
+m.logger = hs.logger.new('crumlee.space', 'debug')
 
 -- Hattip: https://github.com/Hammerspoon/Spoons/blob/master/Source/MicMute.spoon/init.lua#L11
 
@@ -12,19 +14,34 @@ m.author = "me"
 m.homepage = "https://me.com"
 m.license = "MIT - https://opensource.org/licenses/MIT"
 
-function m:updateMicMute(muted)
-    if muted == -1 then
-        muted = hs.audiodevice.defaultInputDevice():muted()
-    end
+m.muteState = nil
 
-    if muted then
-        m:mute_menu:setTitle("📵 Muted")
-    else
-        m:mute_menu:setTitle("🎙 On")
+m.enableMenuBar = false
+m.enableMuteIndicator = false
+m.enableApplescriptMute = false
+m.enableAppMute = false
+m.enableAudioDeviceMute = false
+
+function m:setIndicatorMuteState(mute)
+    -- TODO desktop indicator!
+    if m.showMenuBar then
+        if mute then
+            m.mute_menu:setTitle("📵 Muted")
+        else
+            m.mute_menu:setTitle("🎙 On")
+        end
     end
 end
 
-function doapplescript(mute)
+function m:setAudioDeviceMuteState(mute)
+    if mute then
+        hs.audiodevice.defaultInputDevice():setInputMuted(true)
+    else
+        hs.audiodevice.defaultInputDevice():setInputMuted(false)
+    end
+end
+
+function m:setApplescriptMuteState(mute)
     if mute then
         hs.osascript.applescript("set volume input volume 0")
     else
@@ -32,43 +49,109 @@ function doapplescript(mute)
     end
 end
 
-function m:doapps(mute)
-    local zoom = hs.application 'Zoom'
-    local teams = hs.application.find("com.microsoft.teams")
-    if mute then
-        if zoom then
-            local ok = zoom:selectMenuItem 'Mute Audio'
+function m:setAppMuteState(mute)
+    m:setTeamsMuteState(mute)
+    m:setZoomMuteState(mute)
+    m:setMeetMuteState(mute)
+    m:setTupleMuteState(mute)
+end
+
+function m:setTupleMuteState(mute)
+    -- TODO is this the fastest way? maybe a window filter?
+    local app = hs.application.find("tuple")
+    if app then
+        if mute then
+            local ok = app:selectMenuItem('Mute')
             if not ok then
                 hs.timer.doAfter(0.5, function ()
-                    zoom:selectMenuItem 'Mute Audio'
+                    eventtap.keyStroke({ "cmd", "shift" }, "m", 0, app)
+                end)
+            end
+        else
+            local ok = app:selectMenuItem('Unmute')
+            if not ok then
+                hs.timer.doAfter(0.5, function ()
+                    eventtap.keyStroke({ "cmd", "shift" }, "m", 0, app)
                 end)
             end
         end
-        if teams then
-            local ok = teams:selectMenuItem 'Mute'
+    end
+end
+
+function m:setMeetMuteState(mute)
+    -- TODO this only supports toggle!
+    local app = hs.application.find("Google Meet")
+    if app then
+        if mute then
+            eventtap.keyStroke({ "cmd" }, "d", 0, app)
+        else
+            eventtap.keyStroke({ "cmd" }, "d", 0, app)
+        end
+    end
+end
+
+function m:setTeamsMuteState(mute)
+    local app = hs.application.find("com.microsoft.teams")
+    if app then
+        if mute then
+            local ok = app:selectMenuItem('Mute')
             if not ok then
                 hs.timer.doAfter(0.5, function ()
-                    hs.eventtap.keyStroke({ "cmd", "shift" }, "m", 0, teams)
+                    eventtap.keyStroke({ "cmd", "shift" }, "m", 0, app)
+                end)
+            end
+        else
+            local ok = app:selectMenuItem('Unmute')
+            if not ok then
+                hs.timer.doAfter(0.5, function ()
+                    eventtap.keyStroke({ "cmd", "shift" }, "m", 0, app)
                 end)
             end
         end
-    else
-        if zoom then
-            local ok = zoom:selectMenuItem 'Unmute Audio'
+    end
+end
+
+function m:setZoomMuteState(mute)
+    local app = hs.application('Zoom')
+    if app then
+        if mute then
+            local ok = app:selectMenuItem('Mute Audio')
             if not ok then
                 hs.timer.doAfter(0.5, function ()
-                    zoom:selectMenuItem 'Unmute Audio'
+                    app:selectMenuItem('Mute Audio')
+                end)
+            end
+        else
+            local ok = app:selectMenuItem('Unmute Audio')
+            if not ok then
+                hs.timer.doAfter(0.5, function ()
+                    app:selectMenuItem('Unmute Audio')
                 end)
             end
         end
-        if teams then
-            local ok = teams:selectMenuItem 'Unmute'
-            if not ok then
-                hs.timer.doAfter(0.5, function ()
-                    hs.eventtap.keyStroke({ "cmd", "shift" }, "m", 0, teams)
-                end)
-            end
-        end
+    end
+end
+
+function m:setMicMute(mute)
+    m.logger.d('Setting mute state: ', mute)
+    m.muteState = mute
+
+    -- TODO pcall these
+
+    if m.enableMuteIndicator then
+        m:setIndicatorMuteState(mute)
+    end
+
+    if m.enableAppMute then
+        m:setAppMuteState(mute)
+    end
+
+    if m.enableApplescriptMute then
+        m:setApplescriptMuteState(mute)
+    end
+
+    if m.enableAudioDeviceMute then
+        m:setAudioDeviceMuteState(mute)
     end
 end
 
@@ -79,48 +162,7 @@ end
 --- Parameters:
 ---  * None
 function m:toggleMicMute()
-    local mic = hs.audiodevice.defaultInputDevice()
-    local zoom = hs.application 'Zoom'
-    local teams = hs.application.find("com.microsoft.teams")
-    if mic:muted() then
-        mic:setInputMuted(false)
-        if zoom then
-            local ok = zoom:selectMenuItem 'Unmute Audio'
-            if not ok then
-                hs.timer.doAfter(0.5, function ()
-                    zoom:selectMenuItem 'Unmute Audio'
-                end)
-            end
-        end
-        if teams then
-            local ok = teams:selectMenuItem 'Unmute'
-            if not ok then
-                hs.timer.doAfter(0.5, function ()
-                    hs.eventtap.keyStroke({ "cmd", "shift" }, "m", 0, teams)
-                    -- hs.eventtap.keyStroke({ "cmd" }, "d", 0, hs.application("Google Meet"))
-                end)
-            end
-        end
-    else
-        mic:setInputMuted(true)
-        if zoom then
-            local ok = zoom:selectMenuItem 'Mute Audio'
-            if not ok then
-                hs.timer.doAfter(0.5, function ()
-                    zoom:selectMenuItem 'Mute Audio'
-                end)
-            end
-        end
-        if teams then
-            local ok = teams:selectMenuItem 'Mute'
-            if not ok then
-                hs.timer.doAfter(0.5, function ()
-                    hs.eventtap.keyStroke({ "cmd", "shift" }, "m", 0, teams)
-                end)
-            end
-        end
-    end
-    m:updateMicMute(-1)
+    m:setMicMute(not self.muteState)
 end
 
 --- MicMute:bindHotkeys(mapping, latch_timeout)
@@ -135,6 +177,7 @@ function m:bindHotkeys(mapping, latch_timeout)
     if (self.hotkey) then
         self.hotkey:delete()
     end
+
     local mods = mapping["toggle"][1]
     local key = mapping["toggle"][2]
 
@@ -157,40 +200,23 @@ function m:bindHotkeys(mapping, latch_timeout)
 end
 
 function m:init()
-    m:time_since_mute = 0
-    m:mute_menu = hs.menubar.new()
-    m:mute_menu:setClickCallback(function ()
-        m:toggleMicMute()
-    end)
-    m:updateMicMute(-1)
+    m.time_since_mute = 0
+    m:setMicMute(false)
 
-    hs.audiodevice.watcher.setCallback(function (arg)
-        if string.find(arg, "dIn ") then
-            m:updateMicMute(-1)
-        end
-    end)
-    hs.audiodevice.watcher.start()
-end
-
-
-function toggleMicMute()
-    local zoom = hs.application 'Zoom'
-    if zoom then
-        local ok = zoom:selectMenuItem 'Unmute Audio'
-        if not ok then
-            hs.timer.doAfter(0.5, function ()
-                zoom:selectMenuItem 'Unmute Audio'
-            end)
-        end
-        if zoom then
-            local ok = zoom:selectMenuItem 'Mute Audio'
-            if not ok then
-                hs.timer.doAfter(0.5, function ()
-                    zoom:selectMenuItem 'Mute Audio'
-                end)
-            end
-        end
+    if m.showMenuBar then
+        m.mute_menu = hs.menubar.new()
+        m.mute_menu:setClickCallback(function ()
+            m:toggleMicMute()
+        end)
     end
+
+    -- TODO need to watch anything?
+    -- hs.audiodevice.watcher.setCallback(function (arg)
+    --     if string.find(arg, "dIn ") then
+    --         m:updateMicMute(-1)
+    --     end
+    -- end)
+    -- hs.audiodevice.watcher.start()
 end
 
 return m

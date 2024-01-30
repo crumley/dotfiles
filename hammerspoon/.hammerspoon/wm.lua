@@ -85,7 +85,7 @@ function m:init()
     m.chooser:choices({
         {
             ["text"] = "Rotate",
-            ["subText"] = "",
+            ["subText"] = "Rotate clockwise",
             ["uuid"] = "rotate"
         },
         {
@@ -99,11 +99,6 @@ function m:init()
             ["uuid"] = "mirror_y"
         },
         {
-            ["text"] = "Restart Yabai",
-            ["subText"] = "",
-            ["uuid"] = "restart_yabai"
-        },
-        {
             ["text"] = "Yabai off",
             ["subText"] = "Turn off",
             ["uuid"] = "off_yabai"
@@ -113,6 +108,11 @@ function m:init()
             ["subText"] = "Turn on",
             ["uuid"] = "on_yabai"
         },
+        {
+            ["text"] = "Restart Yabai",
+            ["subText"] = "",
+            ["uuid"] = "restart_yabai"
+        }
     })
 end
 

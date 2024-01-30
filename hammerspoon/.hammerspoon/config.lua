@@ -1,10 +1,14 @@
 local wm = require('wm')
-local filter = require('hs.window.filter')
 wm:init()
+
+local mutable = require('mutable')
+mutable.enableAppMute = true
+mutable:init()
 
 local hyper = { "ctrl", "cmd", "option" }
 local hyperShift = { "ctrl", "cmd", "option", "shift" }
 
+local filter = require('hs.window.filter')
 local appFilters = {
     -- Browser
     Arc = filter.new('Arc'),
@@ -34,13 +38,21 @@ local appFilters = {
 
 local config = {}
 config.key_bindings = {}
+
+config.key_bindings[""] = {
+    F17 = function () mutable:toggleMicMute() end,
+    F18 = function () wm:action("rotate") end,
+    F19 = function () wm:horizontal_cycle() end,
+}
+
 config.key_bindings[hyper] = {
-    G = function () spoon.SpaceManager:focusCurrentWindow() end,
     ["1"] = function () wm:horizontal_cycle() end,
-    ["2"] = function () wm:action("mirror_y") end,
+    ["2"] = function () wm:action("rotate") end,
     ["3"] = function () wm:showMenu() end,
     ["4"] = function () wm:action("rotate") end,
     ["5"] = function () spoon.SpaceManager:show() end,
+
+    G = function () spoon.SpaceManager:focusCurrentWindow() end,
 
     A = function () spoon.AppJump:jump(appFilters.Code) end,
     D = function () spoon.AppJump:jump(appFilters.iTerm) end,
@@ -59,7 +71,7 @@ config.key_bindings[hyper] = {
     R = function () hs.reload() end,
     F12 = function () hs.caffeinate.startScreensaver() end,
 
-    F = function () toggleMicMute() end,
+    F = function () mutable:toggleMicMute() end,
 
     B = function () spoon.Watermelon:toggle() end,
 
@@ -169,25 +181,5 @@ config.activities = {
         end
     },
 }
-
-function toggleMicMute()
-    local zoom = hs.application 'Zoom'
-    if zoom then
-        local ok = zoom:selectMenuItem 'Unmute Audio'
-        if not ok then
-            hs.timer.doAfter(0.5, function ()
-                zoom:selectMenuItem 'Unmute Audio'
-            end)
-        end
-        if zoom then
-            local ok = zoom:selectMenuItem 'Mute Audio'
-            if not ok then
-                hs.timer.doAfter(0.5, function ()
-                    zoom:selectMenuItem 'Mute Audio'
-                end)
-            end
-        end
-    end
-end
 
 return config
