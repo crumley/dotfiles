@@ -29,6 +29,7 @@ yabai -m rule --add app="^1Password$" manage=off
 yabai -m rule --add app="^Docker Desktop$" manage=off
 yabai -m rule --add app="^Karabiner-Elements$" manage=off
 yabai -m rule --add app="^Karabiner-EventViewer$" manage=off
+yabai -m rule --add app="^Tuple$" manage=off
 
 yabai -m rule --add title="^Hammerspoon Console$" manage=off
 yabai -m rule --add app="^zoom.us$" title="^Zoom$" manage=off
@@ -40,6 +41,10 @@ yabai -m rule --add app="^zoom.us$" title="^Zoom$" manage=off
 yabai -m rule --add app="^Arc$" title="^Space [0-9]+" manage=off
 
 yabai -m rule --add app="^WhatsApp$" manage=off
+
+# yabai -m rule --add app="IntelliJ IDEA" title!="( – )" manage=off
+yabai -m rule --add app="IntelliJ IDEA" manage=off
+yabai -m rule --add app="IntelliJ IDEA" title=".*\[(.*)\].*" manage=on
 
 # yabai -m rule --add app="^Discord$" manage=off
 # yabai -m rule --add app="^Messages$" manage=off
