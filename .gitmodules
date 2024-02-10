@@ -1,3 +1,18 @@
 [submodule "hammerspoon/.hammerspoon/Spoons/Hyper.spoon"]
 	path = hammerspoon/.hammerspoon/Spoons/Hyper.spoon
 	url = https://github.com/evantravers/Hyper.spoon.git
+[submodule "hammerspoon/.hammerspoon/Spoons/AppJump.spoon"]
+	path = hammerspoon/.hammerspoon/Spoons/AppJump.spoon
+	url = https://github.com/crumley/AppJump.spoon.git
+[submodule "hammerspoon/.hammerspoon/Spoons/Watermelon.spoon"]
+	path = hammerspoon/.hammerspoon/Spoons/Watermelon.spoon
+	url = https://github.com/crumley/Watermelon.spoon.git
+[submodule "hammerspoon/.hammerspoon/Spoons/SpaceManager.spoon"]
+	path = hammerspoon/.hammerspoon/Spoons/SpaceManager.spoon
+	url = https://github.com/crumley/SpaceManager.spoon.git
+[submodule "hammerspoon/.hammerspoon/Spoons/Unsplashed.spoon"]
+	path = hammerspoon/.hammerspoon/Spoons/Unsplashed.spoon
+	url = https://github.com/crumley/Unsplashed.spoon.git
+[submodule "hammerspoon/.hammerspoon/Spoons/DoNotDisturb.spoon"]
+	path = hammerspoon/.hammerspoon/Spoons/DoNotDisturb.spoon
+	url = https://github.com/crumley/DoNotDisturb.spoon.git

@@ -1,6 +1,8 @@
 #!/bin/bash
 cd "$(dirname "$0")"
+
 git pull
+git submodule init
 git submodule sync --recursive
 git submodule update --recursive --remote --init
 
