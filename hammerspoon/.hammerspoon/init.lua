@@ -56,25 +56,37 @@ spoon.SpoonInstall:andUse('ReloadConfiguration', {
 
 -- Configure Hammerdora
 hs.loadSpoon('Watermelon')
+spoon.Watermelon.logger.setLogLevel('INFO')
 spoon.Watermelon.logFilePath = localSettings.melonPath
 
 -- Configigure SpaceManager
 hs.loadSpoon('SpaceManager')
+spoon.SpaceManager.logger.setLogLevel('info')
 spoon.SpaceManager.dockOnPrimaryOnly = true
 spoon.SpaceManager.desktopLozenge = true
 spoon.SpaceManager.activities = config.activities
 spoon.SpaceManager:start()
 
 hs.loadSpoon('AppJump')
-spoon.AppJump.logger.level = "info"
+spoon.AppJump.logger.setLogLevel('info')
 
 hs.loadSpoon('Unsplashed')
+spoon.Unsplashed.logger.setLogLevel('info')
 spoon.Unsplashed.clientId = localSettings.unsplashApiKey
 spoon.Unsplashed:start()
-backgroundTimer = hs.timer.doEvery(60 * 60 * 3, function ()
+
+local function rotateBackground()
     logger.i('Rotating background image')
     spoon.Unsplashed:setRandomDesktopPhotoFromCollection(localSettings.unsplashCollectionId)
-end)
+end
+
+-- Rotate background at specific times of day
+-- Capture timers in global variables so they are not harvested
+backgroundTimer9 = hs.timer.doAt("09:00", rotateBackground)
+backgroundTimer12 = hs.timer.doAt("12:00", rotateBackground)
+backgroundTimer15 = hs.timer.doAt("15:00", rotateBackground)
+backgroundTimer18 = hs.timer.doAt("18:00", rotateBackground)
+backgroundTimer21 = hs.timer.doAt("21:00", rotateBackground)
 
 -- Make key bindings
 for modifier, modifierTable in pairs(config.key_bindings) do
