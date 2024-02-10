@@ -1,6 +1,3 @@
-[submodule "hammerspoon/.hammerspoon/Spoons/Hyper.spoon"]
-	path = hammerspoon/.hammerspoon/Spoons/Hyper.spoon
-	url = https://github.com/evantravers/Hyper.spoon.git
 [submodule "hammerspoon/.hammerspoon/Spoons/AppJump.spoon"]
 	path = hammerspoon/.hammerspoon/Spoons/AppJump.spoon
 	url = https://github.com/crumley/AppJump.spoon.git
