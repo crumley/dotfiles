@@ -1,5 +1,7 @@
 karabiner/.config/karabiner/automatic_backups
 hammerspoon/.hammerspoon/.settings.json
+hammerspoon/.hammerspoon/Spoons/EmmyLua.spoon
+hammerspoon/.hammerspoon/Spoons/ReloadConfiguration.spoon
 Brewfile.lock.json
 fish/.config/fish/fish_variables
 fish/.config/fish/completions
