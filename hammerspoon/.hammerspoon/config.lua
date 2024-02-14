@@ -18,6 +18,7 @@ local appFilters = {
     -- Nerd
     iTerm = filter.new('iTerm2'),
     Code = filter.new('Code'),
+    Dotfiles = filter.new(false):setAppFilter('Code', { allowTitles = 'dotfiles', currentSpace = nil }),
 
     -- Communication/Collab
     Slack = filter.new('Slack'),
@@ -80,16 +81,28 @@ config.key_bindings[hyper] = {
 }
 
 config.key_bindings[hyperShift] = {
+    -- Jamming to tunes...
     Y = function () hs.spotify.pause() end,
     U = function () hs.spotify.playpause() end,
     I = function () hs.spotify.previous() end,
     O = function () hs.spotify.next() end,
     P = function () hs.spotify.displayCurrentTrack() end,
 
+    -- Summon windows
+    Q = function () spoon.AppJump:summon(appFilters["1Password"]) end,
     W = function () spoon.AppJump:summon(appFilters.Slack) end,
     X = function () spoon.AppJump:summon(appFilters.Logseq) end,
     Z = function () spoon.AppJump:summon(appFilters.Meet) end,
 
+    -- New window functions
+    D = function ()
+        hs.osascript.applescript(string.format([[
+            tell application "iTerm2"
+                create window with default profile
+                activate
+            end tell
+        ]], nil))
+    end,
     S = function ()
         hs.osascript.applescript(string.format([[
             tell application "Google Chrome"
@@ -99,16 +112,14 @@ config.key_bindings[hyperShift] = {
         ]], nil))
     end,
 
+    -- Window resizing fns
     N = function () wm:action("left") end,
     M = function () wm:action("right") end,
 
     R = function ()
         spoon.Unsplashed:setRandomDesktopPhotoFromCollection(hs.settings.get("settings")
             .unsplashCollectionId)
-    end,
-
-    -- RETURN = function() hs.window.focusedWindow():centerOnScreen(nil, true) end,
-    RETURN = function () push(0.05, 0.05, 0.9, 0.9) end,
+    end
 }
 
 config.activities = {
@@ -160,6 +171,17 @@ config.activities = {
                     activate
                 end tell
             ]], nil))
+        end
+    },
+    Dotfiles = {
+        text = "Dotfiles",
+        subText = "Work on dotfiles.",
+        apps = {},
+        layout = {},
+        space = true,
+        setup = function ()
+            -- TODO, this isn't working for some reason, maybe race condition on space switching.
+            spoon.AppJump:summon(appFilters.Dotfiles)
         end
     },
     Focus = {
