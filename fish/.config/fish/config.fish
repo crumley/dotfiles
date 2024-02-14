@@ -29,7 +29,7 @@ fish_add_path $HOME/bin
 abbr zx ". ~/.config/fish/config.fish"
 
 # git
-abbr ls 'eza -FH1 --icons --group-directories-first'
+abbr ls 'eza -F -H1 --icons --group-directories-first'
 abbr g. 'git add .'
 abbr gam 'git commit -am'
 abbr gc 'git commit -m'
@@ -43,6 +43,7 @@ abbr gs 'git status'
 abbr gsp 'git stash pop'
 abbr gp 'git push origin HEAD'
 abbr gpf 'git push -f origin HEAD'
+abbr gpof 'git push origin +@:staging'
 abbr grom 'git rebase origin/master'
 abbr gu 'git up'
 abbr mt 'git mergetool'
