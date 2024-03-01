@@ -1,36 +1,27 @@
--- todo
--- fix not finding dendron when not on current space
--- make space management keyboard shortcuts just to get started
--- allow collecting windows into an activity within 10s goes to the same new workspace then switches
--- Fix bug where dock doesn't come back to primary space after deleting a space
--- add activity for zoom meeting with dendron (interviews?)
--- cleanup closed spaces that might still be tracked
--- default to new space at certain amount of time
-
--- 08082023
--- b:closing all spaces but one doesnt unhide the dock
--- f:space chooser (new/set focus) and remove auto focus,
--- 08142023
--- empty space close
--- github prep + commit
+-- 03012024
+-- SpaceManager
+--   f:cleanUp to move windows back to their "owned" spaces, does closing space close its owned windows?
+--   f:Order of spaces, keep it consistent
+--   f:reconilation
+--   f:Some desktop visual that will help keep track from space manager
+--   f:Concept of a focused space. Then keystroke to send stuff there. space chooser (new/set focus) and remove auto focus,
+--   b:closing all spaces but one doesnt unhide the dock
+-- Ability for activity to select a specific window of an app (like Dendron)
+-- Common spaces with windows already on it. use activities for "working spaces" to reconfigure as needed
 
 -- 09052023
 -- Cycle current space through various grid layouts
--- Activity to close current space (if not on primary space)
--- Alternativly a close activity action that can remove the extra Arc window.
-
--- 09062023
--- Ability for activity to select a specific window of an app (like Dendron)
--- Fix bug where app(v) doesn't exist... e.g. zoom is closed. May be similar area to feature above
-
--- 09082023
--- Doing mash-b when melon is paused resets to a new 25m instead of unpausing
-
 -- Common layouts 70 30 etc
--- Common spaces with windows already on it. use activities for "working spaces" to reconfigure as needed
--- Terminal on each space, arc on each space?
--- Keystroke to bring app to space from anywhere... e.g get calendar here, then put it back?
 
+-- Watermelon
+--  b:Doing mash-b when melon is paused resets to a new 25m instead of unpausing
+
+-- Mutable
+--  f:change toolbar color or some other visual indicator
+--  b:sometimes gets in a funk where toggling is super slow. noticed with meet.
+
+-- New:MoreOrLessTimer
+--  Will be able to handle a timer invocation that catches up when it misses something due to sleep
 
 local logger = hs.logger.new('crumley', 'debug')
 
@@ -82,11 +73,11 @@ end
 
 -- Rotate background at specific times of day
 -- Capture timers in global variables so they are not harvested
-backgroundTimer9 = hs.timer.doAt("09:00", rotateBackground)
-backgroundTimer12 = hs.timer.doAt("12:00", rotateBackground)
-backgroundTimer15 = hs.timer.doAt("15:00", rotateBackground)
-backgroundTimer18 = hs.timer.doAt("18:00", rotateBackground)
-backgroundTimer21 = hs.timer.doAt("21:00", rotateBackground)
+BackgroundTimer9 = hs.timer.doAt("09:00", rotateBackground)
+BackgroundTimer12 = hs.timer.doAt("12:00", rotateBackground)
+BackgroundTimer15 = hs.timer.doAt("15:00", rotateBackground)
+BackgroundTimer18 = hs.timer.doAt("18:00", rotateBackground)
+BackgroundTimer21 = hs.timer.doAt("21:00", rotateBackground)
 
 -- Make key bindings
 for modifier, modifierTable in pairs(config.key_bindings) do
