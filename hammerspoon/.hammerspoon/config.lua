@@ -95,14 +95,14 @@ config.key_bindings[hyperShift] = {
     Z = function () spoon.AppJump:summon(appFilters.Meet) end,
 
     -- New window functions
-    D = function ()
-        hs.osascript.applescript(string.format([[
-            tell application "iTerm2"
-                create window with default profile
-                activate
-            end tell
-        ]], nil))
-    end,
+    -- D = function ()
+    --     hs.osascript.applescript(string.format([[
+    --         tell application "iTerm2"
+    --             create window with default profile
+    --             activate
+    --         end tell
+    --     ]], nil))
+    -- end,
     S = function ()
         hs.osascript.applescript(string.format([[
             tell application "Google Chrome"
@@ -182,6 +182,18 @@ config.activities = {
         setup = function ()
             -- TODO, this isn't working for some reason, maybe race condition on space switching.
             spoon.AppJump:summon(appFilters.Dotfiles)
+        end
+    },
+    Meet = {
+        text = "Meet",
+        subText = "Have a meeting.",
+        apps = {},
+        layout = {},
+        space = true,
+        setup = function ()
+            -- TODO, this isn't working for some reason, maybe race condition on space switching.
+            -- TODO, if no such window exists should it be created?
+            spoon.AppJump:summon(appFilters.Meet)
         end
     },
     Focus = {
