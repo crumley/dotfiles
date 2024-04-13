@@ -123,21 +123,6 @@ config.key_bindings[hyperShift] = {
 }
 
 config.activities = {
-    Inbox = {
-        text = "Inbox",
-        subText = "Windows useful for triaging the day.",
-        apps = { "Slack", "Gmail", "Google Chrome" },
-        space = true,
-        permanent = true,
-        setup = function ()
-            hs.osascript.applescript(string.format([[
-                tell application "Google Chrome"
-                    make new window
-                    activate
-                end tell
-            ]], nil))
-        end
-    },
     Someday = {
         text = "Someday",
         subText = "Windows to make available for someday.",
@@ -154,6 +139,21 @@ config.activities = {
         space = true,
         permanent = true,
     },
+    Inbox = {
+        text = "Inbox",
+        subText = "Windows useful for triaging the day.",
+        apps = { "Slack", "Gmail", "Google Chrome" },
+        space = true,
+        permanent = true,
+        setup = function ()
+            hs.osascript.applescript(string.format([[
+                tell application "Google Chrome"
+                    make new window
+                    activate
+                end tell
+            ]], nil))
+        end
+    },
     Mail = {
         text = "Gmail",
         subText = "Curate Email Inbox",
@@ -163,6 +163,7 @@ config.activities = {
             { 'Google Chrome', nil, nil, hs.layout.right30, 0, 0 }
         },
         space = true,
+        permanent = true,
         setup = function ()
             -- Create Arc window with new tab
             hs.osascript.applescript(string.format([[
@@ -171,6 +172,19 @@ config.activities = {
                     activate
                 end tell
             ]], nil))
+        end
+    },
+    Meet = {
+        text = "Meet",
+        subText = "Have a meeting.",
+        apps = {},
+        layout = {},
+        space = true,
+        permanent = true,
+        setup = function ()
+            -- TODO, this isn't working for some reason, maybe race condition on space switching.
+            -- TODO, if no such window exists should it be created?
+            spoon.AppJump:summon(appFilters.Meet)
         end
     },
     Dotfiles = {
@@ -182,18 +196,6 @@ config.activities = {
         setup = function ()
             -- TODO, this isn't working for some reason, maybe race condition on space switching.
             spoon.AppJump:summon(appFilters.Dotfiles)
-        end
-    },
-    Meet = {
-        text = "Meet",
-        subText = "Have a meeting.",
-        apps = {},
-        layout = {},
-        space = true,
-        setup = function ()
-            -- TODO, this isn't working for some reason, maybe race condition on space switching.
-            -- TODO, if no such window exists should it be created?
-            spoon.AppJump:summon(appFilters.Meet)
         end
     },
     Focus = {
