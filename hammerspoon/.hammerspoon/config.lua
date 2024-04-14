@@ -1,3 +1,6 @@
+local filter = require('hs.window.filter')
+local hswindow = require('hs.window')
+
 local wm = require('wm')
 wm:init()
 
@@ -8,8 +11,9 @@ mutable:init()
 local hyper = { "ctrl", "cmd", "option" }
 local hyperShift = { "ctrl", "cmd", "option", "shift" }
 
-local filter = require('hs.window.filter')
-local appFilters = {
+local config = {}
+
+config.appFilters = {
     -- Browser
     Arc = filter.new('Arc'),
     Chrome = filter.new('Google Chrome'),
@@ -37,7 +41,105 @@ local appFilters = {
     Logseq = filter.new('Logseq'),
 }
 
-local config = {}
+config.activities = {
+    Inbox = {
+        text = "Inbox",
+        subText = "Windows useful for triaging the day.",
+        apps = { "Slack", "Gmail", "Google Chrome" },
+        space = true,
+        permanent = true,
+        singleton = true,
+        setup = function ()
+            hs.osascript.applescript(string.format([[
+                tell application "Google Chrome"
+                    make new window
+                    activate
+                end tell
+            ]], nil))
+        end
+    },
+    Someday = {
+        text = "Someday",
+        subText = "Windows to make available for someday.",
+        apps = {},
+        layout = {},
+        space = true,
+        singleton = true,
+        permanent = true,
+    },
+    Today = {
+        text = "Today",
+        subText = "Windows to focus on today.",
+        apps = {},
+        layout = {},
+        space = true,
+        singleton = true,
+        permanent = true,
+    },
+    Mail = {
+        text = "Gmail",
+        subText = "Curate Email Inbox",
+        apps = { 'Gmail', 'Google Chrome' },
+        layout = {
+            { "Gmail",         nil, nil, hs.layout.left70,  0, 0 },
+            { 'Google Chrome', nil, nil, hs.layout.right30, 0, 0 }
+        },
+        space = true,
+        singleton = true,
+        setup = function ()
+            -- Create Arc window with new tab
+            hs.osascript.applescript(string.format([[
+                tell application "Google Chrome"
+                    make new window
+                    activate
+                end tell
+            ]], nil))
+        end
+    },
+    Dotfiles = {
+        text = "Dotfiles",
+        subText = "Work on dotfiles.",
+        apps = {},
+        layout = {},
+        space = true,
+        singleton = true,
+        setup = function ()
+            -- TODO, this isn't working for some reason, maybe race condition on space switching.
+            spoon.AppJump:summon(config.appFilters.Dotfiles)
+        end
+    },
+    Meet = {
+        text = "Meet",
+        subText = "Have a meeting.",
+        apps = {},
+        layout = {},
+        space = true,
+        setup = function ()
+            -- TODO, this isn't working for some reason, maybe race condition on space switching.
+            -- TODO, if no such window exists should it be created?
+            spoon.AppJump:summon(config.appFilters.Meet)
+        end
+    },
+    Focus = {
+        text = "Focus",
+        subText = "Created a space for focus on a specific task",
+        apps = {},
+        layout = {},
+        space = true,
+        setup = function ()
+            -- Create chrome window with new tab
+            hs.osascript.applescript(string.format([[
+                tell application "Google Chrome"
+                    make new window
+                    tell front window
+                        open location "chrome-extension://edacconmaakjimmfgnblocblbcdcpbko/main.html"
+                    end tell
+                end tell
+            ]], nil))
+        end
+    },
+}
+
 config.key_bindings = {}
 
 config.key_bindings[""] = {
@@ -52,19 +154,24 @@ config.key_bindings[hyper] = {
     ["4"] = function () wm:showMenu() end,
     ["5"] = function () spoon.SpaceManager:show() end,
 
-    -- nil starts activity with current window
-    G = function () spoon.SpaceManager:startActivity(nil) end,
+    -- Start a Focus with the current window
+    G = function ()
+        spoon.SpaceManager:startActivity(
+            "Focus",
+            { hs.window.frontmostWindow() }
+        )
+    end,
 
-    A = function () spoon.AppJump:jump(appFilters.Code) end,
-    D = function () spoon.AppJump:jump(appFilters.iTerm) end,
-    E = function () spoon.AppJump:jump(appFilters.Spotify) end,
-    S = function () spoon.AppJump:jump(appFilters.Chrome) end,
-    W = function () spoon.AppJump:jump(appFilters.Slack) end,
-    Q = function () spoon.AppJump:jump(appFilters["1Password"]) end,
-    Z = function () spoon.AppJump:jump(appFilters.Meet) end,
-    C = function () spoon.AppJump:jump(appFilters.Calendar) end,
-    M = function () spoon.AppJump:jump(appFilters.Messages) end,
-    X = function () spoon.AppJump:jump(appFilters.Logseq) end,
+    A = function () spoon.AppJump:jump(config.appFilters.Code) end,
+    D = function () spoon.AppJump:jump(config.appFilters.iTerm) end,
+    E = function () spoon.AppJump:jump(config.appFilters.Spotify) end,
+    S = function () spoon.AppJump:jump(config.appFilters.Chrome) end,
+    W = function () spoon.AppJump:jump(config.appFilters.Slack) end,
+    Q = function () spoon.AppJump:jump(config.appFilters["1Password"]) end,
+    Z = function () spoon.AppJump:jump(config.appFilters.Meet) end,
+    C = function () spoon.AppJump:jump(config.appFilters.Calendar) end,
+    M = function () spoon.AppJump:jump(config.appFilters.Messages) end,
+    X = function () spoon.AppJump:jump(config.appFilters.Logseq) end,
 
     P = function () hs.spaces.toggleMissionControl() end,
 
@@ -89,10 +196,10 @@ config.key_bindings[hyperShift] = {
     P = function () hs.spotify.displayCurrentTrack() end,
 
     -- Summon windows
-    Q = function () spoon.AppJump:summon(appFilters["1Password"]) end,
-    W = function () spoon.AppJump:summon(appFilters.Slack) end,
-    X = function () spoon.AppJump:summon(appFilters.Logseq) end,
-    Z = function () spoon.AppJump:summon(appFilters.Meet) end,
+    Q = function () spoon.AppJump:summon(config.appFilters["1Password"]) end,
+    W = function () spoon.AppJump:summon(config.appFilters.Slack) end,
+    X = function () spoon.AppJump:summon(config.appFilters.Logseq) end,
+    Z = function () spoon.AppJump:summon(config.appFilters.Meet) end,
 
     -- New window functions
     -- D = function ()
@@ -122,100 +229,5 @@ config.key_bindings[hyperShift] = {
     end
 }
 
-config.activities = {
-    Someday = {
-        text = "Someday",
-        subText = "Windows to make available for someday.",
-        apps = {},
-        layout = {},
-        space = true,
-        permanent = true,
-    },
-    Today = {
-        text = "Today",
-        subText = "Windows to focus on today.",
-        apps = {},
-        layout = {},
-        space = true,
-        permanent = true,
-    },
-    Inbox = {
-        text = "Inbox",
-        subText = "Windows useful for triaging the day.",
-        apps = { "Slack", "Gmail", "Google Chrome" },
-        space = true,
-        permanent = true,
-        setup = function ()
-            hs.osascript.applescript(string.format([[
-                tell application "Google Chrome"
-                    make new window
-                    activate
-                end tell
-            ]], nil))
-        end
-    },
-    Mail = {
-        text = "Gmail",
-        subText = "Curate Email Inbox",
-        apps = { 'Gmail', 'Google Chrome' },
-        layout = {
-            { "Gmail",         nil, nil, hs.layout.left70,  0, 0 },
-            { 'Google Chrome', nil, nil, hs.layout.right30, 0, 0 }
-        },
-        space = true,
-        permanent = true,
-        setup = function ()
-            -- Create Arc window with new tab
-            hs.osascript.applescript(string.format([[
-                tell application "Google Chrome"
-                    make new window
-                    activate
-                end tell
-            ]], nil))
-        end
-    },
-    Meet = {
-        text = "Meet",
-        subText = "Have a meeting.",
-        apps = {},
-        layout = {},
-        space = true,
-        permanent = true,
-        setup = function ()
-            -- TODO, this isn't working for some reason, maybe race condition on space switching.
-            -- TODO, if no such window exists should it be created?
-            spoon.AppJump:summon(appFilters.Meet)
-        end
-    },
-    Dotfiles = {
-        text = "Dotfiles",
-        subText = "Work on dotfiles.",
-        apps = {},
-        layout = {},
-        space = true,
-        setup = function ()
-            -- TODO, this isn't working for some reason, maybe race condition on space switching.
-            spoon.AppJump:summon(appFilters.Dotfiles)
-        end
-    },
-    Focus = {
-        text = "Focus Chrome",
-        subText = "Created a space with a single (new) Chrome window",
-        apps = { 'Google Chrome' },
-        layout = {},
-        space = true,
-        setup = function ()
-            -- Create chrome window with new tab
-            hs.osascript.applescript(string.format([[
-                tell application "Google Chrome"
-                    make new window
-                    tell front window
-                        open location "chrome-extension://edacconmaakjimmfgnblocblbcdcpbko/main.html"
-                    end tell
-                end tell
-            ]], nil))
-        end
-    },
-}
 
 return config
