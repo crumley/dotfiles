@@ -1,0 +1,8 @@
+matches:
+  # Simple text replacement
+  - trigger: ":shrug"
+    replace: "¯\\_(ツ)_/¯"
+  - trigger: "m15z"
+    replace: "materialization"
+  - trigger: "m11z"
+    replace: "materialize"
