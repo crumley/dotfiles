@@ -215,6 +215,9 @@ config.key_bindings[hyperShift] = {
             tell application "Google Chrome"
                 make new window
                 activate
+                open location "chrome-extension://edacconmaakjimmfgnblocblbcdcpbko/session-buddy.html"
+                delay 1
+                activate
             end tell
         ]], nil))
     end,
