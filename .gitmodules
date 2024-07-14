@@ -13,3 +13,6 @@
 [submodule "hammerspoon/.hammerspoon/Spoons/DoNotDisturb.spoon"]
 	path = hammerspoon/.hammerspoon/Spoons/DoNotDisturb.spoon
 	url = https://github.com/crumley/DoNotDisturb.spoon.git
+[submodule "hammerspoon/.hammerspoon/Spoons/BrowserManager.spoon"]
+	path = hammerspoon/.hammerspoon/Spoons/BrowserManager.spoon
+	url = git@github.com:crumley/BrowserManager.git

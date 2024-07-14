@@ -8,21 +8,16 @@
 --   b:closing all spaces but one doesnt unhide the dock
 -- Ability for activity to select a specific window of an app (like Dendron)
 -- Common spaces with windows already on it. use activities for "working spaces" to reconfigure as needed
-
 -- 09052023
 -- Cycle current space through various grid layouts
 -- Common layouts 70 30 etc
-
 -- Watermelon
 --  b:Doing mash-b when melon is paused resets to a new 25m instead of unpausing
-
 -- Mutable
 --  f:change toolbar color or some other visual indicator
 --  b:sometimes gets in a funk where toggling is super slow. noticed with meet.
-
 -- New:MoreOrLessTimer
 --  Will be able to handle a timer invocation that catches up when it misses something due to sleep
-
 local logger = hs.logger.new('crumley', 'debug')
 
 local localSettings = hs.json.read(".settings.json")
@@ -42,7 +37,7 @@ local config = require('config')
 hs.loadSpoon("SpoonInstall")
 spoon.SpoonInstall.use_syncinstall = true
 spoon.SpoonInstall:andUse('ReloadConfiguration', {
-    start = false,
+    start = false
 })
 
 -- Configure Hammerdora
@@ -52,15 +47,23 @@ spoon.Watermelon.logFilePath = localSettings.melonPath
 
 -- Configigure SpaceManager
 hs.loadSpoon('SpaceManager')
-spoon.SpaceManager.logger.setLogLevel('info')
+spoon.SpaceManager.logger.setLogLevel('DEBUG')
 spoon.SpaceManager.dockOnPrimaryOnly = true
 spoon.SpaceManager.desktopLozenge = true
-spoon.SpaceManager.activities = config.activities
+spoon.SpaceManager.activityTemplates = config.activities
 spoon.SpaceManager:start()
 
+-- Configure BrowserManager
+hs.loadSpoon('BrowserManager')
+spoon.BrowserManager.logger.setLogLevel('DEBUG')
+spoon.BrowserManager.browserAppName = "Google Chrome"
+spoon.BrowserManager:start()
+
+-- Configure AppJump
 hs.loadSpoon('AppJump')
 spoon.AppJump.logger.setLogLevel('info')
 
+-- Configure Unsplashed
 hs.loadSpoon('Unsplashed')
 spoon.Unsplashed.logger.setLogLevel('info')
 spoon.Unsplashed.clientId = localSettings.unsplashApiKey
