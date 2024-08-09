@@ -25,6 +25,7 @@ config.appFilters = {
     Dotfiles = filter.new(false):setAppFilter('Code', { allowTitles = 'dotfiles', currentSpace = nil }),
 
     -- Communication/Collab
+    Figma = filter.new('Figma'),
     Slack = filter.new('Slack'),
     Meet = filter.new('Google Meet'),
     Zoom = filter.new('zoom.us'),
@@ -154,37 +155,36 @@ config.key_bindings[hyper] = {
     ["4"] = function () wm:showMenu() end,
     ["5"] = function () spoon.SpaceManager:show() end,
 
-    -- Start a Focus with the current window
+
+    Q = function () spoon.AppJump:jump(config.appFilters["1Password"]) end,
+    W = function () spoon.AppJump:jump(config.appFilters.Slack) end,
+    E = function () spoon.AppJump:jump(config.appFilters.Spotify) end,
+    R = function () hs.reload() end,
+    U = function () hs.spaces.toggleMissionControl() end,
+    P = function () hs.openConsole() end,
+    ['\\'] = function () hs.grid.maximizeWindow(hs.window.focusedWindow()) end,
+
+    A = function () spoon.AppJump:jump(config.appFilters.Code) end,
+    S = function () spoon.AppJump:jump(config.appFilters.Chrome) end,
+    D = function () spoon.AppJump:jump(config.appFilters.iTerm) end,
+    F = function () mutable:toggleMicMute() end,
     G = function ()
+        -- Start a Focus with the current window
         spoon.SpaceManager:startActivity(
             "Focus",
             { hs.window.frontmostWindow() }
         )
     end,
-
-    A = function () spoon.AppJump:jump(config.appFilters.Code) end,
-    D = function () spoon.AppJump:jump(config.appFilters.iTerm) end,
-    E = function () spoon.AppJump:jump(config.appFilters.Spotify) end,
-    S = function () spoon.AppJump:jump(config.appFilters.Chrome) end,
-    W = function () spoon.AppJump:jump(config.appFilters.Slack) end,
-    Q = function () spoon.AppJump:jump(config.appFilters["1Password"]) end,
-    Z = function () spoon.AppJump:jump(config.appFilters.Meet) end,
-    C = function () spoon.AppJump:jump(config.appFilters.Calendar) end,
-    M = function () spoon.AppJump:jump(config.appFilters.Messages) end,
-    X = function () spoon.AppJump:jump(config.appFilters.Logseq) end,
-
-    P = function () hs.spaces.toggleMissionControl() end,
-
-    V = function () hs.openConsole() end,
-    R = function () hs.reload() end,
-    F12 = function () hs.caffeinate.startScreensaver() end,
-
-    F = function () mutable:toggleMicMute() end,
-
-    B = function () spoon.Watermelon:toggle() end,
-
     RETURN = function () hs.grid.show() end,
-    ['\\'] = function () hs.grid.maximizeWindow(hs.window.focusedWindow()) end,
+
+    Z = function () spoon.AppJump:jump(config.appFilters.Meet) end,
+    X = function () spoon.AppJump:jump(config.appFilters.Logseq) end,
+    C = function () spoon.AppJump:jump(config.appFilters.Calendar) end,
+    V = function () spoon.AppJump:jump(config.appFilters.Figma) end,
+    B = function () spoon.Watermelon:toggle() end,
+    M = function () spoon.AppJump:jump(config.appFilters.Messages) end,
+
+    F12 = function () hs.caffeinate.startScreensaver() end,
 }
 
 config.key_bindings[hyperShift] = {
