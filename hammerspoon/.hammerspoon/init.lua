@@ -55,9 +55,11 @@ spoon.SpaceManager:start()
 
 -- Configure BrowserManager
 hs.loadSpoon('BrowserManager')
-spoon.BrowserManager.logger.setLogLevel('DEBUG')
-spoon.BrowserManager.browserAppName = "Google Chrome"
-spoon.BrowserManager:start()
+if spoon.BrowserManager ~= nil then
+    spoon.BrowserManager.logger.setLogLevel('DEBUG')
+    spoon.BrowserManager.browserAppName = "Google Chrome"
+    spoon.BrowserManager:start()
+end
 
 -- Configure AppJump
 hs.loadSpoon('AppJump')

@@ -22,6 +22,8 @@ config.appFilters = {
     -- Nerd
     iTerm = filter.new('iTerm2'),
     Code = filter.new('Code'),
+    Cursor = filter.new('Cursor'),
+    Intellij = filter.new('IntelliJ IDEA'),
     Dotfiles = filter.new(false):setAppFilter('Code', {
         allowTitles = 'dotfiles',
         currentSpace = nil
@@ -195,7 +197,7 @@ config.key_bindings[hyper] = {
     end,
 
     A = function ()
-        spoon.AppJump:jump(config.appFilters.Code)
+        spoon.AppJump:jump(config.appFilters.Cursor)
     end,
     S = function ()
         spoon.AppJump:jump(config.appFilters.Chrome)
@@ -239,7 +241,18 @@ config.key_bindings[hyper] = {
 }
 
 config.key_bindings[hyperShift] = {
-    -- Jamming to tunes...
+    -- Top Row
+    Q = function ()
+        spoon.AppJump:summon(config.appFilters["1Password"])
+    end,
+    W = function ()
+        spoon.AppJump:summon(config.appFilters.Slack)
+    end,
+    R = function ()
+        spoon.Unsplashed:setRandomDesktopPhotoFromCollection(
+            hs.settings.get("settings").unsplashCollectionId
+        )
+    end,
     Y = function ()
         hs.spotify.pause()
     end,
@@ -256,20 +269,10 @@ config.key_bindings[hyperShift] = {
         hs.spotify.displayCurrentTrack()
     end,
 
-    -- Summon windows
-    Q = function ()
-        spoon.AppJump:summon(config.appFilters["1Password"])
+    -- Middle Row
+    A = function ()
+        spoon.AppJump:jump(config.appFilters.Intellij)
     end,
-    W = function ()
-        spoon.AppJump:summon(config.appFilters.Slack)
-    end,
-    X = function ()
-        spoon.AppJump:summon(config.appFilters.Logseq)
-    end,
-    Z = function ()
-        spoon.AppJump:summon(config.appFilters.Meet)
-    end,
-
     -- New window functions
     -- D = function ()
     --     hs.osascript.applescript(string.format([[
@@ -291,18 +294,21 @@ config.key_bindings[hyperShift] = {
         ]], nil))
     end,
 
-    -- Window resizing fns
+    -- Bottom Row
+    Z = function ()
+        spoon.AppJump:summon(config.appFilters.Meet)
+    end,
+    X = function ()
+        spoon.AppJump:summon(config.appFilters.Logseq)
+    end,
+    V = function ()
+        spoon.AppJump:summon(config.appFilters.Figma)
+    end,
     N = function ()
         wm:action("left")
     end,
     M = function ()
         wm:action("right")
-    end,
-
-    R = function ()
-        spoon.Unsplashed:setRandomDesktopPhotoFromCollection(
-            hs.settings.get("settings").unsplashCollectionId
-        )
     end
 }
 
