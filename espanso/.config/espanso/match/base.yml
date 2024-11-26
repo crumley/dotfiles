@@ -6,3 +6,5 @@ matches:
     replace: "materialization"
   - trigger: "m11z"
     replace: "materialize"
+  - trigger: "@@"
+    replace: "crumley@gmail.com"
