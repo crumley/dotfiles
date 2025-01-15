@@ -172,43 +172,49 @@ if status --is-interactive
     # Sourcing {{{
     # macOS homebrew installs into /usr/local/share, apt uses /usr/share
     [ -f /usr/local/share/autojump/autojump.fish ]; and source /usr/local/share/autojump/autojump.fish
-    [ -f /usr/local/share/fish/vendor_completions.d/asdf.fish ]; and source /usr/local/share/fish/vendor_completions.d/asdf.fish
     [ -f /usr/local/share/fish/vendor_completions.d/brew.fish ]; and source /usr/local/share/fish/vendor_completions.d/brew.fish
     [ -f /usr/local/share/fish/vendor_completions.d/brew-cask.fish ]; and source /usr/local/share/fish/vendor_completions.d/brew-cask.fish
     [ -f /usr/local/share/fish/vendor_completions.d/docker-compose.fish ]; and source /usr/local/share/fish/vendor_completions.d/docker-compose.fish
     [ -f /usr/local/share/fish/vendor_completions.d/fd.fish ]; and source /usr/local/share/fish/vendor_completions.d/fd.fish
     [ -f /usr/local/share/fish/vendor_completions.d/rg.fish ]; and source /usr/local/share/fish/vendor_completions.d/rg.fish
-    [ -f /usr/local/share/fish/vendor_completions.d/starship.fish ]; and source /usr/local/share/fish/vendor_completions.d/starship.fish
     # }}}
 
+    # rpk {{{
+        command -s rpk >/dev/null; and rpk generate shell-completion fish | source
+    #}}}
+
     # asdf {{{
+    # [ -f /usr/local/share/fish/vendor_completions.d/asdf.fish ]; and source /usr/local/share/fish/vendor_completions.d/asdf.fish
     # [ -f (brew --prefix asdf)/libexec/asdf.fish ]; and source (brew --prefix asdf)/libexec/asdf.fish
     # [ -f ~/.asdf/plugins/java/set-java-home.fish ]; and . ~/.asdf/plugins/java/set-java-home.fish
     #}}}
 
     # mise {{{
-    mise activate fish | source
+    #mise activate fish | source
     #}}}
 
     # direnv {{{
-    direnv hook fish | source
+    #direnv hook fish | source
     #}}}
 
     # iTerm shell integration {{{
-    [ -f $HOME/.iterm2_shell_integration.fish ]; and source $HOME/.iterm2_shell_integration.fish
+        [ -f $HOME/.iterm2_shell_integration.fish ]; and source $HOME/.iterm2_shell_integration.fish
     # }}}
 
     # starship {{{
-    starship init fish | source
+        starship init fish | source
+        [ -f /usr/local/share/fish/vendor_completions.d/starship.fish ]; and source /usr/local/share/fish/vendor_completions.d/starship.fish
     #}}}
 
     # atuin {{{
-    set -gx ATUIN_NOBIND "true"
-    atuin init fish | source
-    bind \cr _atuin_search
+        set -gx ATUIN_NOBIND "true"
+        atuin init fish | source
+        bind \cr _atuin_search
     #}}}
 
+    # dev {{{
     [ -f /opt/dev/dev.fish ]; and source /opt/dev/dev.fish
+    # }}}
 
     # TMUX {{{
     #     and command -s tmux >/dev/null
