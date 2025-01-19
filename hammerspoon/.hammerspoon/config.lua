@@ -8,8 +8,8 @@ local mutable = require('mutable')
 mutable.enableAppMute = true
 mutable:init()
 
-local hyper = { "ctrl", "cmd", "option" }
-local hyperShift = { "ctrl", "cmd", "option", "shift" }
+local hyper = {"ctrl", "cmd", "option"}
+local hyperShift = {"ctrl", "cmd", "option", "shift"}
 
 local config = {}
 
@@ -29,14 +29,21 @@ config.appFilters = {
         currentSpace = nil
     }),
 
-    -- Communication/Collab
+    -- Communication: Collaboration
     Figma = filter.new('Figma'),
-    Slack = filter.new('Slack'),
     Meet = filter.new('Google Meet'),
     Zoom = filter.new('zoom.us'),
     Tuple = filter.new('Tuple'),
-    Calendar = filter.new('Calendar'),
+
+    -- Communications: Chat
+    Slack = filter.new('Slack'),
+    Discord = filter.new('Discord'),
     Messages = filter.new('Messages'),
+    Whatsapp = filter.new('WhatsApp'),
+
+    -- Personal: Organization
+    Calendar = filter.new('Calendar'),
+    Email = filter.new('Gmail'),
 
     -- Apps
     Spotify = filter.new('Spotify'),
@@ -51,14 +58,15 @@ config.appFilters = {
 }
 
 config.activities = {
-    Inbox = {
-        text = "Inbox",
-        subText = "Windows useful for triaging the day.",
-        apps = { "Slack", "Gmail", "Google Chrome" },
+    Mail = {
+        text = "Mail",
+        subText = "Ponder life's mysteries in Google.",
+        apps = {config.appFilters.Email, config.appFilters.Calendar},
         space = true,
-        permanent = true,
         singleton = true,
-        setup = function ()
+        permanent = true,
+        setup = function()
+            -- Create Arc window with new tab
             hs.osascript.applescript(string.format([[
                 tell application "Google Chrome"
                     make new window
@@ -67,11 +75,28 @@ config.activities = {
             ]], nil))
         end
     },
+    Chat = {
+        text = "Chat",
+        subText = "Windows to chat.",
+        apps = {config.appFilters.Discord, config.appFilters.Slack, config.appFilters.Whatsapp,
+                config.appFilters.Messages},
+        layout = {},
+        space = true,
+        singleton = true,
+        permanent = true
+    },
+    Meet = {
+        text = "Meet",
+        subText = "Have a meeting.",
+        apps = {config.appFilters.Meet},
+        space = true,
+        singleton = true,
+        permanent = true
+    },
     Someday = {
         text = "Someday",
         subText = "Windows to make available for someday.",
         apps = {},
-        layout = {},
         space = true,
         singleton = true,
         permanent = true
@@ -85,46 +110,12 @@ config.activities = {
         singleton = true,
         permanent = true
     },
-    Mail = {
-        text = "Gmail",
-        subText = "Curate Email Inbox",
-        apps = { 'Gmail', 'Google Chrome' },
-        layout = { { "Gmail", nil, nil, hs.layout.left70, 0, 0 }, { 'Google Chrome', nil, nil, hs.layout.right30, 0, 0 } },
-        space = true,
-        singleton = true,
-        setup = function ()
-            -- Create Arc window with new tab
-            hs.osascript.applescript(string.format([[
-                tell application "Google Chrome"
-                    make new window
-                    activate
-                end tell
-            ]], nil))
-        end
-    },
     Dotfiles = {
         text = "Dotfiles",
         subText = "Work on dotfiles.",
-        apps = {},
-        layout = {},
+        apps = {config.appFilters.Dotfiles},
         space = true,
-        singleton = true,
-        setup = function ()
-            -- TODO, this isn't working for some reason, maybe race condition on space switching.
-            spoon.AppJump:summon(config.appFilters.Dotfiles)
-        end
-    },
-    Meet = {
-        text = "Meet",
-        subText = "Have a meeting.",
-        apps = {},
-        layout = {},
-        space = true,
-        setup = function ()
-            -- TODO, this isn't working for some reason, maybe race condition on space switching.
-            -- TODO, if no such window exists should it be created?
-            spoon.AppJump:summon(config.appFilters.Meet)
-        end
+        singleton = true
     },
     Focus = {
         text = "Focus",
@@ -132,7 +123,7 @@ config.activities = {
         apps = {},
         layout = {},
         space = true,
-        setup = function ()
+        setup = function()
             -- Create chrome window with new tab
             hs.osascript.applescript(string.format([[
                 tell application "Google Chrome"
@@ -149,129 +140,127 @@ config.activities = {
 config.key_bindings = {}
 
 config.key_bindings[""] = {
-    F17 = function ()
+    F17 = function()
         mutable:toggleMicMute()
     end,
-    F18 = function ()
+    F18 = function()
         wm:action("rotate")
     end,
-    F19 = function ()
+    F19 = function()
         wm:horizontal_cycle()
     end
 }
 
 config.key_bindings[hyper] = {
-    ["1"] = function ()
+    ["1"] = function()
         wm:action("rotate")
     end,
-    ["2"] = function ()
+    ["2"] = function()
         wm:horizontal_cycle()
     end,
-    ["4"] = function ()
+    ["4"] = function()
         wm:showMenu()
     end,
-    ["5"] = function ()
+    ["5"] = function()
         spoon.SpaceManager:show()
     end,
 
-    Q = function ()
+    Q = function()
         spoon.AppJump:jump(config.appFilters["1Password"])
     end,
-    W = function ()
+    W = function()
         spoon.AppJump:jump(config.appFilters.Slack)
     end,
-    E = function ()
+    E = function()
         spoon.AppJump:jump(config.appFilters.Spotify)
     end,
-    R = function ()
+    R = function()
         hs.reload()
     end,
-    U = function ()
+    U = function()
         hs.spaces.toggleMissionControl()
     end,
-    P = function ()
+    P = function()
         hs.openConsole()
     end,
-    ['\\'] = function ()
+    ['\\'] = function()
         hs.grid.maximizeWindow(hs.window.focusedWindow())
     end,
 
-    A = function ()
+    A = function()
         spoon.AppJump:jump(config.appFilters.Cursor)
     end,
-    S = function ()
+    S = function()
         spoon.AppJump:jump(config.appFilters.Chrome)
     end,
-    D = function ()
+    D = function()
         spoon.AppJump:jump(config.appFilters.iTerm)
     end,
-    F = function ()
+    F = function()
         mutable:toggleMicMute()
     end,
-    G = function ()
+    G = function()
         -- Start a Focus with the current window
-        spoon.SpaceManager:startActivity("Focus", { hs.window.frontmostWindow() })
+        spoon.SpaceManager:startActivityFromTemplate("Focus", {hs.window.frontmostWindow()})
     end,
-    RETURN = function ()
+    RETURN = function()
         hs.grid.show()
     end,
 
-    Z = function ()
+    Z = function()
         spoon.AppJump:jump(config.appFilters.Meet)
     end,
-    X = function ()
+    X = function()
         spoon.AppJump:jump(config.appFilters.Logseq)
     end,
-    C = function ()
+    C = function()
         spoon.AppJump:jump(config.appFilters.Calendar)
     end,
-    V = function ()
+    V = function()
         spoon.AppJump:jump(config.appFilters.Figma)
     end,
-    B = function ()
+    B = function()
         spoon.Watermelon:toggle()
     end,
-    M = function ()
+    M = function()
         spoon.AppJump:jump(config.appFilters.Messages)
     end,
 
-    F12 = function ()
+    F12 = function()
         hs.caffeinate.startScreensaver()
     end
 }
 
 config.key_bindings[hyperShift] = {
-    -- Top Row
-    Q = function ()
-        spoon.AppJump:summon(config.appFilters["1Password"])
-    end,
-    W = function ()
-        spoon.AppJump:summon(config.appFilters.Slack)
-    end,
-    R = function ()
-        spoon.Unsplashed:setRandomDesktopPhotoFromCollection(
-            hs.settings.get("settings").unsplashCollectionId
-        )
-    end,
-    Y = function ()
+    -- Jamming to tunes...
+    Y = function()
         hs.spotify.pause()
     end,
-    U = function ()
+    U = function()
         hs.spotify.playpause()
     end,
-    I = function ()
+    I = function()
         hs.spotify.previous()
     end,
-    O = function ()
+    O = function()
         hs.spotify.next()
     end,
-    P = function ()
+    P = function()
         hs.spotify.displayCurrentTrack()
     end,
 
-    -- Middle Row
-    A = function ()
-        spoon.AppJump:jump(config.appFilters.Intellij)
+    -- Summon windows
+    Q = function()
+        spoon.AppJump:summon(config.appFilters["1Password"])
+    end,
+    W = function()
+        spoon.AppJump:summon(config.appFilters.Slack)
+    end,
+    X = function()
+        spoon.AppJump:summon(config.appFilters.Logseq)
+    end,
+    Z = function()
+        spoon.AppJump:summon(config.appFilters.Meet)
     end,
     -- New window functions
     -- D = function ()
@@ -282,7 +271,7 @@ config.key_bindings[hyperShift] = {
     --         end tell
     --     ]], nil))
     -- end,
-    S = function ()
+    S = function()
         hs.osascript.applescript(string.format([[
             tell application "Google Chrome"
                 make new window
@@ -294,21 +283,16 @@ config.key_bindings[hyperShift] = {
         ]], nil))
     end,
 
-    -- Bottom Row
-    Z = function ()
-        spoon.AppJump:summon(config.appFilters.Meet)
-    end,
-    X = function ()
-        spoon.AppJump:summon(config.appFilters.Logseq)
-    end,
-    V = function ()
-        spoon.AppJump:summon(config.appFilters.Figma)
-    end,
-    N = function ()
+    -- Window resizing fns
+    N = function()
         wm:action("left")
     end,
-    M = function ()
+    M = function()
         wm:action("right")
+    end,
+
+    R = function()
+        spoon.Unsplashed:setRandomDesktopPhotoFromCollection(hs.settings.get("settings").unsplashCollectionId)
     end
 }
 
