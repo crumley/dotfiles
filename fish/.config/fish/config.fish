@@ -1,18 +1,18 @@
+set -gx FISH_HOSTNAME (scutil --get LocalHostName)
+[ -f $HOME/.$FISH_HOSTNAME.fish ]; and source $HOME/.$FISH_HOSTNAME.fish 
+
 # Settings {{{
 set fish_greeting
+set -x EDITOR 'cursor -w'
+set -gx GPG_TTY (tty)
 set -gx FZF_DEFAULT_OPTS '--height=50% --min-height=15 --reverse'
 set -gx FZF_DEFAULT_COMMAND 'rg --files --no-ignore-vcs --hidden'
 set -gx FZF_CTRL_T_COMMAND $FZF_DEFAULT_COMMAND
 set -gx FZF_DEFAULT_COMMAND 'fd'
 set -x ENHANCD_FILTER fzy:fzf:peco
-set -x EDITOR 'code -w'
-set -x GOPATH ~/.go
-set -gx EVENT_NOKQUEUE 1
-set -gx GPG_TTY (tty)
 set -x AWS_IAM_HOME /usr/local/opt/aws-iam-tools/libexec
 set -x AWS_CREDENTIAL_FILEs ~/.aws-credentials-master
-set -x SSH_AUTH_SOCK /Users/rcrumley/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
-set -x KUBECONFIG (find ~/.kube -type f -name '*config*' | tr '\n' ':' | sed 's/:$//')
+set -x SSH_AUTH_SOCK /Users/$USER/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
 # }}}
 
 # PATH {{{
@@ -64,7 +64,6 @@ abbr ports "sudo lsof -i -n -P | grep TCP"
 abbr fe 'open -a "Google Chrome Canary" --args --profile-directory=dev-profile --no-first-run --no-default-browser-check --user-data-dir=/Users/rcrumley/.chrome-debug-user-dir --remote-debugging-port=9222'
 
 abbr mux "tmuxinator"
-
 
 # vim / vim-isms
 abbr v "$EDITOR ."
@@ -161,11 +160,6 @@ if not functions -q fisher
     curl https://git.io/fisher --create-dirs -sLo $XDG_CONFIG_HOME/fish/functions/fisher.fish
     fish -c fisher
 end
-
-function fish_user_key_bindings
-    bind \eg 'test -d .git; and git checkout (string trim -- (git branch | fzf)); and commandline -f repaint'
-    bind \eG 'test -d .git; and git checkout (string trim -- (git branch --all | fzf)); and commandline -f repaint'
-end
 # }}}
 
 if status --is-interactive
@@ -180,45 +174,69 @@ if status --is-interactive
     # }}}
 
     # rpk {{{
+    if test "$FISH_RPK" = "true"
         command -s rpk >/dev/null; and rpk generate shell-completion fish | source
+    end
     #}}}
 
     # asdf {{{
-    # [ -f /usr/local/share/fish/vendor_completions.d/asdf.fish ]; and source /usr/local/share/fish/vendor_completions.d/asdf.fish
-    # [ -f (brew --prefix asdf)/libexec/asdf.fish ]; and source (brew --prefix asdf)/libexec/asdf.fish
-    # [ -f ~/.asdf/plugins/java/set-java-home.fish ]; and . ~/.asdf/plugins/java/set-java-home.fish
-    #}}}
+    if test "$FISH_ASDF" = "true"
+        [ -f /usr/local/share/fish/vendor_completions.d/asdf.fish ]; and source /usr/local/share/fish/vendor_completions.d/asdf.fish
+        [ -f (brew --prefix asdf)/libexec/asdf.fish ]; and source (brew --prefix asdf)/libexec/asdf.fish
+        [ -f ~/.asdf/plugins/java/set-java-home.fish ]; and . ~/.asdf/plugins/java/set-java-home.fish
+    end
+    # }}}
 
     # mise {{{
-    #mise activate fish | source
+    if test "$FISH_MISE" = "true"
+        mise activate fish | source
+    end
     #}}}
 
     # direnv {{{
-    #direnv hook fish | source
+    if test "$FISH_DIRENV" = "true"
+        direnv hook fish | source
+    end
     #}}}
 
     # iTerm shell integration {{{
+    if test "$FISH_ITERM" = "true"
         [ -f $HOME/.iterm2_shell_integration.fish ]; and source $HOME/.iterm2_shell_integration.fish
+    end
     # }}}
 
     # starship {{{
+    if test "$FISH_STARSHIP" = "true"
         starship init fish | source
         [ -f /usr/local/share/fish/vendor_completions.d/starship.fish ]; and source /usr/local/share/fish/vendor_completions.d/starship.fish
+    end
     #}}}
 
     # atuin {{{
+    if test "$FISH_ATUIN" = "true"
         set -gx ATUIN_NOBIND "true"
         atuin init fish | source
         bind \cr _atuin_search
+    end
     #}}}
 
     # dev {{{
-    [ -f /opt/dev/dev.fish ]; and source /opt/dev/dev.fish
+    if test "$FISH_DEV" = "true"
+        [ -f /opt/dev/dev.fish ]; and source /opt/dev/dev.fish
+    end
     # }}}
 
     # TMUX {{{
-    #     and command -s tmux >/dev/null
-    #     and not set -q TMUX
-    #     exec tmux new -A -s (whoami)
+    if test "$FISH_TMUX" = "true"
+        and command -s tmux >/dev/null
+        and not set -q TMUX
+        exec tmux new -A -s (whoami)
+    end
+    # }}}
+
+    # kube {{{
+    if test "$FISH_KUBE" = "true"
+        set -x KUBECONFIG (find ~/.kube -type f -name '*config*' | tr '\n' ':' | sed 's/:$//')
+    end
     # }}}
 end
