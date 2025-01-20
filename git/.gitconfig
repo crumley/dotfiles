@@ -194,3 +194,4 @@
 	insteadOf = "gist:"
 [include]
 	path = /Users/rcrumley/.config/dev/gitconfig
+	path = /Users/ryan/.config/dev/gitconfig
