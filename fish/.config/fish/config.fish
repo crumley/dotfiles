@@ -1,4 +1,11 @@
 set -gx FISH_HOSTNAME (scutil --get LocalHostName)
+
+if not test -f $HOME/.$FISH_HOSTNAME.fish
+    echo "Warning: Host-specific config file $HOME/.$FISH_HOSTNAME.fish does not exist"
+    return -1
+end
+
+
 [ -f $HOME/.$FISH_HOSTNAME.fish ]; and source $HOME/.$FISH_HOSTNAME.fish 
 
 # Settings {{{
@@ -12,7 +19,8 @@ set -gx FZF_DEFAULT_COMMAND 'fd'
 set -x ENHANCD_FILTER fzy:fzf:peco
 set -x AWS_IAM_HOME /usr/local/opt/aws-iam-tools/libexec
 set -x AWS_CREDENTIAL_FILEs ~/.aws-credentials-master
-set -x SSH_AUTH_SOCK /Users/$USER/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+# set -x SSH_AUTH_SOCK /Users/$USER/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+set -x SSH_AUTH_SOCK ~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
 # }}}
 
 # PATH {{{
