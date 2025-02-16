@@ -168,6 +168,13 @@ if not functions -q fisher
     curl https://git.io/fisher --create-dirs -sLo $XDG_CONFIG_HOME/fish/functions/fisher.fish
     fish -c fisher
 end
+
+function fish_user_key_bindings
+    if test "$FISH_ATUIN" = "true"
+        bind \cr _atuin_search
+    end
+end
+
 # }}}
 
 if status --is-interactive
@@ -220,14 +227,6 @@ if status --is-interactive
     end
     #}}}
 
-    # atuin {{{
-    if test "$FISH_ATUIN" = "true"
-        set -gx ATUIN_NOBIND "true"
-        atuin init fish | source
-        bind \cr _atuin_search
-    end
-    #}}}
-
     # dev {{{
     if test "$FISH_DEV" = "true"
         [ -f /opt/dev/dev.fish ]; and source /opt/dev/dev.fish
@@ -247,4 +246,12 @@ if status --is-interactive
         set -x KUBECONFIG (find ~/.kube -type f -name '*config*' | tr '\n' ':' | sed 's/:$//')
     end
     # }}}
+
+    # atuin {{{
+    if test "$FISH_ATUIN" = "true"
+        set -gx ATUIN_NOBIND "true"
+        atuin init fish | source
+        bind \cr _atuin_search
+    end
+    #}}}
 end
