@@ -21,6 +21,7 @@ config.appFilters = {
 
     -- Nerd
     iTerm = filter.new('iTerm2'),
+    Ghostty = filter.new('Ghostty'),
     Code = filter.new('Code'),
     Cursor = filter.new('Cursor'),
     Intellij = filter.new('IntelliJ IDEA'),
@@ -194,7 +195,7 @@ config.key_bindings[hyper] = {
         spoon.AppJump:jump(config.appFilters.Chrome)
     end,
     D = function()
-        spoon.AppJump:jump(config.appFilters.iTerm)
+        spoon.AppJump:jump(config.appFilters.Ghostty)
     end,
     F = function()
         mutable:toggleMicMute()
