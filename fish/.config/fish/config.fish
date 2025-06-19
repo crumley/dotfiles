@@ -254,4 +254,10 @@ if status --is-interactive
         bind \cr _atuin_search
     end
     #}}}
+
+    # carapace {{{
+    if test "$FISH_CARAPACE" = "true"
+        carapace _carapace fish | source
+    end
+    #}}}
 end
