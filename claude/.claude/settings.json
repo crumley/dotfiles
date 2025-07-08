@@ -1,0 +1,31 @@
+{
+  "apiKeyHelper": "/opt/dev/bin/dev llm-gateway print-token --key",
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://proxy.shopify.ai/vendors/anthropic-claude-code"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(rg:*)",
+      "Bash(grep:*)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(echo:*)",
+      "Bash(find:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(awk:*)",
+      "Bash(sed:*)",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(npm:*)",
+      "Bash(go:*)",
+      "Bash(make:*)",
+      "Bash(dev:*)",
+      "Bash(/opt/dev/bin/dev:*)"
+    ]
+  }
+}
