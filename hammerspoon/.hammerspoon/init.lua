@@ -46,20 +46,20 @@ spoon.Watermelon.logger.setLogLevel('INFO')
 spoon.Watermelon.logFilePath = localSettings.melonPath
 
 -- Configigure SpaceManager
-hs.loadSpoon('SpaceManager')
-spoon.SpaceManager.logger.setLogLevel('DEBUG')
-spoon.SpaceManager.dockOnPrimaryOnly = true
-spoon.SpaceManager.desktopLozenge = true
-spoon.SpaceManager.activityTemplates = config.activities
-spoon.SpaceManager:start()
+-- hs.loadSpoon('SpaceManager')
+-- spoon.SpaceManager.logger.setLogLevel('DEBUG')
+-- spoon.SpaceManager.dockOnPrimaryOnly = true
+-- spoon.SpaceManager.desktopLozenge = true
+-- spoon.SpaceManager.activityTemplates = config.activities
+-- spoon.SpaceManager:start()
 
 -- Configure BrowserManager
-hs.loadSpoon('BrowserManager')
-if spoon.BrowserManager ~= nil then
-    spoon.BrowserManager.logger.setLogLevel('DEBUG')
-    spoon.BrowserManager.browserAppName = "Google Chrome"
-    spoon.BrowserManager:start()
-end
+-- hs.loadSpoon('BrowserManager')
+-- if spoon.BrowserManager ~= nil then
+--     spoon.BrowserManager.logger.setLogLevel('DEBUG')
+--     spoon.BrowserManager.browserAppName = "Google Chrome"
+--     spoon.BrowserManager:start()
+-- end
 
 -- Configure AppJump
 hs.loadSpoon('AppJump')

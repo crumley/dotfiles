@@ -6,6 +6,8 @@
 
 command = "/opt/homebrew/bin/fish -l"
 
+copy-on-select = clipboard
+
 mouse-hide-while-typing = true
 macos-titlebar-style = tabs
 macos-titlebar-proxy-icon = hidden

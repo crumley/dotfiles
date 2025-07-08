@@ -1,5 +1,10 @@
 # Crumley's dotfiles
 
+
+Future 
+
+- https://github.com/ajeetdsouza/zoxide
+
 Inspired by <https://github.com/thnukid/dotfiles> and <https://www.theguild.nl/how-to-manage-dotfiles-with-gnu-stow/>
 
 ## Installation
