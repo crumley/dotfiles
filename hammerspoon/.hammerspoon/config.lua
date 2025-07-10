@@ -1,5 +1,8 @@
 local filter = require('hs.window.filter')
-local hswindow = require('hs.window')
+local eventtap = require('hs.eventtap')
+local hstimer = require("hs.timer")
+local hsspaces = require("hs.spaces")
+local hsscreen = require("hs.screen")
 
 local wm = require('wm')
 wm:init()
@@ -205,7 +208,14 @@ config.key_bindings[hyper] = {
         spoon.SpaceManager:startActivityFromTemplate("Focus", {hs.window.frontmostWindow()})
     end,
     RETURN = function()
-        hs.grid.show()
+        local screenId = hsscreen.primaryScreen():getUUID()
+        hsspaces.addSpaceToScreen(screenId)
+        local spaces = hsspaces.allSpaces()[screenId]
+        spaceId = spaces[#spaces]
+        hsspaces.gotoSpace(spaceId)
+        hstimer.doAfter(2, function()
+            hsspaces.closeMissionControl()
+        end)
     end,
 
     Z = function()
@@ -272,6 +282,12 @@ config.key_bindings[hyperShift] = {
     --         end tell
     --     ]], nil))
     -- end,
+    A = function()
+        local app = hs.application.find("Cursor")
+        if app then
+            eventtap.keyStroke({ "cmd", "shift" }, "n", 0, app)
+        end
+    end,
     S = function()
         hs.osascript.applescript(string.format([[
             tell application "Google Chrome"

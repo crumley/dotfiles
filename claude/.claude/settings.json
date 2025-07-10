@@ -27,7 +27,8 @@
       "Bash(go:*)",
       "Bash(make:*)",
       "Bash(dev:*)",
-      "Bash(/opt/dev/bin/dev:*)"
+      "Bash(/opt/dev/bin/dev:*)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }
