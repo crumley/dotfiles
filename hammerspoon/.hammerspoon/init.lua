@@ -18,11 +18,17 @@
 --  b:sometimes gets in a funk where toggling is super slow. noticed with meet.
 -- New:MoreOrLessTimer
 --  Will be able to handle a timer invocation that catches up when it misses something due to sleep
+local config = require('config')
+local utils = require('utils')
+
 local logger = hs.logger.new('crumley', 'debug')
 
-local localSettings = hs.json.read(".settings.json")
+local hostname = hs.host.localizedName()
+
+local localSettings = utils.load_host_settings(logger)
 if localSettings == nil then
-    logger.f("Missing .hammerspoon/.settings.json file.")
+    logger.e('No settings found -- ABORTING')
+    return
 end
 
 hs.settings.set("settings", localSettings)
@@ -30,8 +36,6 @@ hs.settings.set("settings", localSettings)
 package.path = package.path .. ";" .. os.getenv("HOME") .. "/Documents/code/hammerspoon/?.spoon/init.lua"
 
 logger.i('Starting...', hs.inspect(package.path))
-
-local config = require('config')
 
 -- Configigure SpoonInstall (todo am I even using this?)
 hs.loadSpoon("SpoonInstall")
@@ -46,12 +50,12 @@ spoon.Watermelon.logger.setLogLevel('INFO')
 spoon.Watermelon.logFilePath = localSettings.melonPath
 
 -- Configigure SpaceManager
--- hs.loadSpoon('SpaceManager')
--- spoon.SpaceManager.logger.setLogLevel('DEBUG')
--- spoon.SpaceManager.dockOnPrimaryOnly = true
--- spoon.SpaceManager.desktopLozenge = true
--- spoon.SpaceManager.activityTemplates = config.activities
--- spoon.SpaceManager:start()
+hs.loadSpoon('SpaceManager')
+spoon.SpaceManager.logger.setLogLevel('DEBUG')
+spoon.SpaceManager.dockOnPrimaryOnly = true
+spoon.SpaceManager.desktopLozenge = true
+spoon.SpaceManager.activityTemplates = config.activities
+spoon.SpaceManager:start()
 
 -- Configure BrowserManager
 -- hs.loadSpoon('BrowserManager')

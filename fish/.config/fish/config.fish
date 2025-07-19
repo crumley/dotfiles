@@ -5,8 +5,13 @@ if not test -f $HOME/.$FISH_HOSTNAME.fish
     return -1
 end
 
-
-[ -f $HOME/.$FISH_HOSTNAME.fish ]; and source $HOME/.$FISH_HOSTNAME.fish 
+# Security check before sourcing
+if check_config_permissions $HOME/.$FISH_HOSTNAME.fish
+    source $HOME/.$FISH_HOSTNAME.fish
+else
+    echo "Security check failed for $HOME/.$FISH_HOSTNAME.fish - not sourcing"
+    echo "To fix: chmod 600 $HOME/.$FISH_HOSTNAME.fish"
+end 
 
 # Settings {{{
 set fish_greeting
