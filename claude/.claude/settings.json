@@ -26,6 +26,7 @@
       "Bash(npm:*)",
       "Bash(go:*)",
       "Bash(make:*)",
+      "Bash(mkdir:*)",
       "Bash(dev:*)",
       "Bash(/opt/dev/bin/dev:*)",
       "mcp__ide__getDiagnostics"

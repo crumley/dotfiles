@@ -28,10 +28,6 @@ config.appFilters = {
     Code = filter.new('Code'),
     Cursor = filter.new('Cursor'),
     Intellij = filter.new('IntelliJ IDEA'),
-    Dotfiles = filter.new(false):setAppFilter('Code', {
-        allowTitles = 'dotfiles',
-        currentSpace = nil
-    }),
 
     -- Communication: Collaboration
     Figma = filter.new('Figma'),
@@ -51,6 +47,7 @@ config.appFilters = {
 
     -- Apps
     Spotify = filter.new('Spotify'),
+    YouTubeMusic = filter.new('YouTube Music'),
     ["1Password"] = filter.new('1Password'),
 
     -- Notes
@@ -61,85 +58,43 @@ config.appFilters = {
     Logseq = filter.new('Logseq')
 }
 
-config.activities = {
-    Mail = {
-        text = "Mail",
-        subText = "Ponder life's mysteries in Google.",
-        apps = {config.appFilters.Email, config.appFilters.Calendar},
-        space = true,
-        singleton = true,
-        permanent = true,
-        setup = function()
-            -- Create Arc window with new tab
-            hs.osascript.applescript(string.format([[
-                tell application "Google Chrome"
-                    make new window
-                    activate
-                end tell
-            ]], nil))
-        end
-    },
-    Chat = {
-        text = "Chat",
-        subText = "Windows to chat.",
-        apps = {config.appFilters.Discord, config.appFilters.Slack, config.appFilters.Whatsapp,
-                config.appFilters.Messages},
-        layout = {},
-        space = true,
-        singleton = true,
-        permanent = true
-    },
-    Meet = {
-        text = "Meet",
-        subText = "Have a meeting.",
-        apps = {config.appFilters.Meet},
-        space = true,
-        singleton = true,
-        permanent = true
-    },
-    Someday = {
-        text = "Someday",
-        subText = "Windows to make available for someday.",
-        apps = {},
-        space = true,
-        singleton = true,
-        permanent = true
-    },
-    Today = {
-        text = "Today",
-        subText = "Windows to focus on today.",
-        apps = {},
-        layout = {},
-        space = true,
-        singleton = true,
-        permanent = true
-    },
-    Dotfiles = {
-        text = "Dotfiles",
-        subText = "Work on dotfiles.",
-        apps = {config.appFilters.Dotfiles},
-        space = true,
-        singleton = true
-    },
-    Focus = {
-        text = "Focus",
-        subText = "Created a space for focus on a specific task",
-        apps = {},
-        layout = {},
-        space = true,
-        setup = function()
-            -- Create chrome window with new tab
-            hs.osascript.applescript(string.format([[
-                tell application "Google Chrome"
-                    make new window
-                    tell front window
-                        open location "chrome-extension://edacconmaakjimmfgnblocblbcdcpbko/main.html"
-                    end tell
-                end tell
-            ]], nil))
-        end
-    }
-}
+config.activities = {{
+    id = "Communicate",
+    text = "Communicate",
+    subText = "Communicate with others.",
+    apps = {config.appFilters.Meet, config.appFilters.Zoom, config.appFilters.Tuple, config.appFilters.Figma,
+            config.appFilters.Discord, config.appFilters.Slack, config.appFilters.Whatsapp, config.appFilters.Messages,
+            config.appFilters.Calendar, config.appFilters.Email},
+    space = true,
+    singleton = true,
+    permanent = true
+}, {
+    id = "Park",
+    text = "Park",
+    subText = "Park.",
+    apps = {},
+    space = true,
+    singleton = true,
+    permanent = true
+}, {
+    id = "Today",
+    text = "Today",
+    subText = "Windows to focus on today.",
+    apps = {},
+    space = true,
+    singleton = true,
+    permanent = true
+}, {
+    id = "Code",
+    text = "Code",
+    subText = "Code.",
+    apps = {config.appFilters.Cursor, config.appFilters.Ghostty},
+    space = true,
+    singleton = true,
+    permanent = true
+}}
+
+-- No longer need activityOrder since the array order defines it
 
 config.key_bindings = {}
 
@@ -285,7 +240,7 @@ config.key_bindings[hyperShift] = {
     A = function()
         local app = hs.application.find("Cursor")
         if app then
-            eventtap.keyStroke({ "cmd", "shift" }, "n", 0, app)
+            eventtap.keyStroke({"cmd", "shift"}, "n", 0, app)
         end
     end,
     S = function()
