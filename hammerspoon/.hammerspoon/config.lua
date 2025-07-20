@@ -71,7 +71,7 @@ config.activities = {{
 }, {
     id = "Park",
     text = "Park",
-    subText = "Park.",
+    subText = "Windows parked for later.",
     apps = {},
     space = true,
     singleton = true,
@@ -79,7 +79,7 @@ config.activities = {{
 }, {
     id = "Today",
     text = "Today",
-    subText = "Windows to focus on today.",
+    subText = "Windows related to on today.",
     apps = {},
     space = true,
     singleton = true,
@@ -92,6 +92,14 @@ config.activities = {{
     space = true,
     singleton = true,
     permanent = true
+}, {
+    id = "Focus",
+    text = "Focus on a specific task",
+    subText = "Collect windows that are related to a specific task.",
+    apps = {},
+    space = true,
+    singleton = false,
+    permanent = false
 }}
 
 -- No longer need activityOrder since the array order defines it

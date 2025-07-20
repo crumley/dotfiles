@@ -39,6 +39,7 @@ font-variation-bold-italic = wght=800
 
 keybind = global:shift+ctrl+alt+command+d=toggle_quick_terminal
 quick-terminal-animation-duration = 0
+quick-terminal-space-behavior = "move"
 
 window-padding-x = 10
 window-padding-y = 2
