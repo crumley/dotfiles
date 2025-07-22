@@ -6,7 +6,7 @@ if not test -f $HOME/.$FISH_HOSTNAME.fish
 end
 
 # Security check before sourcing
-if check_config_permissions $HOME/.$FISH_HOSTNAME.fish
+if my_check_config_permissions $HOME/.$FISH_HOSTNAME.fish
     source $HOME/.$FISH_HOSTNAME.fish
 else
     echo "Security check failed for $HOME/.$FISH_HOSTNAME.fish - not sourcing"
