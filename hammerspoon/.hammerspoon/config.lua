@@ -94,7 +94,7 @@ config.activities = {{
     permanent = true
 }, {
     id = "Focus",
-    text = "Focus on a specific task",
+    text = "Focus",
     subText = "Collect windows that are related to a specific task.",
     apps = {},
     space = true,
