@@ -16,8 +16,8 @@
 		go = checkout -B
 
 	# Create a new branch from the latest origin/main
-		newbranch = "!f() { git fetch origin && git checkout -b \"$1\" origin/main; }; f"
-		nb = "!f() { git fetch origin && git checkout -b \"$1\" origin/main; }; f"
+		newbranch = "!f() { git fetch origin && git checkout -b \"$1\" origin/main --no-track; }; f"
+		nb = "!f() { git fetch origin && git checkout -b \"$1\" origin/main --no-track; }; f"
 
 	# Amend the currently staged files to the latest commit
 		amend = commit --amend --reuse-message=HEAD
