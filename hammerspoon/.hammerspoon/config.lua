@@ -58,51 +58,14 @@ config.appFilters = {
     Logseq = filter.new('Logseq')
 }
 
-config.activities = {{
-    id = "Communicate",
-    text = "Communicate",
-    subText = "Communicate with others.",
-    apps = {config.appFilters.Meet, config.appFilters.Zoom, config.appFilters.Tuple, config.appFilters.Figma,
-            config.appFilters.Discord, config.appFilters.Slack, config.appFilters.Whatsapp, config.appFilters.Messages,
-            config.appFilters.Calendar, config.appFilters.Email},
-    space = true,
-    singleton = true,
-    permanent = true
-}, {
-    id = "Park",
-    text = "Park",
-    subText = "Windows parked for later.",
-    apps = {},
-    space = true,
-    singleton = true,
-    permanent = true
-}, {
-    id = "Today",
-    text = "Today",
-    subText = "Windows related to on today.",
-    apps = {},
-    space = true,
-    singleton = true,
-    permanent = true
-}, {
-    id = "Code",
-    text = "Code",
-    subText = "Code.",
-    apps = {config.appFilters.Cursor, config.appFilters.Ghostty},
-    space = true,
-    singleton = true,
-    permanent = true
-}, {
-    id = "Focus",
-    text = "Focus",
-    subText = "Collect windows that are related to a specific task.",
-    apps = {},
-    space = true,
-    singleton = false,
-    permanent = false
-}}
-
--- No longer need activityOrder since the array order defines it
+-- Simple space configuration: index -> default name
+config.spaceConfig = {
+    [1] = "Communicate",
+    [2] = "Park",
+    [3] = "Today",
+    [4] = "Code"
+    -- Index 5+ are unmanaged and can be renamed to anything
+}
 
 config.key_bindings = {}
 
@@ -167,8 +130,8 @@ config.key_bindings[hyper] = {
         mutable:toggleMicMute()
     end,
     G = function()
-        -- Start a Focus with the current window
-        spoon.SpaceManager:startActivityFromTemplate("Focus", {hs.window.frontmostWindow()})
+        -- Open SpaceManager menu (previously was "Start Focus")
+        spoon.SpaceManager:show()
     end,
     RETURN = function()
         local screenId = hsscreen.primaryScreen():getUUID()

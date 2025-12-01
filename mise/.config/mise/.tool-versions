@@ -1,4 +1,4 @@
-python 3.10.4
+python 3.12
 direnv 2.31.0
 yarn   1.22.19
 bun    latest

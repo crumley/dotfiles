@@ -54,7 +54,7 @@ hs.loadSpoon('SpaceManager')
 spoon.SpaceManager.logger.setLogLevel('DEBUG')
 spoon.SpaceManager.dockOnPrimaryOnly = true
 spoon.SpaceManager.desktopLozenge = true
-spoon.SpaceManager.activityTemplates = config.activities
+spoon.SpaceManager.spaceConfig = config.spaceConfig
 spoon.SpaceManager:start()
 
 -- Configure BrowserManager

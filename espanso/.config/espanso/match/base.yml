@@ -7,4 +7,9 @@ matches:
   - trigger: "m11z"
     replace: "materialize"
   - trigger: "@@"
-    replace: "crumley@gmail.com"
+    replace: "{{email}}"
+    vars:
+      - name: email
+        type: shell
+        params:
+          cmd: "if [ \"$PROFILE_TYPE\" = 'work' ]; then op item get 'Ryan Crumley' --fields email; else op item get 'Ryan Crumley' --fields email; fi"
