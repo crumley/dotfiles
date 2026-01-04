@@ -37,8 +37,8 @@
 		branches = branch -av
 		remotes = remote -v
 
-	# Remove branches that have already been merged with master
-		# a.k.a. ‘delete merged’
+	# Remove branches that have already been merged with main
+		# a.k.a. 'delete merged'
 		dm = "!git branch --merged | grep -v '\\*' | xargs -n 1 git branch -d"
 
 	# Forcepush, but fail if the remote has been updated since you last pulled.
@@ -53,7 +53,7 @@
 		di = !"d() { git diff --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
 	
 	# Pull in remote changes for the current repository and all its submodules
-		ps = !"git pull; git submodule foreach git pull origin master"
+		ps = !"git pull; git submodule foreach git pull origin main"
 	
 	# Credit an author on the latest commit
 		credit = "!f() { git commit --amend --author \"$1 <$2>\" -C HEAD; }; f"
@@ -62,7 +62,7 @@
 		reb = "!r() { git rebase -i HEAD~$1; }; r"
 	 
 	# Undo operations
-		undopush = push -f origin HEAD^:master
+		undopush = push -f origin HEAD^:main
 		undo = checkout --
 		unstage = reset HEAD --
 		last = checkout -

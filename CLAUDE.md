@@ -207,7 +207,7 @@ ls -la ~ | grep '\->'
 - Host configs require 600 permissions or they won't load
 
 ### Git Workflow
-- Main branch is `main`, but upstream is `master`
+- Main branch is `main` (both locally and on remote)
 
 ### macOS-Specific
 - Uses Homebrew exclusively for package management
