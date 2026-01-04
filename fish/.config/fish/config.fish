@@ -41,6 +41,9 @@ fish_add_path $HOME/bin
 # config files
 abbr zx ". ~/.config/fish/config.fish"
 
+# directories
+abbr b3 "cd ~/Documents/brain3"
+
 # git
 abbr ls 'eza -F -H1 --icons --group-directories-first'
 abbr g. 'git add .'
