@@ -269,4 +269,10 @@ if status --is-interactive
         carapace _carapace fish | source
     end
     #}}}
+
+    # gt {{{
+    if test "$FISH_GT" = "true"
+        gt fish | source
+    end
+    #}}}
 end

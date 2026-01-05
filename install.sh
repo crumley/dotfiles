@@ -28,17 +28,14 @@ defaults -currentHost write -globalDomain NSStatusItemSelectionPadding -int 8
 
 echo "Installing public key..."
 mkdir -p $HOME/.ssh
-append "$(curl https://github.com/crumley.keys)" $HOME/.ssh/authorized_keys
+curl -s https://github.com/crumley.keys >> $HOME/.ssh/authorized_keys
 
-echo "Installing brews from Brewfile..."
-brew bundle
+echo "(skipping)Installing brews from Brewfile..."
+# brew bundle
 
 # https://www.theguild.nl/how-to-manage-dotfiles-with-gnu-stow/
 echo "Stowing configs..."
-stow --dotfiles -t ~ bash fish git hammerspoon home karabiner vim asdf rg ssh rclone tmux direnv atuin espanso ghostty claude
-
-echo "Install gems..."
-sudo gem install tmuxinator
+stow --dotfiles -t ~ bash fish git hammerspoon home karabiner vim mise rg ssh rclone tmux direnv atuin espanso ghostty claude
 
 echo
 echo "Done!"
