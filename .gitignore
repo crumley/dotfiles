@@ -12,3 +12,4 @@ vim/.vim/swaps
 ssh/.ssh/known_hosts*
 ssh/.ssh/asap
 direnv/.config/direnv/lib
+.beads/
