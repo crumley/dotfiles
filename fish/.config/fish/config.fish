@@ -272,7 +272,7 @@ if status --is-interactive
 
     # gt {{{
     if test "$FISH_GT" = "true"
-        gt fish | source
+        gt completion fish | source
     end
     #}}}
 end
