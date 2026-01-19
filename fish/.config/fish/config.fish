@@ -275,4 +275,10 @@ if status --is-interactive
         gt fish | source
     end
     #}}}
+
+    # zoxide {{{
+    if test "$FISH_ZOXIDE" = "true"
+        zoxide init fish | source
+    end
+    #}}}
 end
