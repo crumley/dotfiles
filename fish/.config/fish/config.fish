@@ -189,7 +189,6 @@ end
 if status --is-interactive
     # Sourcing {{{
     # macOS homebrew installs into /usr/local/share, apt uses /usr/share
-    [ -f /usr/local/share/autojump/autojump.fish ]; and source /usr/local/share/autojump/autojump.fish
     [ -f /usr/local/share/fish/vendor_completions.d/brew.fish ]; and source /usr/local/share/fish/vendor_completions.d/brew.fish
     [ -f /usr/local/share/fish/vendor_completions.d/brew-cask.fish ]; and source /usr/local/share/fish/vendor_completions.d/brew-cask.fish
     [ -f /usr/local/share/fish/vendor_completions.d/docker-compose.fish ]; and source /usr/local/share/fish/vendor_completions.d/docker-compose.fish
@@ -273,6 +272,14 @@ if status --is-interactive
     # gt {{{
     if test "$FISH_GT" = "true"
         gt fish | source
+    end
+    #}}}
+
+    # zoxide {{{
+    if test "$FISH_ZOXIDE" = "true"
+        if command -s zoxide >/dev/null
+            zoxide init fish | source
+        end
     end
     #}}}
 end
