@@ -118,7 +118,7 @@ config.key_bindings[hyper] = {
     end,
 
     A = function()
-        spoon.AppJump:jump(config.appFilters.Cursor)
+        spoon.AppJump:jump(config.appFilters.Code)
     end,
     S = function()
         spoon.AppJump:jump(config.appFilters.Chrome)
