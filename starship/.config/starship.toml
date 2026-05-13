@@ -4,6 +4,9 @@ disabled = true
 threshold = 1
 symbol = ">"
 
+[scala]
+disabled = true
+
 [shell]
 disabled = true
 bash_indicator = "🔨"
