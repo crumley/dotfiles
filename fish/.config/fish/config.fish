@@ -15,9 +15,9 @@ end
 
 # Settings {{{
 set fish_greeting
-set -x EDITOR 'cursor -w'
+set -x EDITOR 'code -w'
 set -gx GPG_TTY (tty)
-set -gx FZF_DEFAULT_OPTS '--height=50% --min-height=15 --reverse'
+set -gx FZF_DEFAULT_OPTS '--reverse'
 set -gx FZF_DEFAULT_COMMAND 'rg --files --no-ignore-vcs --hidden'
 set -gx FZF_CTRL_T_COMMAND $FZF_DEFAULT_COMMAND
 set -gx FZF_DEFAULT_COMMAND 'fd'
@@ -35,7 +35,6 @@ fish_add_path /opt/homebrew/bin
 fish_add_path /opt/homebrew/sbin
 fish_add_path $HOME/bin
 fish_add_path $HOME/.bun/bin
-
 # }}}
 
 # Abbreviations {{{
@@ -285,3 +284,5 @@ if status --is-interactive
     end
     #}}}
 end
+# Added by tec agent
+test -x /Users/ryan/.local/state/tec/profiles/base/current/global/init && /Users/ryan/.local/state/tec/profiles/base/current/global/init fish | source

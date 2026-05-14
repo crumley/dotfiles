@@ -26,7 +26,6 @@ config.appFilters = {
     iTerm = filter.new('iTerm2'),
     Ghostty = filter.new('Ghostty'),
     Code = filter.new('Code'),
-    Cursor = filter.new('Cursor'),
     Intellij = filter.new('IntelliJ IDEA'),
 
     -- Communication: Collaboration
@@ -199,17 +198,8 @@ config.key_bindings[hyperShift] = {
     Z = function()
         spoon.AppJump:summon(config.appFilters.Meet)
     end,
-    -- New window functions
-    -- D = function ()
-    --     hs.osascript.applescript(string.format([[
-    --         tell application "iTerm2"
-    --             create window with default profile
-    --             activate
-    --         end tell
-    --     ]], nil))
-    -- end,
     A = function()
-        local app = hs.application.find("Cursor")
+        local app = hs.application.find("Code")
         if app then
             eventtap.keyStroke({"cmd", "shift"}, "n", 0, app)
         end
