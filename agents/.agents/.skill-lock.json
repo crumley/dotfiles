@@ -1,0 +1,43 @@
+{
+  "version": 3,
+  "skills": {
+    "intent-architecture": {
+      "source": "crumley/intent-architecture",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/crumley/intent-architecture.git",
+      "skillPath": ".agents/skills/intent-architecture/SKILL.md",
+      "skillFolderHash": "a646747233d758c0c1353d2751b3323b34aa7cc679da00074f583170ec8a025d",
+      "installedAt": "2026-07-05T20:20:55.411Z",
+      "updatedAt": "2026-07-05T20:20:55.411Z"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel-labs/skills.git",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "skillFolderHash": "eb6a23305aea6e340d14b9de3766e721f9f4861b",
+      "installedAt": "2026-07-05T20:20:58.733Z",
+      "updatedAt": "2026-07-05T20:20:58.733Z"
+    }
+  },
+  "dismissed": {
+    "findSkillsPrompt": true
+  },
+  "lastSelectedAgents": [
+    "amp",
+    "antigravity",
+    "antigravity-cli",
+    "cline",
+    "codex",
+    "cursor",
+    "deepagents",
+    "gemini-cli",
+    "github-copilot",
+    "kimi-code-cli",
+    "opencode",
+    "warp",
+    "zed",
+    "claude-code",
+    "pi"
+  ]
+}
