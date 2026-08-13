@@ -6,11 +6,9 @@ function my_check_config_permissions --description "Check if config file has sec
         return 1
     end
     
-    # Get file permissions (octal)
-    set -l perms (stat -f %Lp $config_file)
-    
-    # Check if file is owned by current user
-    set -l owner (stat -f %Su $config_file)
+    # Use /usr/bin/stat explicitly (always BSD stat on macOS, unaffected by GNU coreutils in PATH)
+    set -l perms (/usr/bin/stat -f %Lp $config_file)
+    set -l owner (/usr/bin/stat -f %Su $config_file)
     if test "$owner" != (whoami)
         echo "Security warning: $config_file is not owned by current user"
         return 1
