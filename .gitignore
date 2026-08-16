@@ -3,6 +3,9 @@ hammerspoon/.hammerspoon/.settings.json
 hammerspoon/.hammerspoon/Spoons/EmmyLua.spoon
 hammerspoon/.hammerspoon/Spoons/ReloadConfiguration.spoon
 Brewfile.lock.json
+# Written by ./upgrade.sh --dump, for diffing against the curated Brewfile.
+# Never committed: the Brewfile is hand-maintained.
+Brewfile.generated
 fish/.config/fish/fish_variables
 fish/.config/fish/completions
 fish/.config/fish/conf.d

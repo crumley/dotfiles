@@ -1,5 +1,84 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# upgrade.sh -- bring installed software up to date.
+#
+# What changed from the two-line version: it no longer assumes macOS and no
+# longer runs `brew bundle dump --force`. That dump overwrote the Brewfile with
+# whatever happened to be installed on the machine, which turns a curated,
+# hand-maintained list into a snapshot of accumulated junk -- including
+# everything pulled in by a one-off experiment. The Brewfile is now an
+# intentional file, so `--dump` here writes Brewfile.generated instead and
+# leaves it to you to diff.
 
-echo "Updating brew..."
+set -euo pipefail
+
+DOTFILES_REPO=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+export DOTFILES_REPO
+
+# shellcheck source=lib/common.sh
+. "$DOTFILES_REPO/lib/common.sh"
+
+DUMP=0
+
+usage() {
+  cat <<'EOF'
+Usage: ./upgrade.sh [OPTIONS]
+
+Updates installed software. On macOS that means Homebrew; on Linux it does
+nothing, because these dotfiles configure packages there but never install or
+upgrade them -- that is the system package manager's job.
+
+Options:
+      --dump    Write the current Homebrew state to Brewfile.generated so it can
+                be diffed against the curated Brewfile. Never overwrites it.
+  -q, --quiet   Only print warnings and errors.
+  -h, --help    This.
+EOF
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help)  usage; exit 0 ;;
+    --dump)     DUMP=1 ;;
+    -q|--quiet) DOTFILES_QUIET=1 ;;
+    *)          die "unknown option: $1 (try --help)" ;;
+  esac
+  shift
+done
+
+PLATFORM=$(dotfiles_platform)
+
+if [ "$PLATFORM" != darwin ]; then
+  say "$PLATFORM: nothing to upgrade (these dotfiles do not manage packages here)."
+  exit 0
+fi
+
+if ! have brew; then
+  die "Homebrew is not installed. Run ./install.sh first."
+fi
+
+say "Updating Homebrew..."
+brew update
+
+say "Upgrading formulae and casks..."
 brew upgrade
-brew bundle dump --force
+
+if [ -f "$DOTFILES_REPO/Brewfile" ]; then
+  say "Checking the Brewfile against what is installed..."
+  # `brew bundle check` exits non-zero when something in the Brewfile is
+  # missing. That is information, not a failure of this script.
+  if brew bundle check --file "$DOTFILES_REPO/Brewfile" --verbose; then
+    :
+  else
+    say "Run './install.sh --brew-bundle' to install what is missing."
+  fi
+fi
+
+if [ "$DUMP" = 1 ]; then
+  out="$DOTFILES_REPO/Brewfile.generated"
+  brew bundle dump --force --file "$out"
+  say "Wrote $out. Diff it against the Brewfile and copy over what belongs:"
+  say "    diff -u Brewfile Brewfile.generated"
+fi
+
+say "Done."
