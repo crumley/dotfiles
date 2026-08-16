@@ -1,20 +1,68 @@
-# Compiled Python files
-*.pyc
+# Global gitignore (core.excludesFile).
+#
+# Scope, on purpose: editor noise, OS noise, and files my own tooling drops into
+# a checkout. Build output and dependency directories (node_modules/, target/,
+# .terraform/, *.pyc) are NOT here — those belong in each project's own
+# .gitignore. Ignoring them globally means a repo that forgot to declare them
+# looks clean on this machine and dirty on everybody else's, which is exactly
+# the bug a project .gitignore exists to prevent.
+#
+# A global ignore only hides untracked files. Anything a project already tracks
+# is unaffected by every rule below.
 
-# Folder view configuration files
+# ── macOS ──────────────────────────────────────────────────────────────────
 .DS_Store
-Desktop.ini
-
-# Thumbnail cache files
+.AppleDouble
+.LSOverride
 ._*
-Thumbs.db
-
-# Files that might appear on external disks
 .Spotlight-V100
 .Trashes
+.fseventsd
+.DocumentRevisions-V100
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
 
-.DS_Store
-target
-node_modules
+# ── Linux ──────────────────────────────────────────────────────────────────
+.directory
+.Trash-*
+.nfs*
+
+# ── Windows (arrives via shared drives and collaborators) ──────────────────
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ── Vim / Neovim ───────────────────────────────────────────────────────────
+*~
+*.sw[a-p]
+[._]*.s[a-v][a-z]
+Session.vim
+.netrwhist
+
+# ── Emacs ──────────────────────────────────────────────────────────────────
+*#
+.#*
+
+# ── JetBrains ──────────────────────────────────────────────────────────────
+# Nothing on this machine writes these; if they ever appear they are somebody
+# else's IDE state that leaked in.
+.idea/
+*.iml
+
+# ── VS Code ────────────────────────────────────────────────────────────────
+# `.vscode/` is deliberately absent: plenty of projects commit shared settings,
+# tasks and launch configs there, and hiding the directory globally would mean
+# never noticing. Only the strictly-personal bits are listed.
+.history/
+
+# ── My own tooling ─────────────────────────────────────────────────────────
+.direnv/
+.mise.local.toml
+mise.local.toml
+.claude/settings.local.json
+
+# Local credential scratch file — never wanted in any repository, anywhere.
 .temp_credentials
-.terraform

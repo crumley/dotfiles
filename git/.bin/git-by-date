@@ -1,6 +1,23 @@
-#!/usr/local/bin/bash
+#!/usr/bin/env bash
+#
+# git-by-date — sort paths by the date they first entered the history.
+#
+# Reads paths on stdin, one per line, and writes "<unix-timestamp> --> <path>"
+# sorted oldest first. Useful for finding the crustiest corner of a repo.
+#
+#   git ls-files | git-by-date
+#   git ls-files '*.fish' | git-by-date
+#   git ls-files | git-by-date | head -20     # the 20 oldest files
+#
+# Invoking it as `git by-date` (Git's subcommand form) additionally requires
+# this file's directory to be on $PATH; see the note in the repo README.
 
-while read f
-do
-    echo "$(git log --format="%at" --reverse "$f" | head -n1) --> $f"
+set -eu
+
+while IFS= read -r path; do
+	[ -n "$path" ] || continue
+	# --reverse then take the first line: `-1` would be applied before the
+	# reversal and hand back the newest commit instead of the oldest.
+	first=$(git log --format='%at' --reverse -- "$path" | head -n 1)
+	printf '%s --> %s\n' "${first:-0}" "$path"
 done | sort -n
