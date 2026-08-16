@@ -1,0 +1,135 @@
+# Brewfile.vscode — VS Code extensions, opt-in.
+#
+#   brew bundle --file=Brewfile.vscode
+#
+# These used to live in the main Brewfile: 148 extension IDs produced by
+# `brew bundle dump`, roughly a third of them abandoned colour themes. They are
+# split out here because they are a different kind of thing from packages — they
+# are per-editor, they change far more often, and VS Code's built-in Settings
+# Sync already carries them between machines. Treat this file as the seed for a
+# fresh machine, not as the source of truth.
+#
+# WHAT WAS DROPPED (all recoverable from git history):
+#   - 49 colour/icon themes. Only Dracula is kept, because ghostty and the rest
+#     of this repo are themed Dracula. Themes are a one-click reinstall.
+#   - 4 duplicates of extensions that are already covered by a sibling here.
+#   - 3 that are dead or no longer wanted: Flow, the Sourcegraph extension, and
+#     a former-employer extension.
+#
+# Anything below that looks unused is still here on purpose: it was kept rather
+# than guessed at. Prune freely — that is the point of the file being readable.
+
+
+# ─── Editing, navigation, formatting ─────────────────────────────────────────
+vscode "editorconfig.editorconfig"
+vscode "esbenp.prettier-vscode"
+vscode "rohit-gohri.format-code-action"
+vscode "shardulm94.trailing-spaces"
+vscode "alefragnani.bookmarks"
+vscode "alexdima.copy-relative-path"
+vscode "maptz.camelcasenavigation"
+vscode "ow.vscode-subword-navigation"
+vscode "wmaurer.change-case"
+vscode "rlivings39.fzf-quick-open"
+vscode "alphabotsec.vscode-eclipse-keybindings"
+vscode "dracula-theme.theme-dracula"          # matches ghostty / repo theming
+
+# ─── Git and GitHub ──────────────────────────────────────────────────────────
+vscode "eamodio.gitlens"
+vscode "github.vscode-pull-request-github"
+vscode "ziyasal.vscode-open-in-github"
+vscode "ivangabriele.vscode-git-add-and-commit"
+vscode "pstreule.codebucket"
+
+# ─── Remote and collaboration ────────────────────────────────────────────────
+vscode "ms-vscode-remote.remote-ssh"
+vscode "ms-vscode-remote.remote-ssh-edit"
+vscode "ms-vscode.remote-explorer"
+vscode "ms-vsliveshare.vsliveshare"
+
+# ─── Markdown, docs, notes ───────────────────────────────────────────────────
+vscode "yzhang.markdown-all-in-one"
+vscode "davidanson.vscode-markdownlint"
+vscode "mdickin.markdown-shortcuts"
+vscode "bierner.markdown-mermaid"
+vscode "bpruitt-goddard.mermaid-markdown-syntax-highlighting"
+vscode "marp-team.marp-vscode"                # slides from markdown
+vscode "kortina.vscode-markdown-notes"
+vscode "tchayen.markdown-links"
+vscode "mushan.vscode-paste-image"
+vscode "ban.spellright"
+vscode "streetsidesoftware.code-spell-checker"
+
+# ─── JavaScript / TypeScript / web ───────────────────────────────────────────
+vscode "dbaeumer.vscode-eslint"
+vscode "orta.vscode-jest"
+vscode "yoavbls.pretty-ts-errors"
+vscode "oven.bun-vscode"
+vscode "christian-kohler.npm-intellisense"
+vscode "christian-kohler.path-intellisense"
+vscode "formulahendry.auto-rename-tag"
+vscode "compulim.compulim-vscode-closetag"
+vscode "mikestead.dotenv"
+vscode "ghmcadams.lintlens"
+vscode "martinjohns.inline-types"
+vscode "marcoq.vscode-typescript-to-json-schema"
+vscode "dkundel.vscode-npm-source"
+vscode "bengreenier.vscode-node-readme"
+vscode "hookyqr.jsdoctagcomplete"
+vscode "asvetliakov.snapshot-tools"
+
+# ─── Python and notebooks ────────────────────────────────────────────────────
+vscode "ms-python.python"
+vscode "ms-python.vscode-pylance"
+vscode "ms-python.debugpy"
+vscode "ms-python.isort"
+vscode "magicstack.magicpython"
+vscode "ms-toolsai.jupyter"
+vscode "ms-toolsai.jupyter-keymap"
+vscode "ms-toolsai.jupyter-renderers"
+vscode "ms-toolsai.vscode-jupyter-cell-tags"
+vscode "ms-toolsai.vscode-jupyter-slideshow"
+vscode "paiqo.databricks-vscode"
+
+# ─── JVM: Java, Scala, Kotlin ────────────────────────────────────────────────
+vscode "vscjava.vscode-java-pack"             # pack; the next five are its members
+vscode "redhat.java"
+vscode "vscjava.vscode-java-debug"
+vscode "vscjava.vscode-java-dependency"
+vscode "vscjava.vscode-java-test"
+vscode "vscjava.vscode-maven"
+vscode "vscjava.vscode-gradle"
+vscode "redhat.vscode-commons"
+vscode "scala-lang.scala"
+vscode "scalameta.metals"
+vscode "mathiasfrohlich.kotlin"
+
+# ─── Go, Clojure, Lua, fish ──────────────────────────────────────────────────
+vscode "golang.go"
+vscode "betterthantomorrow.calva"             # Clojure
+vscode "sumneko.lua"
+vscode "skyapps.fish-vscode"
+vscode "virgilsisoe.hammerspoon"
+vscode "virgilsisoe.hammerspoon-snippets"
+
+# ─── GraphQL and APIs ────────────────────────────────────────────────────────
+vscode "graphql.vscode-graphql"
+vscode "graphql.vscode-graphql-execution"
+vscode "graphql.vscode-graphql-syntax"
+vscode "apollographql.vscode-apollo"
+
+# ─── Data, config, infra formats ─────────────────────────────────────────────
+vscode "redhat.vscode-yaml"
+vscode "tamasfe.even-better-toml"
+vscode "dotjoshjohnson.xml"
+vscode "mechatroner.rainbow-csv"
+vscode "randomfractalsinc.vscode-data-table"
+vscode "eriklynd.json-tools"
+vscode "tberman.json-schema-validator"
+vscode "richie5um2.vscode-statusbar-json-path"
+vscode "hashicorp.terraform"
+vscode "ms-azuretools.vscode-docker"
+
+# ─── Assistance ──────────────────────────────────────────────────────────────
+vscode "visualstudioexptteam.vscodeintellicode"
+vscode "visualstudioexptteam.intellicode-api-usage-examples"
