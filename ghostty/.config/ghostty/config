@@ -1,17 +1,22 @@
-# NOTE:
-# docs:
-# ghostty +show-config --default --docs | nvim
-# examples:
-# https://github.com/search?q=path%3Aghostty%2Fconfig&type=code
+# Ghostty configuration
+#
+# docs:     ghostty +show-config --default --docs | nvim
+# check:    ghostty +show-config          (shows what this file actually resolved to)
+# examples: https://github.com/search?q=path%3Aghostty%2Fconfig&type=code
+#
+# Ghostty runs on macOS and Linux and parses the same key set on both: keys that
+# only mean something on one platform (the macos-* block below, gtk-*/linux-* on
+# the other side) are accepted and ignored elsewhere, so this file needs no
+# per-platform split.
 
-command = "/opt/homebrew/bin/fish -l"
+# Shell. Looked up on PATH rather than hardcoded to a Homebrew prefix, so this
+# works on Apple Silicon, Intel macOS and Linux alike. If fish is not installed,
+# drop `command =` into config.local (see the bottom of this file) to fall back
+# to the login shell.
+command = fish -l
 
 copy-on-select = clipboard
-
 mouse-hide-while-typing = true
-macos-titlebar-style = tabs
-macos-titlebar-proxy-icon = hidden
-macos-option-as-alt = true
 
 # ghostty +list-themes
 theme = "Dracula+"
@@ -19,32 +24,43 @@ alpha-blending = linear-corrected
 background-opacity = 0.7
 background-blur-radius = 40
 
-# font-family = "Atkinson Hyperlegible Mono"
+window-padding-x = 10
+window-padding-y = 2
 
 # ghostty +list-fonts
 font-family = "Hack Nerd Font Mono"
 font-size = 14
 
-# https://usgraphics.com/products/berkeley-mono
+# Alternate fonts, kept as a menu -- uncomment one block at a time.
+#
+# Atkinson Hyperlegible Mono
+# font-family = "Atkinson Hyperlegible Mono"
+#
+# Berkeley Mono -- https://usgraphics.com/products/berkeley-mono
 # font-family = "Berkeley Mono Variable"
 # font-variation = wght=300
 # font-variation = wdth=100
 # font-family-bold = "Berkeley Mono Variable"
 # font-variation-bold = wght=800
-
-# italics
-# https://github.com/subframe7536/maple-font
+#
+# Maple Mono for italics -- https://github.com/subframe7536/maple-font
 # font-family-italic = "Maple Mono"
 # font-variation-italic = wght=200
 # font-family-bold-italic = "Maple Mono"
 # font-variation-bold-italic = wght=800
 
+# Quick terminal. The global: prefix needs Ghostty 1.0+ on macOS, 1.2+ on Linux;
+# `command` there is the Super key on Linux.
 keybind = global:shift+ctrl+alt+command+d=toggle_quick_terminal
 quick-terminal-animation-duration = 0
 quick-terminal-space-behavior = "move"
 
-window-padding-x = 10
-window-padding-y = 2
+# macOS-only; ignored on other platforms.
+macos-titlebar-style = tabs
+macos-titlebar-proxy-icon = hidden
+macos-option-as-alt = true
 
-
-
+# Per-machine overrides, if this box needs any. The leading ? makes the include
+# optional, so nothing breaks when the file does not exist. Loaded last, so it
+# wins over everything above.
+config-file = ?config.local
