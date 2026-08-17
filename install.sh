@@ -37,6 +37,7 @@ STOW_ONLY=0
 DO_UPDATE=0
 SKIP_BREW=0
 BREW_BUNDLE=0
+VSCODE_EXTENSIONS=0
 SSH_KEYS=0
 LIST_ONLY=0
 PRUNE=1
@@ -66,6 +67,8 @@ Options:
       --skip-brew         Never install or invoke Homebrew (macOS).
       --brew-bundle       Install everything in the Brewfile (macOS; slow, and
                           off by default -- see below).
+      --vscode-extensions Install the VS Code extensions in Brewfile.vscode.
+                          Separate from --brew-bundle on purpose.
       --ssh-authorized-keys
                           Add github.com/crumley.keys to
                           ~/.ssh/authorized_keys, deduplicated. Off by default.
@@ -99,7 +102,8 @@ Conflicts:
 Homebrew:
   --brew-bundle is opt-in because installing the whole Brewfile takes a long
   time and is rarely what you want on an existing machine. On a fresh Mac, run
-  ./install.sh --brew-bundle once.
+  ./install.sh --brew-bundle once. The 92 VS Code extensions are a second,
+  separate manifest and a second, separate flag: --vscode-extensions.
 
 Environment:
   DOTFILES_TARGET       Where to link (default: $HOME). Same as --target.
@@ -134,6 +138,7 @@ while [ $# -gt 0 ]; do
     --update)     DO_UPDATE=1 ;;
     --skip-brew)  SKIP_BREW=1 ;;
     --brew-bundle) BREW_BUNDLE=1 ;;
+    --vscode-extensions) VSCODE_EXTENSIONS=1 ;;
     --ssh-authorized-keys) SSH_KEYS=1 ;;
     --no-prune)   PRUNE=0 ;;
     --list)       LIST_ONLY=1 ;;
@@ -279,6 +284,14 @@ if [ "$SYSTEM_STEPS" = 1 ] && [ "$PLATFORM" = darwin ]; then
     ensure_homebrew
   fi
 
+  # `brew bundle` was commented out in the old installer, and that was not
+  # laziness: the Brewfile required tap "shopify/private", which no longer
+  # resolves, and named a dozen formulae and casks that have since been
+  # disabled or removed from the catalog. Any one of those aborts the whole
+  # run. The Brewfile has since been curated back to something installable, so
+  # this is live again -- with an explicit --file, and still opt-in because
+  # installing it takes a long time. If it starts failing, fix the Brewfile;
+  # do not comment this out again.
   if [ "$BREW_BUNDLE" = 1 ]; then
     if have brew; then
       say "Installing from Brewfile..."
@@ -292,6 +305,22 @@ if [ "$SYSTEM_STEPS" = 1 ] && [ "$PLATFORM" = darwin ]; then
     fi
   elif [ "$SKIP_BREW" = 0 ] && have brew && [ "$DRY_RUN" = 0 ]; then
     info "Brewfile not installed (rerun with --brew-bundle for that)"
+  fi
+
+  # VS Code extensions live in their own manifest and are deliberately NOT part
+  # of --brew-bundle: 92 editor extensions have no business reinstalling
+  # themselves during a fresh machine setup.
+  if [ "$VSCODE_EXTENSIONS" = 1 ]; then
+    if [ ! -f "$DOTFILES_REPO/Brewfile.vscode" ]; then
+      warn "no Brewfile.vscode in this checkout; skipping"
+    elif ! have brew; then
+      warn "--vscode-extensions given but brew is not installed; skipping"
+    elif [ "$DRY_RUN" = 1 ]; then
+      info "would run brew bundle --file $DOTFILES_REPO/Brewfile.vscode"
+    else
+      say "Installing VS Code extensions..."
+      brew bundle --file "$DOTFILES_REPO/Brewfile.vscode"
+    fi
   fi
 
   say "Applying macOS preferences..."

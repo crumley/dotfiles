@@ -65,9 +65,15 @@ brew upgrade
 
 if [ -f "$DOTFILES_REPO/Brewfile" ]; then
   say "Checking the Brewfile against what is installed..."
-  # `brew bundle check` exits non-zero when something in the Brewfile is
-  # missing. That is information, not a failure of this script.
-  if brew bundle check --file "$DOTFILES_REPO/Brewfile" --verbose; then
+  # This is the inversion that matters. The old line was `brew bundle dump
+  # --force`, which let the machine overwrite the manifest: everything ever
+  # installed for a one-off experiment got written back into the Brewfile, and
+  # every hand-written comment and deliberate omission was lost. It rewrote in
+  # place rather than erroring, so the loss was silent. `check` runs the
+  # relationship the right way round -- the curated manifest audits the machine
+  # and reports what has drifted. --no-upgrade so it reports, rather than
+  # quietly deciding to install things.
+  if brew bundle check --file "$DOTFILES_REPO/Brewfile" --no-upgrade --verbose; then
     :
   else
     say "Run './install.sh --brew-bundle' to install what is missing."
