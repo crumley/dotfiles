@@ -1,3 +1,7 @@
+# ~/.inputrc — readline. Portable as-is: this is the same library on macOS and
+# Linux. It configures bash and every other readline program (python, psql,
+# gdb, sqlite3, irb); it has no effect on fish, which has its own line editor.
+
 # Make Tab autocomplete regardless of filename case
 set completion-ignore-case on
 
@@ -8,9 +12,13 @@ set show-all-if-ambiguous on
 set mark-symlinked-directories on
 
 # Use the text that has already been typed as the prefix for searching through
-# commands (i.e. more intelligent Up/Down behavior)
+# commands (i.e. more intelligent Up/Down behavior). \e[A/\e[B are the normal
+# cursor-key sequences; \eOA/\eOB are what a terminal in application-cursor
+# mode sends, which is how tmux and several emulators drive the arrows.
 "\e[B": history-search-forward
 "\e[A": history-search-backward
+"\eOB": history-search-forward
+"\eOA": history-search-backward
 
 # Do not autocomplete hidden files unless the pattern explicitly begins with a dot
 set match-hidden-files off
@@ -36,5 +44,7 @@ set input-meta on
 set output-meta on
 set convert-meta off
 
-# Use Alt/Meta + Delete to delete the preceding word
+# Alt + forward-delete kills the word *after* the cursor. (The old comment here
+# claimed this deleted the preceding word; that is backward-kill-word, which is
+# already bound to Alt+Backspace by default.)
 "\e[3;3~": kill-word
