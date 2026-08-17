@@ -39,10 +39,13 @@ abbr mt 'git mergetool'
 
 abbr k kubectl
 
-# ripgrep
-abbr r 'rg --no-heading'
-abbr rt 'rg --no-heading -tjs -tts'
-abbr rf 'rg --files | rg --no-heading'
+# ripgrep. These used to pass --no-heading explicitly, which is now redundant:
+# rg/.ripgreprc sets it (along with --smart-case, --trim and --max-columns), and
+# 20-env.fish points RIPGREP_CONFIG_PATH at it so it actually takes effect.
+# Deliberately not restated here -- rg's defaults live in one file, not two.
+abbr r rg
+abbr rt 'rg -tjs -tts'
+abbr rf 'rg --files | rg'
 
 # tmux
 abbr t tmux

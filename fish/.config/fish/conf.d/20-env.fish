@@ -35,6 +35,21 @@ if set -q FZF_DEFAULT_COMMAND
     set -gx FZF_CTRL_T_COMMAND $FZF_DEFAULT_COMMAND
 end
 
+# ripgrep. rg has no implicit config lookup -- it reads ~/.ripgreprc only when
+# this variable names it, so without this the stowed rg package is inert and
+# --smart-case, --max-columns and friends never apply.
+#
+# Guarded on the file rather than on `command -q rg`, because the failure that
+# actually bites is the file being absent, not rg: pointed at a path that does
+# not exist, rg prints
+#   rg: failed to read the file specified in RIPGREP_CONFIG_PATH: ...
+# to stderr on *every single invocation*. That would be the normal state on any
+# box where the rg stow package is not linked yet. A `test -f` is also cheaper
+# than the `command -q` it replaces.
+if test -f $HOME/.ripgreprc
+    set -gx RIPGREP_CONFIG_PATH $HOME/.ripgreprc
+end
+
 # SSH agent: the 1Password agent socket, when it is actually there. Guarded on
 # the socket existing rather than on macOS, so this neither breaks a Linux box
 # with a working ssh-agent nor points at a socket that was never created.
