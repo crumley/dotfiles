@@ -94,7 +94,6 @@ only thing the installer deletes. `--no-prune` turns it off.
 | `--brew-bundle` | install the Brewfile (macOS) |
 | `--vscode-extensions` | install `Brewfile.vscode` (separate on purpose) |
 | `--skip-brew` | never install or invoke Homebrew |
-| `--ssh-authorized-keys` | add `github.com/crumley.keys` to `~/.ssh/authorized_keys`, deduplicated |
 | `--no-prune` | keep symlinks pointing at files this repo no longer has |
 
 Named packages install a subset: `./install.sh fish git starship`.
