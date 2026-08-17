@@ -183,7 +183,7 @@ brew "koekeishiya/formulae/yabai"         # tiling WM, controlled by wm.lua
 cask "ghostty"                            # terminal (ghostty/ stow package)
 cask "visual-studio-code"
 cask "cursor"                             # $EDITOR
-cask "claude-code@latest"                      # claude/ and agents/ stow packages
+cask "claude-code@latest"                 # claude/ and agents/ stow packages
 cask "macvim-app"                         # was cask "macvim" (renamed upstream)
 cask "sublime-merge"
 cask "github"                             # GitHub Desktop
@@ -197,6 +197,7 @@ cask "dash"                               # offline API docs
 cask "postman"
 cask "tableplus"                          # SQL client
 cask "docker-desktop"
+cask "p4v"                                # ships p4merge, a git difftool backend
 
 # ─── Cloud / infra GUI + CLI bundles ─────────────────────────────────────────
 cask "gcloud-cli"                         # was cask "google-cloud-sdk" (renamed)
