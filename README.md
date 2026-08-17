@@ -1,92 +1,273 @@
-# Crumley's dotfiles
+# dotfiles
 
+My personal configuration, managed with [GNU Stow](https://www.gnu.org/software/stow/).
+Each top-level directory is a stow package whose contents are symlinked into `$HOME`, so
+`fish/.config/fish/config.fish` in this repo becomes `~/.config/fish/config.fish` on the machine.
 
-Future 
+Fish is the primary shell; bash is kept as a competent fallback because it is what Linux and
+`ssh` drop you into. Everything here is meant to work on **macOS and Linux** — the installer
+configures tools on both, but it only *installs* packages on macOS.
 
-- https://github.com/ajeetdsouza/zoxide
+## Install
 
-Inspired by <https://github.com/thnukid/dotfiles> and <https://www.theguild.nl/how-to-manage-dotfiles-with-gnu-stow/>
+You need `git`, `bash`, and GNU Stow. Everything else is optional and degrades cleanly when
+it is absent.
 
-## Installation
-
-### Using Git and the bootstrap script
-
-You can clone the repository wherever you want. (I like to keep it in `~/Projects/dotfiles`, with `~/dotfiles` as a symlink.) The bootstrapper script will pull in the latest version and copy the files to your home folder.
-
-```bash
-git clone https://github.com/mathiasbynens/dotfiles.git && cd dotfiles && ./bootstrap.sh
+```sh
+# macOS
+brew install stow
+# Debian/Ubuntu
+sudo apt install stow
+# Fedora
+sudo dnf install stow
 ```
 
-To update, `cd` into your local `dotfiles` repository and then:
+Then clone anywhere and run the installer. The checkout is permanent — the links point back
+into it, so don't clone to a temp directory.
 
-```bash
-./bootstrap.sh
+```sh
+git clone https://github.com/crumley/dotfiles.git ~/dotfiles
+cd ~/dotfiles
+./install.sh --dry-run    # see exactly what would happen
+./install.sh              # link everything for this platform
 ```
 
-Alternatively, to update while avoiding the confirmation prompt:
+A second run is free: a symlink that already points at the right file here is never touched,
+so `./install.sh` is safe to rerun whenever the repo changes.
 
-```bash
-./bootstrap.sh -f
+On a fresh Mac, one extra pass installs the software the configs assume:
+
+```sh
+./install.sh --brew-bundle          # everything in Brewfile (slow; opt-in on purpose)
+./install.sh --vscode-extensions    # the 92 editor extensions in Brewfile.vscode
 ```
 
-### Git-free install
+### When something is already in the way
 
-To install these dotfiles without Git:
+A plain `./install.sh` **refuses rather than damages.** If a real file, a directory, or a
+foreign symlink occupies a path a package wants, it names every one of them, changes nothing
+at all, and exits non-zero:
 
-```bash
-cd; curl -#L https://github.com/mathiasbynens/dotfiles/tarball/master | tar -xzv --strip-components 1 --exclude={README.md,bootstrap.sh}
+```
+error: 1 path(s) are in the way; nothing has been changed.
+
+  file           /Users/ryan/.config/atuin/config.toml
 ```
 
-To update later on, just run that command again.
+`--takeover` is the answer:
 
-### Specify the `$PATH`
-
-If `~/.path` exists, it will be sourced along with the other files, before any feature testing (such as [detecting which version of `ls` is being used](https://github.com/mathiasbynens/dotfiles/blob/aff769fd75225d8f2e481185a71d5e05b76002dc/.aliases#L21-26)) takes place.
-
-Here’s an example `~/.path` file that adds `~/utils` to the `$PATH`:
-
-```bash
-export PATH="$HOME/utils:$PATH"
+```sh
+./install.sh --takeover
 ```
 
-### Add custom commands without creating a new fork
+It moves each conflicting path into `~/.dotfiles-backup/<timestamp>/`, preserving the path
+relative to `$HOME`, and then links — **in the same pass**. Nothing is ever deleted, modes are
+preserved (a move, not a copy), and you can recover anything from the backup directory.
 
-If `~/.extra` exists, it will be sourced along with the other files. You can use this to add a few custom commands without the need to fork this entire repository, or to add commands you don’t want to commit to a public repository.
+The reason it works this way is Atuin, and the reason is worth stating precisely because the
+folklore version is wrong. **Atuin does not rewrite its config.** It creates
+`~/.config/atuin/config.toml` if and only if the file does not exist; a symlinked config
+survives `atuin init` and normal use untouched, and no setting disables the generation
+(checked against upstream `settings.rs` and Atuin 18.16.1). The failure is a *race*: you delete
+the file so stow can get past it, one of your open terminals starts a shell in the gap, Atuin
+recreates it, and stow refuses again. Moving aside and linking in one pass never opens that gap,
+so there is no retry loop here and no instruction to close your terminals first.
 
-My `~/.extra` looks something like this:
+The mirror image is handled too. When a file is deleted from this repo, the symlink it left in
+`$HOME` is removed, so a config that moved (`~/.tmux.conf` → `~/.config/tmux/tmux.conf`) does
+not leave a dangling link behind — tmux 3.1+ reads both paths and would error on every start.
+Only symlinks pointing at a file this repo no longer has are ever removed; that is the one and
+only thing the installer deletes. `--no-prune` turns it off.
 
-```bash
-# PATH additions
-export PATH="~/bin:$PATH"
+### Flags worth knowing
 
-# Git credentials
-# Not in the repository, to prevent people from accidentally committing under my name
-GIT_AUTHOR_NAME="Mathias Bynens"
-GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
-git config --global user.name "$GIT_AUTHOR_NAME"
-GIT_AUTHOR_EMAIL="mathias@mailinator.com"
-GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-git config --global user.email "$GIT_AUTHOR_EMAIL"
+`./install.sh --help` is authoritative. The ones that matter on a fresh box:
+
+| flag | what it does |
+| --- | --- |
+| `-n`, `--dry-run` | show everything, change nothing |
+| `-f`, `--force`, `--takeover` | move conflicts to `~/.dotfiles-backup/<timestamp>/`, then link |
+| `-t`, `--target DIR` | link into `DIR` instead of `$HOME` (also `DOTFILES_TARGET`) |
+| `--list` | print the packages this platform would install |
+| `--stow-only` | link only: no Homebrew, no macOS defaults, no agent skills, no submodules |
+| `--update` | `git pull` and advance submodules before linking |
+| `--brew-bundle` | install the Brewfile (macOS) |
+| `--vscode-extensions` | install `Brewfile.vscode` (separate on purpose) |
+| `--skip-brew` | never install or invoke Homebrew |
+| `--no-prune` | keep symlinks pointing at files this repo no longer has |
+
+Named packages install a subset: `./install.sh fish git starship`.
+
+Environment: `DOTFILES_TARGET` (where to link), `DOTFILES_BACKUP_ROOT` (where takeover puts
+things), `DOTFILES_PLATFORM` (force `darwin`/`linux`, for exercising the other code path),
+`DOTFILES_QUIET`.
+
+Pointing `--target` at anything other than your real home automatically suppresses every
+machine-level step — Homebrew, macOS defaults, agent skills — so trying the installer out can
+never mutate the machine:
+
+```sh
+mkdir /tmp/fakehome && ./install.sh --target /tmp/fakehome --takeover
 ```
 
-You could also use `~/.extra` to override settings, functions and aliases from my dotfiles repository. It’s probably better to [fork this repository](https://github.com/mathiasbynens/dotfiles/fork_select) instead, though.
+## What's in it
 
-### Brew
+Nineteen packages. All of them install on Linux except the two marked macOS-only.
 
-Update Brewfile with latest:
+| package | lands at | configures |
+| --- | --- | --- |
+| `agents` | `~/.agents/.skill-lock.json` | agent skills lockfile; the installer reinstalls each locked skill |
+| `atuin` | `~/.config/atuin/config.toml` | shell history search |
+| `bash` | `~/.bashrc`, `~/.bash_profile` | interactive bash and login-shell layering |
+| `claude` | `~/.claude/settings.json` | Claude Code permissions |
+| `direnv` | `~/.config/direnv/direnvrc` | per-directory environments, with the mise hook |
+| `espanso` | `~/.config/espanso/` | text expansion |
+| `fish` | `~/.config/fish/` | the primary shell: `config.fish`, `conf.d/`, `functions/`, `fish_plugins` |
+| `ghostty` | `~/.config/ghostty/config` | terminal |
+| `git` | `~/.gitconfig`, `~/.gitignore_global`, `~/.gitattributes`, `~/bin/git-by-date` | git |
+| `hammerspoon` | `~/.hammerspoon/` | window management and automation — **macOS only** |
+| `home` | `~/.profile`, `~/.inputrc`, `~/.wgetrc`, `~/.hushlogin` | POSIX environment, readline, wget |
+| `karabiner` | `~/.config/karabiner/karabiner.json` | keyboard remapping — **macOS only** |
+| `mise` | `~/.config/mise/config.toml` | language runtime versions |
+| `rclone` | `~/bin/rclone-cron.sh` | the scheduled rclone sync |
+| `rg` | `~/.ripgreprc` | ripgrep defaults — see the note below |
+| `ssh` | `~/.ssh/config` | ssh, and the 1Password agent socket on either platform |
+| `starship` | `~/.config/starship.toml` | prompt |
+| `tmux` | `~/.config/tmux/tmux.conf` | tmux |
+| `vim` | `~/.vimrc`, `~/.gvimrc` | vim, dependency-free and plugin-free |
 
-`brew bundle dump > Brewfile`
+Packages are **discovered, not listed** — every non-hidden top-level directory is one. Adding
+`zellij/` to the repo is enough to get it installed; no script needs editing.
+[`lib/packages.sh`](lib/packages.sh) is the one file that knows otherwise, and it holds only two
+things: which top-level directories are repo machinery rather than packages, and which packages
+are platform-specific.
 
-## Thanks to…
+Not packages: `lib/` (installer machinery), `macos/` (the `defaults write` block), `test/`,
+and `.github/`.
 
-- [Gianni Chiappetta](http://gf3.ca/) for sharing his [amazing collection of dotfiles](https://github.com/gf3/dotfiles)
-- [Matijs Brinkhuis](http://hotfusion.nl/) and his [dotfiles repository](https://github.com/matijs/dotfiles)
-- [Jan Moesen](http://jan.moesen.nu/) and his [ancient `.bash_profile`](https://gist.github.com/1156154) + [shiny _tilde_ repository](https://github.com/janmoesen/tilde)
-- [Ben Alman](http://benalman.com/) and his [dotfiles repository](https://github.com/cowboy/dotfiles)
-- [Nicolas Gallagher](http://nicolasgallagher.com/) and his [dotfiles repository](https://github.com/necolas/dotfiles)
-- [Tom Ryder](http://blog.sanctum.geek.nz/) and his [dotfiles repository](https://github.com/tejr/dotfiles)
-- [Chris Gerke](http://www.randomsquared.com/) and his [tutorial on creating an OS X SOE master image](http://chris-gerke.blogspot.com/2012/04/mac-osx-soe-master-image-day-7.html) + [_Insta_ repository](https://github.com/cgerke/Insta)
-- @ptb and [his _OS X Lion Setup_ repository](https://github.com/ptb/Mac-OS-X-Lion-Setup)
-- [Lauri ‘Lri’ Ranta](http://lri.me/) for sharing [loads of hidden preferences](http://lri.me/hiddenpreferences.txt)
-- [Tim Esselens](http://devel.datif.be/)
-- anyone who [contributed a patch](https://github.com/mathiasbynens/dotfiles/contributors) or [made a helpful suggestion](https://github.com/mathiasbynens/dotfiles/issues)
+Two packages install executables into `~/bin` — `git-by-date` and `rclone-cron.sh`. Both the
+fish config and `~/.profile` put `~/bin` on `$PATH`, which is what makes `git by-date` work in
+Git's subcommand form.
+
+One caveat on `rg`: ripgrep reads `.ripgreprc` **only** when `RIPGREP_CONFIG_PATH` points at
+it — there is no lookup by name or location — and nothing in this repo sets that variable yet.
+So the file is linked but currently inert. Until a shell config sets it, either export it
+yourself or add it to `~/.$hostname.fish`:
+
+```fish
+set -gx RIPGREP_CONFIG_PATH $HOME/.ripgreprc
+```
+
+`rg --debug --files 2>&1 | head -1` names the config actually loaded.
+
+## Platform support
+
+Everything is expected to work on Linux except `hammerspoon` and `karabiner`, whose
+applications genuinely do not exist there. `ghostty` and `espanso` both ship for Linux and their
+configs are platform-independent, so they stow everywhere.
+
+**The installer does not install Linux packages.** That is deliberate: on Linux this repo
+configures whatever happens to be there and stays out of your package manager's way. No `apt`,
+no `dnf`, no Homebrew. Every config assumes the tool it configures may be absent and degrades
+without complaining — a missing `starship` falls back to a plain prompt, a missing `fish` means
+tmux keeps your login shell, a missing `eza` leaves `ls` alone.
+
+The `Brewfile` is macOS-only and says so in a hard banner partway down; everything above the
+banner is cross-platform CLI, everything below is casks, fonts, macOS-only utilities, and GNU
+replacements for tools macOS ships in BSD flavour. If a Linux package list is ever wanted, it is
+a mechanical cut at that line.
+
+Nothing here hardcodes a Homebrew prefix. `/opt/homebrew`, `/usr/local`,
+`/home/linuxbrew/.linuxbrew` and `~/.linuxbrew` are all discovered at runtime, and no brew at
+all is a supported outcome.
+
+## Day to day
+
+**After editing a config**, re-run the installer. Existing correct links are left alone, and
+anything new gets linked:
+
+```sh
+./install.sh
+```
+
+Stow directly also works for a single package, but the installer's conflict handling and prune
+pass do not:
+
+```sh
+stow --dotfiles --no-folding -t ~ fish     # link one package
+stow -D --dotfiles -t ~ fish               # unlink one package
+```
+
+**To add a package**, make the directory and lay the files out as they should appear under
+`$HOME`, then run `./install.sh`. Nothing else. If it should only exist on one platform, add it
+to `DOTFILES_DARWIN_ONLY` or `DOTFILES_LINUX_ONLY` in `lib/packages.sh`.
+
+**To update software:**
+
+```sh
+./install.sh --update      # git pull + submodules, then relink
+./upgrade.sh               # brew update && brew upgrade, then audit against the Brewfile
+```
+
+`upgrade.sh` deliberately does **not** run `brew bundle dump`. The `Brewfile` is hand-maintained;
+a dump would overwrite it with whatever happens to be installed, silently, including everything
+a one-off experiment dragged in. It runs `brew bundle check` instead — the manifest audits the
+machine rather than the other way round. `./upgrade.sh --dump` writes `Brewfile.generated`
+(gitignored) for diffing, and never touches the `Brewfile`.
+
+### Host-specific config and secrets
+
+Nothing private is ever committed here. Per-machine settings and secrets live **outside the
+repo**, in files named after the host:
+
+- `~/.$hostname.fish` — sourced by fish, and **permission-checked before sourcing**. It must be
+  owned by you and not group- or world-writable, or it is refused with a warning and the rest of
+  the shell config still loads. `chmod 600` it.
+- `~/.$hostname.hammerspoon.lua` — same idea, same check, for Hammerspoon.
+
+The hostname is `scutil --get LocalHostName` on macOS, `hostname -s` elsewhere; `FISH_HOSTNAME`
+overrides it.
+
+The host file is also where the fish feature flags go, since which integrations you want differs
+per machine. Each is off unless set to `true`, and each additionally checks the tool is installed:
+
+```fish
+set -gx FISH_STARSHIP true    # prompt
+set -gx FISH_ATUIN true       # history search on ctrl-r
+set -gx FISH_MISE true        # runtime version manager
+set -gx FISH_DIRENV true      # per-directory environments
+set -gx FISH_ZOXIDE true      # smarter cd
+set -gx FISH_TMUX true        # auto-attach to tmux on login
+set -gx FISH_KUBE true        # merge every ~/.kube/*config* into KUBECONFIG
+```
+
+Other escape hatches, none of them repo-provided and all of them optional:
+
+| file | read by |
+| --- | --- |
+| `~/.config/fish/conf.d/<name>.fish` | fish — any name **not** starting with two digits; gitignored, and the right home for third-party appends |
+| `~/.profile.local` | `~/.profile` (POSIX environment) |
+| `~/.extra` | `~/.bashrc` (interactive bash) |
+| `~/.gitconfig.local` | `~/.gitconfig`, last, so it wins |
+| `~/.gitconfig-work` | `~/.gitconfig`, for clones under `~/work/` |
+| `~/.config/ghostty/config.local` | `ghostty/config`, included last |
+
+## Testing
+
+```sh
+./test/run.sh            # everything
+./test/run.sh lint       # shellcheck over every shell script
+./test/run.sh syntax     # parse checks: fish, bash/sh, lua, json, toml, yaml, Brewfile
+./test/run.sh install    # the installer's own end-to-end suite
+./test/run.sh smoke      # install into a throwaway home, then start the shells against it
+```
+
+Nothing touches your real home directory: the install and smoke checks work inside a `mktemp`
+directory and refuse to run if the target resolves to `$HOME`. Optional linters that are not
+installed are reported as a loud `SKIP` — never silently counted as a pass.
+
+CI (`.github/workflows/ci.yml`) runs exactly these scripts, so there is no second copy of the
+logic to drift: shellcheck on Ubuntu (gate at `severity>=warning`, a `style` pass as advisory),
+parse checks on Ubuntu and macOS, and the installer suite plus the shell-startup smoke test on
+both. Putting the install path on a two-OS matrix is the point — it is what actually answers
+"does a clean install work on Linux?"
