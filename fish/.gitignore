@@ -1,0 +1,35 @@
+# Scoped ignore rules for the `fish` stow package.
+#
+# Why this file exists: stow folds `~/.config/fish/{conf.d,functions,completions}`
+# into this repository, so anything fisher (or a plugin, or a third-party
+# installer) writes at runtime lands *here* and shows up as untracked noise.
+# The repository root .gitignore therefore ignores those three directories
+# wholesale. That is the right default -- but it also made it impossible to
+# track the config files this repo actually owns.
+#
+# So: re-open the two directories, re-ignore everything inside them, then
+# re-include exactly the files that are ours. Runtime droppings stay invisible;
+# owned config stays tracked. (Note that a negation alone is not enough -- git
+# will not descend into an excluded directory, so the directory itself has to be
+# un-ignored first.)
+
+!/.config/fish/conf.d/
+!/.config/fish/functions/
+/.config/fish/conf.d/*
+/.config/fish/functions/*
+
+# Ours: numbered conf.d fragments. Anything without a NN- prefix (fisher
+# plugins, and third-party appends such as `conf.d/local.fish`) stays ignored.
+!/.config/fish/conf.d/[0-9][0-9]-*.fish
+
+# Ours: autoloaded functions. Add new ones here when you add the file.
+!/.config/fish/functions/my_*.fish
+!/.config/fish/functions/fish_user_key_bindings.fish
+!/.config/fish/functions/bcp.fish
+!/.config/fish/functions/bip.fish
+!/.config/fish/functions/bup.fish
+!/.config/fish/functions/gcb.fish
+!/.config/fish/functions/kp.fish
+!/.config/fish/functions/posix-source.fish
+!/.config/fish/functions/ts.fish
+!/.config/fish/functions/upall.fish

@@ -1,0 +1,30 @@
+# https://editorconfig.org — house style, so a config file does not change
+# shape depending on which editor last touched it.
+#
+# hammerspoon/.hammerspoon/.editorconfig layers on top of this for Lua; that
+# file is the EmmyLua formatter's config and stays authoritative there.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{fish,sh,bash}]
+indent_size = 4
+
+[*.{yml,yaml,json,toml}]
+indent_size = 2
+
+[*.md]
+# Trailing whitespace is a line break in Markdown.
+trim_trailing_whitespace = false
+
+# Vendored or generated — left exactly as it arrives.
+[{Brewfile.lock.json,**/Spoons/**}]
+trim_trailing_whitespace = false
+insert_final_newline = false
