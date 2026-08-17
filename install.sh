@@ -38,7 +38,6 @@ DO_UPDATE=0
 SKIP_BREW=0
 BREW_BUNDLE=0
 VSCODE_EXTENSIONS=0
-SSH_KEYS=0
 LIST_ONLY=0
 PRUNE=1
 DOTFILES_TARGET=${DOTFILES_TARGET:-$HOME}
@@ -69,9 +68,6 @@ Options:
                           off by default -- see below).
       --vscode-extensions Install the VS Code extensions in Brewfile.vscode.
                           Separate from --brew-bundle on purpose.
-      --ssh-authorized-keys
-                          Add github.com/crumley.keys to
-                          ~/.ssh/authorized_keys, deduplicated. Off by default.
       --no-prune          Keep symlinks that point at files this repository no
                           longer has. They are removed by default; nothing else
                           is ever deleted.
@@ -139,7 +135,6 @@ while [ $# -gt 0 ]; do
     --skip-brew)  SKIP_BREW=1 ;;
     --brew-bundle) BREW_BUNDLE=1 ;;
     --vscode-extensions) VSCODE_EXTENSIONS=1 ;;
-    --ssh-authorized-keys) SSH_KEYS=1 ;;
     --no-prune)   PRUNE=0 ;;
     --list)       LIST_ONLY=1 ;;
     -q|--quiet)   DOTFILES_QUIET=1 ;;
@@ -436,33 +431,6 @@ restore_agent_skills() {
     done
 }
 
-# github.com/crumley.keys -> ~/.ssh/authorized_keys.
-#
-# Opt-in, and deduplicated. It used to run on every install and append
-# unconditionally, so the file grew a duplicate copy of every key each time.
-# It is also arguably server provisioning rather than dotfiles -- a laptop does
-# not usually accept inbound ssh -- so it no longer runs unless asked for.
-install_authorized_keys() {
-  have curl || { warn "curl not found; skipping authorized_keys"; return 0; }
-  local ssh_dir="$DOTFILES_TARGET/.ssh"
-  local keyfile="$ssh_dir/authorized_keys"
-  local tmp="$TMPDIR_RUN/keys" added=0 line
-
-  say "Installing public keys..."
-  if ! curl -fsSL https://github.com/crumley.keys -o "$tmp"; then
-    warn "could not fetch public keys; skipping"
-    return 0
-  fi
-  mkdir -p "$ssh_dir"
-  chmod 700 "$ssh_dir"
-  while IFS= read -r line; do
-    [ -n "$line" ] || continue
-    if append_line_once "$keyfile" "$line"; then added=$((added + 1)); fi
-  done <"$tmp"
-  chmod 600 "$keyfile"
-  info "$added new key(s) added to ${keyfile#"$DOTFILES_TARGET/"}"
-}
-
 # Fish plugins. Bootstrapping used to happen from fish's own startup, curling a
 # URL (git.io/fisher) that no longer resolves -- so it ran on every shell start
 # and achieved nothing. It belongs here, once, at install time. The function is
@@ -478,9 +446,6 @@ bootstrap_fisher() {
 if [ "$SYSTEM_STEPS" = 1 ]; then
   bootstrap_fisher
   restore_agent_skills
-fi
-if [ "$SSH_KEYS" = 1 ]; then
-  install_authorized_keys
 fi
 
 say "Done."
