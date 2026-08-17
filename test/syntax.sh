@@ -12,40 +12,6 @@ set -uo pipefail
 # shellcheck source=test/lib.sh
 . "$(dirname -- "${BASH_SOURCE[0]}")/lib.sh"
 
-# known_broken PATH
-# Files that genuinely do not parse today, on a repo that has never had CI.
-# Reported as a loud SKIP with the reason instead of a FAIL, so that adopting
-# this suite does not paint every in-flight PR red for a defect none of them
-# caused. Each entry names its owner; delete it when that task lands.
-#
-# This list is for *pre-existing* breakage only. A file that parsed yesterday
-# and does not today must fail — do not add it here to go green.
-KNOWN_BROKEN_PATHS="home/.profile"
-KNOWN_BROKEN_USED=""
-KNOWN_BROKEN_REASON=""
-
-# Sets KNOWN_BROKEN_REASON and returns 0 when PATH is a known-broken file.
-#
-# The reason comes back in a global rather than on stdout on purpose: a command
-# substitution runs in a subshell, so the record of which entries actually fired
-# would be thrown away with it — and a stale entry that never reports itself is
-# exactly the failure mode this list has to avoid.
-known_broken() {
-    KNOWN_BROKEN_REASON=""
-    case "$1" in
-        home/.profile)
-            # eval \$($(brew --prefix)/bin/brew shellenv)
-            # The backslash makes it a literal `$`, so this line has never
-            # worked on any platform. Owned by t3 (POSIX shell config).
-            # shellcheck disable=SC2016  # quoting a literal, not expanding it
-            KNOWN_BROKEN_REASON='pre-existing syntax error, owned by t3: the escaped `\$` on line 1 has never worked'
-            KNOWN_BROKEN_USED="$KNOWN_BROKEN_USED $1"
-            return 0
-            ;;
-    esac
-    return 1
-}
-
 # report_parse_failure PATH LABEL OUTPUT
 report_parse_failure() {
     local path="$1" label="$2" out="$3"
@@ -133,15 +99,7 @@ else
 $scripts
 EOF
 
-    # A known-broken entry that no longer triggers is a lie waiting to be
-    # believed. Report it so it gets deleted rather than quietly excusing a file
-    # that someone already fixed.
-    for kb in $KNOWN_BROKEN_PATHS; do
-        case " $KNOWN_BROKEN_USED " in
-            *" $kb "*) ;;
-            *) info "stale known_broken entry: $kb parses (or is gone) — delete it from test/syntax.sh" ;;
-        esac
-    done
+    report_stale_known_broken
 fi
 
 # --- lua (Hammerspoon) -----------------------------------------------------

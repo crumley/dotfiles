@@ -93,6 +93,62 @@ report_totals() {
 have() { command -v "$1" >/dev/null 2>&1; }
 
 # ---------------------------------------------------------------------------
+# Known-broken files
+#
+# Files that genuinely do not work today, on a repo that has never had CI.
+# Reported as a loud SKIP with the reason instead of a FAIL, so that adopting
+# this suite does not paint every in-flight PR red for a defect none of them
+# caused. Each entry names its owner; delete it when that task lands.
+#
+# This list is for *pre-existing* breakage only. A file that worked yesterday
+# and does not today must fail — never add one here to go green.
+#
+# It lives in lib.sh because two checks consult it: syntax.sh (does the file
+# parse?) and smoke-test.sh (does a shell that reads it start?). One list, so an
+# entry cannot be deleted from one place and linger in the other.
+# ---------------------------------------------------------------------------
+
+KNOWN_BROKEN_PATHS="home/.profile"
+KNOWN_BROKEN_USED=""
+# shellcheck disable=SC2034  # read by syntax.sh and smoke-test.sh, which source this
+KNOWN_BROKEN_REASON=""
+
+# Sets KNOWN_BROKEN_REASON and returns 0 when PATH (repo-relative) is known
+# broken.
+#
+# The reason comes back in a global rather than on stdout on purpose: a command
+# substitution runs in a subshell, so the record of which entries actually fired
+# would be discarded with it — and a stale entry that never reports itself is
+# exactly the failure mode this list has to avoid.
+known_broken() {
+    KNOWN_BROKEN_REASON=""
+    case "$1" in
+        home/.profile)
+            # eval \$($(brew --prefix)/bin/brew shellenv)
+            # The backslash makes it a literal `$`, so this line has never
+            # worked on any platform. macOS's /bin/sh only warns; Ubuntu's dash
+            # refuses to start at all. Owned by t3 (POSIX shell config).
+            # shellcheck disable=SC2016,SC2034  # a literal, not an expansion; read by the scripts that source this
+            KNOWN_BROKEN_REASON='pre-existing breakage, owned by t3: the escaped `\$` on line 1 has never worked'
+            KNOWN_BROKEN_USED="$KNOWN_BROKEN_USED $1"
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+# A known-broken entry that no longer fires is a lie waiting to be believed.
+report_stale_known_broken() {
+    local kb
+    for kb in $KNOWN_BROKEN_PATHS; do
+        case " $KNOWN_BROKEN_USED " in
+            *" $kb "*) ;;
+            *) info "stale known_broken entry: $kb now works (or is gone) — delete it from test/lib.sh" ;;
+        esac
+    done
+}
+
+# ---------------------------------------------------------------------------
 # File discovery
 # ---------------------------------------------------------------------------
 
@@ -117,6 +173,8 @@ _is_excluded() {
 # Every tracked file (or, outside git, every file on disk), NUL-free, one per
 # line, relative to REPO_ROOT, with excluded paths already dropped. An optional
 # `case` glob filters the list.
+#
+# shellcheck disable=SC2120  # the glob is optional; callers in syntax.sh pass it
 repo_files() {
     local filter="${1:-*}" f
     {

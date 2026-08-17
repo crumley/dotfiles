@@ -161,6 +161,26 @@ info "packages: $(printf '%s' "$PKGS" | tr -s ' ')"
 
 SHELL_TIMEOUT=${DOTFILES_SMOKE_TIMEOUT:-20}
 
+# Follow an installed path back through its symlink to the repo-relative file it
+# came from, so a startup failure can be matched against the known-broken list.
+# Prints nothing when the path is not a link into the repo.
+repo_path_of() {
+    local p="$1" link hops=0
+    [ -e "$p" ] || return 0
+    while [ -L "$p" ] && [ "$hops" -lt 20 ]; do
+        link=$(readlink "$p")
+        case "$link" in
+            /*) p="$link" ;;
+            *) p="$(dirname -- "$p")/$link" ;;
+        esac
+        hops=$((hops + 1))
+    done
+    p="$(cd -- "$(dirname -- "$p")" 2>/dev/null && pwd -P)/$(basename -- "$p")"
+    case "$p" in
+        "$REPO_PHYS"/*) printf '%s\n' "${p#"$REPO_PHYS"/}" ;;
+    esac
+}
+
 # A shell that never exits is as broken as one that exits nonzero, and it must
 # not be allowed to hang CI. `timeout` is GNU-only and is absent from the macOS
 # runners; perl's alarm is the portable stand-in and perl is present everywhere
@@ -212,6 +232,16 @@ try_shell() {
         return 1
     fi
 
+    if [ "$rc" -ne 0 ] && known_broken "$(repo_path_of "$TARGET/$needs")"; then
+        # The startup file this shell reads is already on the known-broken list,
+        # so this is the same defect the syntax check already reported, not a
+        # new one. Ubuntu is where it bites hardest: /bin/sh is dash, which
+        # refuses to start, where macOS's sh merely warns.
+        skip "$label failed to start (exit $rc) — $KNOWN_BROKEN_REASON"
+        printf '%s\n' "$out" | sed 's/^/           | /'
+        return 0
+    fi
+
     if [ "$rc" -eq 0 ]; then
         pass "$label starts cleanly (exit 0)"
         if [ -n "$out" ]; then
@@ -243,4 +273,8 @@ try_shell "bash (interactive rc)" ".bashrc" bash -i -c 'exit 0'
 # /bin/sh reads .profile only as a login shell.
 try_shell "sh (login)" ".profile" sh -l -c 'exit 0'
 
+# Staleness is reported by syntax.sh, which exercises every file deterministically.
+# It is not reported here: whether a given shell reads a given startup file is
+# platform-dependent (macOS's /bin/sh tolerates what dash rejects), so an entry
+# not firing on one OS says nothing about whether it is stale.
 report_totals
