@@ -1,7 +1,21 @@
-# File: ~/.config/direnv/direnvrc
-#source "$(asdf direnv hook asdf)"
+# ~/.config/direnv/direnvrc — direnv's global preamble, sourced before every
+# .envrc. Anything defined here is available to all of them.
+#
+# This defines `use mise`, so a project .envrc can hand tool resolution to mise:
+#
+#     # .envrc
+#     use mise
+#
+# Note that mise's own docs steer you away from the direnv path and toward
+# `mise activate` (which the shell config already does). This stays for the
+# projects whose .envrc asks for it; it is not the primary integration.
+#
+# The guard matters: without it, a machine that has direnv but not mise prints
+# "mise: command not found" on every single directory change. Assume the tool
+# may or may not be present and degrade quietly.
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise direnv activate)"
+fi
 
-eval "$(mise direnv activate)"
-
-# Uncomment the following line to make direnv silent by default.
+# Uncomment to silence direnv's per-directory export chatter.
 # export DIRENV_LOG_FORMAT=""

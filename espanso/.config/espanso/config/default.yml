@@ -1,42 +1,18 @@
-# espanso configuration file
+# espanso global config. https://espanso.org/docs/configuration/basics/
+#
+# Only the settings that differ from espanso's defaults are here; the file used
+# to be mostly upstream's commented-out template. `espanso path` says where
+# espanso is reading this from, and `espanso match list` parses this config plus
+# match/ and prints every trigger it found — the quickest syntax check there is.
 
-# For a complete introduction, visit the official docs at: https://espanso.org/docs/
-
-# You can use this file to define the global configuration options for espanso.
-# These are the parameters that will be used by default on every application,
-# but you can also override them on a per-application basis.
-
-# To make customization easier, this file contains some of the commonly used
-# parameters. Feel free to uncomment and tune them to fit your needs!
-
-# --- Toggle key
-
-# Customize the key used to disable and enable espanso (when double tapped)
-# Available options: CTRL, SHIFT, ALT, CMD, OFF
-# You can also specify the key variant, such as LEFT_CTRL, RIGHT_SHIFT, etc...
-# toggle_key: ALT
-# You can also disable the toggle key completely with
+# No double-tap toggle. The default is ALT, which fires by accident often
+# enough to be worse than having no toggle at all. Use `espanso cmd toggle`
+# (or `espanso stop`) when espanso genuinely needs to be out of the way.
 toggle_key: OFF
 
+# No built-in search overlay hotkey either; same reasoning.
 search_shortcut: off
 
-# --- Injection Backend
-
-# Espanso supports multiple ways of injecting text into applications. Each of
-# them has its quirks, therefore you may want to change it if you are having problems.
-# By default, espanso uses the "Auto" backend which should work well in most cases,
-# but you may want to try the "Clipboard" or "Inject" backend in case of issues.
-# backend: Clipboard
-
-# --- Auto-restart
-
-# Enable/disable the config auto-reload after a file change is detected.
+# Reload on file change, so editing a match file in the repo takes effect
+# without restarting the daemon.
 auto_restart: true
-
-# --- Clipboard threshold
-
-# Because injecting long texts char-by-char is a slow operation, espanso automatically
-# uses the clipboard if the text is longer than 'clipboard_threshold' characters.
-# clipboard_threshold: 100
-
-# For a list of all the available options, visit the official docs at: https://espanso.org/docs/

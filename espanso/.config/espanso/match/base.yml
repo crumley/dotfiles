@@ -1,18 +1,30 @@
+# espanso text expansions. https://espanso.org/docs/matches/basics/
+#
+# Everything here is cross-platform: plain replacements plus one shell var that
+# calls the 1Password CLI, which exists on macOS and Linux alike.
+
 matches:
-  # Simple text replacement
   - trigger: ":shrug"
     replace: "¯\\_(ツ)_/¯"
+
   - trigger: "m15z"
     replace: "materialization"
+
   - trigger: "m11z"
     replace: "materialize"
-  - trigger: "status@@"
-    replace: "bin/semanticq control status --sections snapshot_creation"
+
+  # Pull the email off the 1Password item rather than hardcoding it, so it is
+  # never sitting in a git repo. `label=email` is the current `op` field
+  # selector (bare `--fields email` is the pre-2.x shorthand); `--fields` takes
+  # `label=` to select by field name and `type=` to select by field type.
   - trigger: "e@@"
     replace: "{{email}}"
     vars:
       - name: email
         type: shell
         params:
-          cmd: op item get 'Ryan Crumley' --fields email
+          cmd: op item get 'Ryan Crumley' --fields label=email
 
+# Removed: the `status@@` trigger, which expanded to
+# `bin/semanticq control status --sections snapshot_creation`. semanticq was
+# Shopify tooling and went with the job.

@@ -1,13 +1,98 @@
+# Starship prompt. https://starship.rs/config/
+#
+# Design goals, in order: fast, legible, identical on macOS and Linux.
+#
+# The single biggest source of prompt latency is Starship's language modules —
+# each one shells out to a toolchain (`node -v`, `python --version`, `ruby -v`,
+# `java -version`, ...) on every prompt, and `java -version` alone can cost
+# hundreds of milliseconds. So `format` below is written out explicitly instead
+# of relying on Starship's default: modules that do not appear in `format` are
+# never evaluated at all, which is stricter and cheaper than setting
+# `disabled = true` on each of them one by one.
+#
+# mise already owns which toolchain versions are active, so asking the prompt to
+# re-derive and re-print them every time is duplicated work. `mise current` is
+# the answer to "what am I running here", on demand.
+#
+# To add a module back, put its `$name` in `format` — adding a `[section]`
+# without that does nothing.
+#
+# Glyphs are deliberately plain Unicode (❯, ✘, arrows), not Nerd Font private-use
+# codepoints: this file has to render on a Linux box with a stock DejaVu Mono as
+# happily as it does in Ghostty with Hack Nerd Font.
 
-[shlvl]
-disabled = true
-threshold = 1
-symbol = ">"
+"$schema" = 'https://starship.rs/config-schema.json'
 
-[scala]
-disabled = true
+add_newline = true
 
-[shell]
-disabled = true
-bash_indicator = "🔨"
-fish_indicator = "🐠"
+# Starship warns on stderr when a module exceeds this. 500ms (the default) is
+# tight for a cold git status over a large repo or a network filesystem; 1s
+# keeps the warning meaningful without crying wolf on a slow Linux VM.
+command_timeout = 1000
+
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_state\
+$git_status\
+$cmd_duration\
+$line_break\
+$character"""
+
+# username/hostname render only over SSH (Starship's own default). That is
+# exactly the wanted behaviour: silent on the laptop, unmistakable the moment
+# the prompt belongs to a remote Linux box.
+[username]
+format = "[$user]($style)@"
+style_user = "bold yellow"
+style_root = "bold red"
+
+[hostname]
+ssh_only = true
+format = "[$hostname]($style) "
+style = "bold yellow"
+
+[directory]
+style = "bold cyan"
+truncation_length = 4
+truncate_to_repo = true
+read_only = " [ro]"
+read_only_style = "bold red"
+
+[git_branch]
+symbol = ""
+format = "on [$branch]($style) "
+style = "bold purple"
+
+[git_state]
+format = "\\([$state( $progress_current/$progress_total)]($style)\\) "
+style = "bold yellow"
+
+# Deliberately terse: the point is "something is dirty", not a full accounting.
+# `git status` gives the detail when the detail is wanted.
+[git_status]
+format = "[$all_status$ahead_behind]($style) "
+style = "bold red"
+conflicted = "="
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+untracked = "?"
+stashed = "$"
+modified = "!"
+staged = "+"
+renamed = "»"
+deleted = "✘"
+
+# Only speak up about commands slow enough to be worth noticing.
+[cmd_duration]
+min_time = 2000
+format = "took [$duration]($style) "
+style = "bold yellow"
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
