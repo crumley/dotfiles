@@ -8,16 +8,19 @@
 
 	# Clone a repository including all submodules
 		c = clone --recursive
-	
+
 	# Commit all changes
 		ca = !git add -A && git commit -av
-	
+
 	# Switch to a branch, creating it if necessary
 		go = checkout -B
 
-	# Create a new branch from the latest origin/main
-		newbranch = "!f() { git fetch origin && git checkout -b \"$1\" origin/main --no-track; }; f"
-		nb = "!f() { git fetch origin && git checkout -b \"$1\" origin/main --no-track; }; f"
+	# Create a new branch from the tip of the remote's default branch.
+	# Derives that branch from refs/remotes/origin/HEAD (repairing it with
+	# `remote set-head --auto` if it is missing) so this also works in repos
+	# still on `master`; falls back to origin/main if the remote is unreachable.
+		newbranch = "!f() { git fetch origin && git remote set-head origin --auto >/dev/null 2>&1; base=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null); git checkout -b \"$1\" \"${base:-origin/main}\" --no-track; }; f"
+		nb = !git newbranch
 
 	# Amend the currently staged files to the latest commit
 		amend = commit --amend --reuse-message=HEAD
@@ -37,9 +40,11 @@
 		branches = branch -av
 		remotes = remote -v
 
-	# Remove branches that have already been merged with main
-		# a.k.a. 'delete merged'
-		dm = "!git branch --merged | grep -v '\\*' | xargs -n 1 git branch -d"
+	# Remove branches that have already been merged into the current branch
+	# a.k.a. 'delete merged'. Refuses to consider the current branch or any of
+	# the usual long-lived branches, whichever one you happen to be standing on;
+	# `branch -d` (never -D) then refuses anything not actually merged.
+		dm = "!f() { here=$(git symbolic-ref --quiet --short HEAD); git for-each-ref --merged HEAD --format='%(refname:short)' refs/heads/ | grep -vxE 'main|master|develop|trunk' | grep -vxF \"${here:-HEAD}\" | while read -r b; do git branch -d \"$b\"; done; }; f"
 
 	# Forcepush, but fail if the remote has been updated since you last pulled.
 	# Prevents clobbering other people's commits on the same branch unless you really, really want to.
@@ -48,21 +53,25 @@
 
 	# Show the diff between the latest commit and the current state
 		d = !"git diff-index --quiet HEAD -- || clear; git diff --patch-with-stat"
-	
+
 	# `git di $number` shows the diff between the state `$number` revisions ago and the current state
 		di = !"d() { git diff --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
-	
-	# Pull in remote changes for the current repository and all its submodules
-		ps = !"git pull; git submodule foreach git pull origin main"
-	
+
+	# Pull in remote changes for this repository and all of its submodules.
+	# `submodule update --remote` follows each submodule's own default branch
+	# (submodule.<name>.branch, else the remote's HEAD) instead of assuming
+	# every one of them calls it `main`.
+		ps = !"git pull && git submodule update --init --remote --recursive"
+
 	# Credit an author on the latest commit
 		credit = "!f() { git commit --amend --author \"$1 <$2>\" -C HEAD; }; f"
-	
+
 	# Interactive rebase with the given number of latest commits
 		reb = "!r() { git rebase -i HEAD~$1; }; r"
-	 
-	# Undo operations
-		undopush = push -f origin HEAD^:main
+
+	# Undo operations. These are all local-only on purpose; to undo something
+	# already published, use `pf` / `forcepush` (--force-with-lease) so a
+	# teammate's commits cannot be silently dropped.
 		undo = checkout --
 		unstage = reset HEAD --
 		last = checkout -
@@ -75,51 +84,119 @@
 [core]
 
 	# http://adaptivepatchwork.com/2012/03/01/mind-the-end-of-your-line/
-	eol = native
+	# Store LF in history, leave the working tree alone. `core.eol` and
+	# `core.safecrlf` are deliberately unset: eol=native is already the default,
+	# and safecrlf=true turns a reversibility warning into a hard error on any
+	# file Git decides is mixed.
 	autocrlf = input
-	safecrlf = true
-	ignorecase = false
-	excludesfile = ~/.gitignore_global
-	attributesfile = ~/.gitattributes
 
-	# Make `git rebase` safer on OS X
-	# More info: <http://www.git-tower.com/blog/make-git-rebase-safe-on-osx/>
-	trustctime = false
+	excludesFile = ~/.gitignore_global
+	attributesFile = ~/.gitattributes
 
-	# Prevent showing files whose names contain non-ASCII symbols as unversioned.
+	# Store filenames in precomposed (NFC) form. macOS hands Git decomposed
+	# (NFD) names, so without this a file called "café" is added as one spelling
+	# and reported unversioned under the other.
 	# http://michael-kuehnel.de/git/2014/11/21/git-mac-osx-and-german-umlaute.html
-	precomposeunicode = false
+	precomposeUnicode = true
 
 [merge]
 
 	# Include summaries of merged commits in newly created merge commit messages
 	log = true
-	tool = p4mergetool
-	conflictstyle = diff3
+	tool = vscode
+	# zdiff3 is diff3 with the common prefix/suffix hoisted out of the conflict
+	# region, so the part you actually have to read is smaller. Git >= 2.35.
+	conflictStyle = zdiff3
+
+[mergetool]
+	keepBackup = false
+
+[mergetool "vscode"]
+	# Git has shipped a built-in `vscode` backend only since 2.47; spelling the
+	# command out keeps this working on the older Git that distributions ship,
+	# and on Linux, where `code` is on PATH just the same.
+	cmd = code --wait --merge \"$REMOTE\" \"$LOCAL\" \"$BASE\" \"$MERGED\"
+	trustExitCode = true
+
+[diff]
+	tool = vscode
+	# Detect copies as well as renames
+	renames = copies
+	# Histogram produces noticeably more readable hunks than the default Myers
+	# on code that moves around. Git >= 1.8.2.
+	algorithm = histogram
+	# Colour lines that merely moved differently from lines that changed,
+	# ignoring pure re-indentation. Git >= 2.17.
+	colorMoved = zebra
+	colorMovedWS = allow-indentation-change
+
+[difftool "vscode"]
+	cmd = code --wait --diff \"$LOCAL\" \"$REMOTE\"
+
+[fetch]
+	# Drop remote-tracking branches and tags that no longer exist upstream,
+	# instead of accumulating them forever. prune: Git >= 1.8.5,
+	# pruneTags: Git >= 2.17.
+	prune = true
+	pruneTags = true
 
 [push]
 	default = current
+	# `git push` on a brand new branch creates the upstream by itself, so `-u`
+	# stops being something you have to remember. Git >= 2.37.
+	autoSetupRemote = true
 
 [pull]
 	# Prevent automatic creation of merge commits if the pull can't fast forward.
-	# If a pull fails because of this, you can retry it with `git pull --rebase` to rebase onto the new commits.
-	# Shopify prefers to rebase, so this will require you to decide if a rebase is necessary.
+	# If a pull fails because of this, retry with `git up` (pull --rebase
+	# --autostash) once you have decided a rebase is what you want. Left as
+	# `only` rather than pull.rebase=true so that the decision stays explicit.
 	ff = only
 
-[commit]
-	template = ~/.stCommitMsg
-	
+[rebase]
+	# Honour `fixup!`/`squash!` commits without having to pass --autosquash.
+	autoSquash = true
+	# Stash and restore a dirty tree around a rebase. Git >= 2.6.
+	autoStash = true
+	# When rebasing a stack, move every branch that pointed into the rebased
+	# range, not just the one checked out. Git >= 2.38.
+	updateRefs = true
+
+[branch]
+	# Most recently touched branches first in `git branch`. Git >= 2.19.
+	sort = -committerdate
+
+[tag]
+	# Version-aware ordering, so v10 sorts after v9 rather than after v1.
+	sort = -version:refname
+
+[column]
+	# Multi-column `git branch`/`git tag` listings when the terminal is wide
+	# enough, single column when piped. Git >= 1.7.11.
+	ui = auto
+
 [init]
 	defaultBranch = main
+
 [help]
 
-	# Automatically correct and execute mistyped commands. Keep this off unless you enjoy pain.
+	# 0 is Git's own default: print the suggestion, never run it. Spelled out
+	# because the alternative is a machine that guesses what you meant.
 	autocorrect = 0
 
 [user]
 
+	# Personal identity. A work identity belongs in ~/.gitconfig-work, picked up
+	# by the includeIf at the bottom of this file, not here.
 	name = Ryan Crumley
 	email = crumley@gmail.com
+
+[credential]
+	# Use whichever credential store this machine actually has: the macOS
+	# Keychain, libsecret on a Linux desktop, otherwise an in-memory cache.
+	# Git has no OS-conditional include, so this dispatches at run time; the
+	# helpers live in `git --exec-path`, which is not on PATH.
+	helper = "!f() { p=$(git --exec-path); for h in osxkeychain libsecret; do if [ -x \"$p/git-credential-$h\" ]; then exec \"$p/git-credential-$h\" \"$@\"; fi; done; exec \"$p/git-credential-cache\" --timeout=3600 \"$@\"; }; f"
 
 [rerere]
 	# https://git-scm.com/docs/git-rerere
@@ -128,20 +205,6 @@
 	# resolve that same conflict in a future rebase, this setting will reuse your previously recorded conflict resolution.
 	enabled = true
 	autoupdate = true
-[mergetool "p4mergetool"]
-	cmd = /Applications/p4merge.app/Contents/Resources/launchp4merge $PWD/$BASE $PWD/$REMOTE $PWD/$LOCAL $PWD/$MERGED
-	trustExitCode = false
-
-[mergetool]
-	keepBackup = false
-
-[diff]
-	tool = p4mergetool
-	# Detect copies as well as renames
-	renames = copies
-
-[difftool "p4mergetool"]
-	cmd = /Applications/p4merge.app/Contents/Resources/launchp4merge $LOCAL $REMOTE
 
 [color]
 	# Use colors in Git commands that are capable of colored output when outputting to the terminal
@@ -166,31 +229,33 @@
 	changed = green
 	untracked = cyan
 
-# URL shorthands
+# URL shorthands. GitHub turned off the git:// protocol in 2022, so every
+# shorthand now resolves to SSH; `github:`/`gist:` used to fetch over git://
+# and could no longer connect at all.
 [url "git@github.com:"]
 
 	insteadOf = "gh:"
-	pushInsteadOf = "github:"
-	pushInsteadOf = "git://github.com/"
-
-[url "git://github.com/"]
-
 	insteadOf = "github:"
 
 [url "git@gist.github.com:"]
 
 	insteadOf = "gst:"
-	pushInsteadOf = "gist:"
-	pushInsteadOf = "git://gist.github.com/"
-
-[url "git://gist.github.com/"]
-
 	insteadOf = "gist:"
-[include]
-	path = /Users/rcrumley/.config/dev/gitconfig
-	path = /Users/ryan/.config/dev/gitconfig
+
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+
+# Optional overrides, last so they win. Git silently ignores an include whose
+# path does not exist, so neither file has to be there.
+#
+#   ~/.gitconfig.local  - anything specific to this one machine.
+#   ~/.gitconfig-work   - work identity (name/email/signing key) for anything
+#                         cloned under ~/work/. Create it with a [user] block.
+[include]
+	path = ~/.gitconfig.local
+
+[includeIf "gitdir:~/work/"]
+	path = ~/.gitconfig-work

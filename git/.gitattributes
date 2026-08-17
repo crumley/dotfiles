@@ -1,0 +1,72 @@
+# Global gitattributes (core.attributesFile).
+#
+# Only a fallback: a .gitattributes committed inside a repository always wins,
+# so this fills the gap for repositories that declare nothing.
+
+# Normalise line endings on the way into history and check out LF, matching
+# core.autocrlf = input. Git's own binary heuristic keeps it away from files
+# that are not text.
+* text=auto
+
+# Shell and fish scripts must keep LF even if this is ever checked out on
+# Windows; the .bat/.ps1 counterparts must keep CRLF.
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.fish  text eol=lf
+*.zsh   text eol=lf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# Never line-end-mangle, never try to diff or merge these as text.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.icns  binary
+*.webp  binary
+*.pdf   binary
+*.mp3   binary
+*.mp4   binary
+*.mov   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.eot   binary
+*.zip   binary
+*.gz    binary
+*.tgz   binary
+*.bz2   binary
+*.xz    binary
+*.7z    binary
+*.jar   binary
+*.class binary
+*.pyc   binary
+*.so    binary
+*.dylib binary
+*.dll   binary
+*.db    binary
+*.sqlite  binary
+*.sqlite3 binary
+
+# Language-aware hunk headers, so `@@` lines name the enclosing function rather
+# than whatever happened to be a few lines up. All of these drivers are built
+# into Git; an unrecognised name simply falls back to the default.
+*.c      diff=cpp
+*.h      diff=cpp
+*.cpp    diff=cpp
+*.cs     diff=csharp
+*.css    diff=css
+*.go     diff=golang
+*.html   diff=html
+*.java   diff=java
+*.kt     diff=kotlin
+*.md     diff=markdown
+*.php    diff=php
+*.pl     diff=perl
+*.py     diff=python
+*.rb     diff=ruby
+*.rs     diff=rust
+*.tex    diff=tex
