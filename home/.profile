@@ -72,6 +72,21 @@ if [ -z "${EDITOR:-}" ]; then
 	unset _editor
 fi
 
+# ripgrep reads its config file only when this points at it — there is no
+# implicit lookup by name or location, so the stowed ~/.ripgreprc (rg package,
+# package-root dotfile) is inert without this line and always has been.
+#
+# Guarded rather than a bare export, because rg does not ignore a path it
+# cannot read: it prints "rg: failed to read the file specified in
+# RIPGREP_CONFIG_PATH: ... (os error 2)" to stderr on *every* invocation while
+# otherwise working normally. On a machine where the rg package is not stowed,
+# an unconditional export would mean that warning on every single search. The
+# guard costs one stat per login.
+if [ -r "$HOME/.ripgreprc" ]; then
+	RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
+	export RIPGREP_CONFIG_PATH
+fi
+
 # Machine-local environment that is not committed: tokens, per-host paths,
 # anything private. POSIX sh only — this file is sourced by dash too.
 if [ -r "$HOME/.profile.local" ]; then
