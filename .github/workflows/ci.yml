@@ -1,0 +1,147 @@
+name: CI
+
+# Every job here shells out to test/*.sh, which is also what you run locally
+# (`./test/run.sh`). The YAML installs tools and nothing else, so there is no
+# second copy of the check logic to drift.
+#
+# The installer's own end-to-end suite is test/install-test.sh, which ships with
+# install.sh rather than with this workflow. It is invoked here, not
+# reimplemented — putting it on a two-OS matrix is the part it cannot do for
+# itself, and is the whole reason this file exists.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Submodules are deliberately NOT checked out. Six Hammerspoon Spoons are
+# submodules and one of them (BrowserManager) is declared with an SSH remote
+# (git@github.com:...), which cannot clone on a runner without a deploy key.
+# The Spoons are vendored macOS-only plugins that this repo does not lint, so
+# skipping them costs nothing; `submodules: recursive` would cost a guaranteed
+# red X on every run. test/lib.sh excludes */Spoons/* from discovery to match.
+
+jobs:
+  lint:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Install shellcheck
+        run: |
+          if ! command -v shellcheck >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq shellcheck
+          fi
+          shellcheck --version
+
+      # The gate. Fails on anything at severity>=warning that is not annotated
+      # in test/shellcheck-baseline.txt.
+      - name: shellcheck (gate, severity=warning)
+        run: ./test/lint.sh
+
+      # Advisory only. Style nits should be visible without being able to block
+      # a merge — that is what turns a linter into a maintenance burden.
+      - name: shellcheck (advisory, severity=style)
+        continue-on-error: true
+        env:
+          SHELLCHECK_SEVERITY: style
+        run: ./test/lint.sh
+
+  syntax:
+    name: syntax (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      # fish is not preinstalled on any GitHub runner. Install it, or the fish
+      # checks would skip on every run and the repo's primary shell would be the
+      # one thing never validated. Both OSes: fish 3.x on Ubuntu and 4.x on brew
+      # is itself a portability signal worth having.
+      - name: Install parsers (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fish lua5.4 python3-yaml
+          fish --version
+
+      - name: Install parsers (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install --quiet fish lua
+          fish --version
+
+      # actionlint checks this workflow itself. Linux only — the workflow files
+      # are platform-independent, so linting them twice buys nothing.
+      - name: Install actionlint
+        if: runner.os == 'Linux'
+        run: |
+          curl -fsSL -o download-actionlint.bash \
+            https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash
+          bash download-actionlint.bash 1.7.7
+          rm -f download-actionlint.bash
+          echo "$PWD" >> "$GITHUB_PATH"
+
+      - name: Parse checks
+        run: ./test/syntax.sh
+
+  install:
+    name: install (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Install stow and fish (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq stow fish
+          stow --version | head -1
+
+      - name: Install stow and fish (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install --quiet stow fish
+          stow --version | head -1
+
+      # The installer's own suite. Every test inside it installs into a
+      # throwaway directory via DOTFILES_TARGET; the installer suppresses all
+      # machine-level steps (Homebrew, macOS defaults, agent skills) whenever the
+      # target is not the real home, so nothing here mutates the runner.
+      #
+      # This is the job that answers the actual question the repo exists to
+      # answer: does a clean install work on Linux?
+      - name: Installer end-to-end suite
+        run: ./test/run.sh install
+
+      # Complementary to the above: install, then actually start fish, bash and
+      # sh against the result. Parsing is not loading — this is what catches a
+      # config that assumes Homebrew, or that aborts when atuin is missing.
+      - name: Shell startup smoke test
+        run: ./test/run.sh smoke
