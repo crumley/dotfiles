@@ -1,0 +1,45 @@
+# mise global config. https://mise.jdx.dev/configuration.html
+#
+# This replaces the asdf-era `~/.config/mise/.tool-versions` that used to live
+# here. mise never read that file: `~/.config/mise/config.toml` is the one and
+# only global config path. Verified with `mise config ls`, which listed nothing
+# with the .tool-versions present and listed this file once it existed.
+# `.tool-versions` is still honoured *inside a project*, just not as global
+# config — per-project pins belong in each repo's own mise.toml.
+#
+# These are fallbacks, not mandates: any project with its own mise.toml or
+# .tool-versions overrides them. `mise install` materialises the set,
+# `mise current` says what is actually active right now.
+#
+# Version specs are pinned to a line rather than "latest". "latest" resolves at
+# install time and records nothing, so two machines set up a month apart end up
+# on different majors with nothing in the repo explaining why — which is the
+# whole thing a version file exists to prevent.
+
+[tools]
+# LTS line. Bump the major deliberately, not by drift.
+node = "24"
+
+python = "3.12"
+ruby = "3.4"
+
+# Rust's own channel name; rustup-style rolling stable is the intended way to
+# track Rust, so this is a pin to a channel rather than a floating "latest".
+rust = "stable"
+
+# Bun is pre-2.0 and still moving; track the 1.x line.
+bun = "1"
+
+# Yarn Classic, deliberately frozen — 1.22.19 is the last release of the 1.x
+# line. Modern Yarn ships per-project via corepack, not globally.
+yarn = "1.22.19"
+
+# Temurin LTS. Bare "temurin" resolved to whatever the newest Temurin build was
+# on the day you ran it (temurin-26 at time of writing), including non-LTS
+# releases — same drift problem as "latest", with a slower blast radius.
+java = "temurin-21"
+
+# Removed: `direnv 2.31.0`. It was the only exact pin in the file, at a version
+# from 2021, while Homebrew was independently installing a current direnv — so
+# mise would shadow the newer binary on PATH with an ancient one. direnv is a
+# system tool here, not a per-project toolchain; let the package manager own it.

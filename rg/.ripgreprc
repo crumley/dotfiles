@@ -1,25 +1,31 @@
-# Ensure filename+linenumber is clickable for vscode + iterm
+# ripgrep defaults. https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md
+#
+# ripgrep only reads this file when RIPGREP_CONFIG_PATH points at it — there is
+# no implicit lookup by name or location. The shell config is what sets it:
+#
+#   RIPGREP_CONFIG_PATH=$HOME/.ripgreprc
+#
+# If that export is missing, every line below is silently inert and rg falls
+# back to its own defaults. Check with `rg --debug --files 2>&1 | head -1`,
+# which names the config file it loaded.
+#
+# One flag per line. Shell quoting is NOT applied here, so a value with spaces
+# goes on its own line under the flag rather than in `--flag="a b"`.
+
+# Print `path:line:match` on every result line instead of grouping matches under
+# a path heading. Terminals and editors that linkify `path:line` — VS Code's
+# integrated terminal most of all, since `code -w` is $EDITOR here — can only
+# make a hit clickable when the path is on the same line as the match.
 --no-heading
 
+# Minified files and lockfiles otherwise blow a single match into a wall of
+# text; show a preview of the long line instead of dumping it.
 --max-columns=150
 --max-columns-preview
 
+# Drop trailing/leading whitespace from matched lines, so deeply indented code
+# lines up instead of pushing the match off the right edge.
 --trim
 
-# Add my 'web' type.
-#--type-add
-#web:*.{html,css,js}*
-
-# Using glob patterns to include/exclude files or folders
-#--glob=!git/*
-
-# or
-#--glob
-#!git/*
-
-# Set the colors.
-#--colors=line:none
-#--colors=line:style:bold
-
-# Because who cares about case!?
+# Lowercase query means case-insensitive; type a capital and you meant it.
 --smart-case
