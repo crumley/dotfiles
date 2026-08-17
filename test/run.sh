@@ -30,10 +30,12 @@ usage() {
 }
 
 checks=""
+want_all=0
 for arg in "$@"; do
     case "$arg" in
         -h | --help) usage 0 ;;
-        lint | syntax | install | smoke | all) checks="$checks $arg" ;;
+        all) want_all=1 ;;
+        lint | syntax | install | smoke) checks="$checks $arg" ;;
         *)
             printf 'run.sh: unknown argument %s\n\n' "$arg" >&2
             usage 1
@@ -41,9 +43,12 @@ for arg in "$@"; do
     esac
 done
 
-case "$checks" in
-    '' | *all*) checks="lint syntax install smoke" ;;
-esac
+# Matched as a whole word, never as a substring. `case "$checks" in *all*)`
+# looks equivalent and is not: "install" contains "all", so `run.sh install`
+# quietly ran the entire suite.
+if [ "$want_all" = 1 ] || [ -z "$checks" ]; then
+    checks="lint syntax install smoke"
+fi
 
 rc=0
 failed=""
