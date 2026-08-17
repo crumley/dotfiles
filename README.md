@@ -131,7 +131,7 @@ Nineteen packages. All of them install on Linux except the two marked macOS-only
 | `karabiner` | `~/.config/karabiner/karabiner.json` | keyboard remapping — **macOS only** |
 | `mise` | `~/.config/mise/config.toml` | language runtime versions |
 | `rclone` | `~/bin/rclone-cron.sh` | the scheduled rclone sync |
-| `rg` | `~/.ripgreprc` | ripgrep defaults |
+| `rg` | `~/.ripgreprc` | ripgrep defaults — see the note below |
 | `ssh` | `~/.ssh/config` | ssh, and the 1Password agent socket on either platform |
 | `starship` | `~/.config/starship.toml` | prompt |
 | `tmux` | `~/.config/tmux/tmux.conf` | tmux |
@@ -149,6 +149,17 @@ and `.github/`.
 Two packages install executables into `~/bin` — `git-by-date` and `rclone-cron.sh`. Both the
 fish config and `~/.profile` put `~/bin` on `$PATH`, which is what makes `git by-date` work in
 Git's subcommand form.
+
+One caveat on `rg`: ripgrep reads `.ripgreprc` **only** when `RIPGREP_CONFIG_PATH` points at
+it — there is no lookup by name or location — and nothing in this repo sets that variable yet.
+So the file is linked but currently inert. Until a shell config sets it, either export it
+yourself or add it to `~/.$hostname.fish`:
+
+```fish
+set -gx RIPGREP_CONFIG_PATH $HOME/.ripgreprc
+```
+
+`rg --debug --files 2>&1 | head -1` names the config actually loaded.
 
 ## Platform support
 
