@@ -5,7 +5,7 @@
 # Install (Linux, and macOS if you have granted cron Full Disk Access):
 #
 #   crontab -e
-#   */10 * * * * "$HOME/.bin/rclone-cron.sh" >>/tmp/rclone-cron.log 2>&1
+#   */10 * * * * "$HOME/bin/rclone-cron.sh" >>/tmp/rclone-cron.log 2>&1
 #
 # The path must be absolute. cron runs jobs with a near-empty environment and an
 # unspecified working directory, which is why the previous version of this
