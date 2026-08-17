@@ -25,13 +25,23 @@
 # do not need to be listed.
 DOTFILES_NOT_PACKAGES="lib bin macos scripts script test tests docs"
 
-# Packages that are macOS-only: the applications they configure do not exist,
-# or are not used, on Linux. A Linux install skips these entirely.
+# Packages that are macOS-only: the applications they configure genuinely do
+# not exist on Linux. Everything else stows everywhere.
 #
-# (Ghostty and espanso do have Linux builds. The owner's call is that these
-# four are macOS-desktop configuration; if that changes, move the package name
-# out of this list and it is installed everywhere. That is the whole change.)
-DOTFILES_DARWIN_ONLY="espanso ghostty hammerspoon karabiner"
+# Removing a package from this list is the whole change needed to install it
+# everywhere. Two came off it after their configs were actually checked:
+#
+#   ghostty  Ghostty's config schema is platform-independent and it
+#            parses-and-ignores keys that do not apply to the running platform
+#            (verified against 1.3.1, which accepts gtk-titlebar and
+#            linux-cgroup on macOS without complaint). One config serves both.
+#   espanso  Officially supports Linux as of 2.3.0, and the config is plain
+#            text replacements plus the 1Password CLI, which runs on both.
+#            Installing it on Linux differs -- X11 and Wayland need different
+#            espanso packages and the Wayland build is upstream-flagged
+#            experimental -- but that is a packaging matter, and this installer
+#            does not install packages on Linux anyway.
+DOTFILES_DARWIN_ONLY="hammerspoon karabiner"
 
 # Packages that are Linux-only. None today; kept so the map is symmetric and
 # the next person has an obvious place to put one.

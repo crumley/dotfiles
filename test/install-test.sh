@@ -28,6 +28,7 @@ assert() { local d=$1; shift; if "$@"; then ok "$d"; else bad "$d"; fi; }
 refute() { local d=$1; shift; if "$@"; then bad "$d"; else ok "$d"; fi; }
 
 real_dir()   { [ -d "$1" ] && [ ! -L "$1" ]; }
+dangling()   { [ -L "$1" ] && [ ! -e "$1" ]; }
 relative_link() { local t; t=$(readlink "$1") && case "$t" in /*) return 1 ;; *) return 0 ;; esac; }
 same()       { [ "$1" = "$2" ]; }
 grep_out()   { printf '%s' "$2" | grep -q -- "$1"; }
@@ -40,8 +41,10 @@ newhome() {
   printf '%s\n' "$d"
 }
 
+STALE_SRC=""
 cleanup() {
   local d
+  [ -n "$STALE_SRC" ] && rm -f "$STALE_SRC"
   for d in $HOMES; do
     case "$d" in
       "$HOME"|"$HOME"/*|/|'') printf 'refusing to clean %s\n' "$d" >&2 ;;
@@ -102,8 +105,9 @@ assert "starship is discovered (the old hardcoded list missed it)" grep_out '^st
 assert "macOS keeps hammerspoon" grep_out '^hammerspoon$' "$darwin_list"
 refute "Linux skips hammerspoon" grep_out '^hammerspoon$' "$linux_list"
 refute "Linux skips karabiner"   grep_out '^karabiner$' "$linux_list"
-refute "Linux skips espanso"     grep_out '^espanso$' "$linux_list"
-refute "Linux skips ghostty"     grep_out '^ghostty$' "$linux_list"
+assert "Linux gets espanso (supported since 2.3.0)" grep_out '^espanso$' "$linux_list"
+assert "Linux gets ghostty (its config schema is platform-independent)" \
+  grep_out '^ghostty$' "$linux_list"
 assert "Linux still gets fish"   grep_out '^fish$' "$linux_list"
 
 group "Clean install"
@@ -113,6 +117,9 @@ assert "the atuin config is a symlink" [ -L "$h1/.config/atuin/config.toml" ]
 assert "starship is linked" [ -L "$h1/.config/starship.toml" ]
 assert "links are relative, so stow owns them" relative_link "$h1/.config/atuin/config.toml"
 assert "--no-folding: ~/.config is a real directory, not a link into the repo" real_dir "$h1/.config"
+assert "git-by-date lands in ~/bin, which is on PATH" [ -L "$h1/bin/git-by-date" ]
+assert "rclone-cron.sh lands in ~/bin too" [ -L "$h1/bin/rclone-cron.sh" ]
+refute "nothing is installed into ~/.bin any more" [ -e "$h1/.bin" ]
 
 group "Idempotency"
 before=$(snapshot "$h1")
@@ -169,6 +176,33 @@ assert "install over a folded tree exits 0" install_into "$h3" -q
 assert "the fold was unfolded into a real directory" real_dir "$h3/.config"
 assert "repository content was not moved out of the repo" [ -f "$REPO/atuin/.config/atuin/config.toml" ]
 refute "nothing was backed up: none of it was a real conflict" [ -d "$h3/.dotfiles-backup" ]
+
+group "Pruning links to files the repository no longer has"
+h6=$(newhome)
+STALE_SRC="$REPO/rg/.ripgreprc-stale-test"
+printf 'temporary\n' >"$STALE_SRC"
+install_into "$h6" -q
+assert "setup: a new file in a package gets linked" [ -L "$h6/.ripgreprc-stale-test" ]
+rm -f "$STALE_SRC"
+assert "setup: deleting it from the repo leaves a dangling link" dangling "$h6/.ripgreprc-stale-test"
+printf 'mine\n' >"$h6/.a-real-file"
+ln -s /etc/hosts "$h6/.a-foreign-link"
+ln -s /nowhere/at/all "$h6/.a-foreign-dangling-link"
+mkdir -p "$h6/.dotfiles-backup/manual"
+ln -s "$REPO/rg/.ripgreprc-stale-test" "$h6/.dotfiles-backup/manual/rescued"
+assert "--no-prune leaves the stale link alone" install_into "$h6" -q --no-prune
+assert "  ... it is still there" [ -L "$h6/.ripgreprc-stale-test" ]
+assert "the default run prunes it" install_into "$h6" -q
+refute "the stale link is gone" [ -e "$h6/.ripgreprc-stale-test" ]
+refute "  ... really gone, not just broken" [ -L "$h6/.ripgreprc-stale-test" ]
+assert "a real file is untouched" [ -f "$h6/.a-real-file" ]
+assert "a symlink pointing outside the repo is untouched" [ -L "$h6/.a-foreign-link" ]
+assert "even a dangling one, if it points outside the repo" [ -L "$h6/.a-foreign-dangling-link" ]
+assert "backups are never pruned" [ -L "$h6/.dotfiles-backup/manual/rescued" ]
+assert "working links survive" [ -L "$h6/.ripgreprc" ]
+before=$(snapshot "$h6")
+install_into "$h6" -q
+assert "and the run after a prune is a no-op again" same "$before" "$(snapshot "$h6")"
 
 group "Subsets and bad input"
 h4=$(newhome)

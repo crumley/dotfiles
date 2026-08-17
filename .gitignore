@@ -10,8 +10,16 @@ fish/.config/fish/fish_variables
 fish/.config/fish/completions
 fish/.config/fish/conf.d
 fish/.config/fish/functions
-!fish/.config/fish/functions/my_*.fish
+# There is deliberately no `!fish/.config/fish/functions/my_*.fish` line here
+# any more. It looked like it protected those files and did nothing at all: git
+# does not descend into an excluded directory, so a negation inside one can
+# never match. The tracked functions survived only because they were already
+# tracked -- a fresh clone-and-add would have dropped them. The exception is
+# expressed where it can actually work, in the fish package's own
+# fish/.gitignore, which re-opens the directory before re-including files.
 vim/.vim/swaps
 ssh/.ssh/known_hosts*
 ssh/.ssh/asap
 direnv/.config/direnv/lib
+# Optional machine-local Ghostty settings, included by the tracked config.
+ghostty/.config/ghostty/config.local

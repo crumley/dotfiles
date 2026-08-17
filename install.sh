@@ -39,6 +39,7 @@ SKIP_BREW=0
 BREW_BUNDLE=0
 SSH_KEYS=0
 LIST_ONLY=0
+PRUNE=1
 DOTFILES_TARGET=${DOTFILES_TARGET:-$HOME}
 DOTFILES_BACKUP_ROOT=${DOTFILES_BACKUP_ROOT:-}
 
@@ -68,6 +69,9 @@ Options:
       --ssh-authorized-keys
                           Add github.com/crumley.keys to
                           ~/.ssh/authorized_keys, deduplicated. Off by default.
+      --no-prune          Keep symlinks that point at files this repository no
+                          longer has. They are removed by default; nothing else
+                          is ever deleted.
       --list              List the packages this platform would install.
   -q, --quiet             Only print warnings and errors.
   -h, --help              This.
@@ -80,10 +84,17 @@ Conflicts:
   outside the repository, or one stow will not take over (an absolute one, or
   one left behind by another package).
 
-  Rerun with --takeover to move those aside and link over them. That is the
-  answer to Atuin rewriting ~/.config/atuin/config.toml before you can get a
-  rerun in: --takeover moves the file aside and links in the same pass, so
-  there is no window for Atuin to write it back.
+  Rerun with --takeover to move those aside and link over them. It moves and
+  links in a single pass, which is what solves the Atuin case: Atuin recreates
+  ~/.config/atuin/config.toml whenever the file is missing when a shell starts,
+  so deleting it by hand and then running stow loses a race with your own
+  terminals. --takeover never opens that gap.
+
+  The mirror image is handled too: when a file is deleted from this repository
+  the symlink it left in your home directory is removed, so a config that moved
+  (~/.tmux.conf -> ~/.config/tmux/tmux.conf) does not leave something broken
+  behind. Only symlinks pointing at a file this repository no longer has are
+  ever removed. --no-prune turns that off.
 
 Homebrew:
   --brew-bundle is opt-in because installing the whole Brewfile takes a long
@@ -124,6 +135,7 @@ while [ $# -gt 0 ]; do
     --skip-brew)  SKIP_BREW=1 ;;
     --brew-bundle) BREW_BUNDLE=1 ;;
     --ssh-authorized-keys) SSH_KEYS=1 ;;
+    --no-prune)   PRUNE=0 ;;
     --list)       LIST_ONLY=1 ;;
     -q|--quiet)   DOTFILES_QUIET=1 ;;
     --)           shift; break ;;
@@ -352,6 +364,20 @@ say "Linking $PKG_COUNT package(s)..."
 # shellcheck disable=SC2086  # PACKAGES is a newline-separated list of names
 dotfiles_stow "$DRY_RUN" $PACKAGES
 
+# ---------------------------------------------------------------------------
+# Prune links to files this repository no longer has
+# ---------------------------------------------------------------------------
+
+if [ "$PRUNE" = 1 ]; then
+  STALE="$TMPDIR_RUN/stale"
+  printf '%s\n' "$PACKAGES" | dotfiles_scan_stale >"$STALE"
+  STALE_COUNT=$(wc -l <"$STALE" | tr -d ' ')
+  if [ "$STALE_COUNT" -gt 0 ]; then
+    say "Removing $STALE_COUNT stale link(s) to files this repo no longer has..."
+    dotfiles_prune "$STALE" "$DRY_RUN"
+  fi
+fi
+
 if [ "$DRY_RUN" = 1 ]; then
   say "Dry run complete; nothing was changed."
   exit 0
@@ -408,7 +434,20 @@ install_authorized_keys() {
   info "$added new key(s) added to ${keyfile#"$DOTFILES_TARGET/"}"
 }
 
+# Fish plugins. Bootstrapping used to happen from fish's own startup, curling a
+# URL (git.io/fisher) that no longer resolves -- so it ran on every shell start
+# and achieved nothing. It belongs here, once, at install time. The function is
+# stowed with the fish package; if it is not there yet, this is a no-op.
+bootstrap_fisher() {
+  have fish || return 0
+  printf '%s\n' "$PACKAGES" | grep -qx fish || return 0
+  say "Bootstrapping fish plugins..."
+  fish -c 'if functions -q my_fisher_bootstrap; my_fisher_bootstrap; end' ||
+    warn "fisher bootstrap failed; run 'fish -c my_fisher_bootstrap' by hand"
+}
+
 if [ "$SYSTEM_STEPS" = 1 ]; then
+  bootstrap_fisher
   restore_agent_skills
 fi
 if [ "$SSH_KEYS" = 1 ]; then

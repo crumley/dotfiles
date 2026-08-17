@@ -76,6 +76,8 @@ fi
 
 if [ "$DUMP" = 1 ]; then
   out="$DOTFILES_REPO/Brewfile.generated"
+  warn "the Brewfile is hand-curated: this writes Brewfile.generated, and copying it"
+  warn "over the Brewfile wholesale would throw that curation away."
   brew bundle dump --force --file "$out"
   say "Wrote $out. Diff it against the Brewfile and copy over what belongs:"
   say "    diff -u Brewfile Brewfile.generated"

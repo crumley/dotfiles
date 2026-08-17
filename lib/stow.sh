@@ -3,12 +3,20 @@
 # Linking, conflict detection, and takeover.
 #
 # Why this file exists at all: `stow` refuses to link over a real file, and it
-# reports that failure in its own vocabulary, after doing part of the work. The
-# recurring pain is Atuin, which rewrites ~/.config/atuin/config.toml every time
-# a shell starts, so by the time you have deleted the file and rerun the
-# installer the file is back. The answer is to decide up front, before touching
-# anything, exactly which paths are in the way -- and then either report them
-# precisely or move them out of the way in one atomic-feeling step.
+# reports that failure in its own vocabulary, after doing part of the work.
+#
+# The recurring pain is Atuin, and it is worth being precise about it because
+# the folklore version is wrong. Atuin does not rewrite its config: it creates
+# ~/.config/atuin/config.toml if and only if the file does not exist (upstream
+# settings.rs, checked against 18.16.1 -- a symlinked config survives `atuin
+# init` and normal use untouched, and no setting disables the generation). The
+# failure is a race, not a rewrite. You delete the file to get stow past it,
+# some shell starts in the gap, Atuin recreates it, and stow refuses again.
+#
+# So the fix is not a retry loop, and it is not telling anyone to close their
+# terminals first. It is to work out up front, before touching anything, exactly
+# which paths are in the way, and then move them aside and link in a single
+# pass, so the gap the race needs never opens.
 #
 # The rules, in order of importance:
 #
@@ -28,6 +36,9 @@
 # the curated one. Moving the intruder aside into a timestamped backup gets the
 # same "these dotfiles win" outcome, is reversible, and can never damage the
 # repository.
+#
+# Moving, not copying, is also what keeps the file's mode intact -- Atuin writes
+# its config 0600, and a rescued file should still be 0600 in the backup.
 
 # Path components GNU Stow ignores by default (stow(8), "Ignore Lists"). We
 # mirror them so the scan does not report conflicts for files stow will never
@@ -248,6 +259,103 @@ dotfiles_takeover() {
 
   # shellcheck disable=SC2034  # read by install.sh after this returns
   DOTFILES_MOVED=$moved
+}
+
+# ---------------------------------------------------------------------------
+# Pruning links the repository no longer provides
+# ---------------------------------------------------------------------------
+#
+# The mirror image of the conflict problem. When a file is deleted from a
+# package, stow does not know it ever existed, so the symlink it created in
+# $HOME stays behind pointing at nothing. That is not cosmetic: a leftover
+# ~/.tmux.conf makes tmux error on every start, because tmux 3.1+ reads both
+# ~/.tmux.conf and ~/.config/tmux/tmux.conf.
+#
+# The rule is deliberately narrow, and it is the only thing this installer ever
+# deletes: a path is pruned only if it is a symlink, AND its destination
+# resolves inside this repository, AND that destination does not exist. A real
+# file can never match. A symlink to anywhere else can never match. A working
+# link can never match.
+
+# Top-level names in the target directory that the given packages install into,
+# one per line. This is where stale links can be, and it keeps the sweep off
+# the rest of $HOME.
+_dotfiles_target_roots() {
+  local pkg entry name
+  while IFS= read -r pkg; do
+    [ -n "$pkg" ] || continue
+    for entry in "$DOTFILES_REPO/$pkg"/* "$DOTFILES_REPO/$pkg"/.[!.]*; do
+      [ -e "$entry" ] || continue
+      name=${entry##*/}
+      if _stow_ignored "$name"; then continue; fi
+      _translate_dotfiles "$name"
+    done
+  done | sort -u
+}
+
+# Print every stale link, one path per line, relative to the target directory.
+# Reads the package list on stdin.
+dotfiles_scan_stale() {
+  local roots dir link dest rel
+  roots=$(_dotfiles_target_roots)
+
+  {
+    # Loose links directly in the target directory: ~/.tmux.conf, ~/.screenrc,
+    # ~/.iterm2_shell_integration.bash all live here.
+    find "$DOTFILES_TARGET" -mindepth 1 -maxdepth 1 -type l -print 2>/dev/null
+    # Anything under a directory this repository installs into. .config is
+    # always swept: a package that drops an entire subdirectory (tmuxinator,
+    # say) no longer names it, so it would not otherwise be looked at.
+    for dir in $roots .config; do
+      case "$dir" in .|..|'') continue ;; esac
+      [ -d "$DOTFILES_TARGET/$dir" ] || continue
+      [ -L "$DOTFILES_TARGET/$dir" ] && continue
+      find "$DOTFILES_TARGET/$dir" -name .dotfiles-backup -prune -o -type l -print 2>/dev/null
+    done
+  } | while IFS= read -r link; do
+    rel=${link#"$DOTFILES_TARGET"/}
+    # Never touch anything inside a backup: those are the user's rescued files,
+    # and a backed-up symlink into the repo may well be dangling.
+    case "$rel" in .dotfiles-backup/*) continue ;; esac
+    dest=$(link_target_abs "$link") || continue
+    dest=$(normalize_path "$dest")
+    case "$dest" in
+      "$DOTFILES_REPO"/*)
+        [ -e "$dest" ] || printf '%s\n' "$rel"
+        ;;
+    esac
+  done | sort -u
+}
+
+# Remove the stale links listed in the file $1. $2 is 1 for a dry run.
+# Sets DOTFILES_PRUNED.
+dotfiles_prune() {
+  local list=$1 dry=$2 rel path dest pruned=0
+
+  while IFS= read -r rel; do
+    [ -n "$rel" ] || continue
+    path="$DOTFILES_TARGET/$rel"
+    # Re-check every condition at the moment of deletion rather than trusting
+    # the scan. Deleting is the one irreversible thing here.
+    [ -L "$path" ] || continue
+    dest=$(link_target_abs "$path") || continue
+    dest=$(normalize_path "$dest")
+    case "$dest" in
+      "$DOTFILES_REPO"/*) ;;
+      *) continue ;;
+    esac
+    [ -e "$dest" ] && continue
+    if [ "$dry" = 1 ]; then
+      info "would remove stale link $rel -> $dest"
+    else
+      rm -- "$path"
+      info "removed stale link $rel"
+    fi
+    pruned=$((pruned + 1))
+  done <"$list"
+
+  # shellcheck disable=SC2034  # read by install.sh after this returns
+  DOTFILES_PRUNED=$pruned
 }
 
 # Run stow over the given packages. $1 is 1 for a dry run.
