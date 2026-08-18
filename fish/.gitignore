@@ -22,6 +22,20 @@
 # plugins, and third-party appends such as `conf.d/local.fish`) stays ignored.
 !/.config/fish/conf.d/[0-9][0-9]-*.fish
 
+# Except this one. `00-local.fish` is the machine's own configuration -- feature
+# flags, secrets, whatever this box needs and no other box should see. It has to
+# sort first, because 50-tools.fish reads the FISH_* flags it sets, and the NN-
+# prefix is the only thing that sorts ahead of 10-path.fish. That prefix would
+# otherwise re-include it via the rule above, so it is ignored again here.
+# Order matters: a later pattern wins, which is why this sits below the negation.
+/.config/fish/conf.d/00-local.fish
+
+# Ours, despite having no NN- prefix: `direnv.fish` shadows the identically named
+# vendor snippet that Homebrew and distro packages install, which would otherwise
+# hook direnv unconditionally and make FISH_DIRENV meaningless. The name has to
+# match the vendor file's exactly, so it cannot take a numeric prefix.
+!/.config/fish/conf.d/direnv.fish
+
 # Ours: autoloaded functions. Add new ones here when you add the file.
 !/.config/fish/functions/my_*.fish
 !/.config/fish/functions/fish_user_key_bindings.fish

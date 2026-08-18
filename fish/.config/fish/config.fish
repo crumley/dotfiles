@@ -3,7 +3,7 @@
 # Deliberately thin. Real configuration lives in conf.d/, which fish sources
 # automatically, in sorted order, *before* this file:
 #
-#   conf.d/00-host.fish   hostname derivation + ~/.$FISH_HOSTNAME.fish
+#   conf.d/00-local.fish  this machine's own config -- untracked, may not exist
 #   conf.d/10-path.fish   PATH (Homebrew discovered, never hardcoded)
 #   conf.d/20-env.fish    environment variables
 #   conf.d/30-abbr.fish   abbreviations (interactive only)
@@ -18,4 +18,8 @@
 # conf.d/local.fish. Those are gitignored by design, so an installer that
 # appends to your shell config can never again cause repo drift.
 #
-# Secrets and per-host settings belong in ~/.$FISH_HOSTNAME.fish (chmod 600).
+# Secrets and per-machine settings belong in conf.d/00-local.fish, which is
+# gitignored and therefore never leaves this machine. It sorts first, so the
+# FISH_* flags it sets are in place before 50-tools.fish reads them. There is no
+# indirection through ~/.$hostname.fish any more and no hostname to derive: the
+# file is either there or it is not, and fish sources it like any other fragment.
