@@ -30,5 +30,6 @@
       "Bash(npm:*)",
       "mcp__ide__getDiagnostics"
     ]
-  }
+  },
+  "agentPushNotifEnabled": true
 }
