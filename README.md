@@ -116,7 +116,7 @@ Nineteen packages. All of them install on Linux except the two marked macOS-only
 
 | package | lands at | configures |
 | --- | --- | --- |
-| `agents` | `~/.agents/.skill-lock.json` | agent skills lockfile; the installer reinstalls each locked skill |
+| `agents` | `~/.agents/skills.list` | which agent skills to reinstall, and from where |
 | `atuin` | `~/.config/atuin/config.toml` | shell history search |
 | `bash` | `~/.bashrc`, `~/.bash_profile` | interactive bash and login-shell layering |
 | `claude` | `~/.claude/settings.json` | Claude Code permissions |
@@ -215,10 +215,23 @@ machine rather than the other way round. `./upgrade.sh --dump` writes `Brewfile.
 
 Nothing private is ever committed here.
 
-- **fish** — `fish/.config/fish/conf.d/00-local.fish`. It lives in the repo but is gitignored,
-  so it is stowed to `~/.config/fish/conf.d/00-local.fish` like any other fragment and simply
-  never committed. It sorts first, which is what puts the `FISH_*` flags in place before
-  `conf.d/50-tools.fish` reads them. Missing is fine — fish sources what is there.
+- **fish** — `~/.config/fish/conf.d/00-local.fish`, a real file you create, not a symlink and
+  not in the repo. A commented-out template ships as
+  `conf.d/00-local.fish.example` and is stowed alongside it, so a fresh machine starts with:
+
+  ```bash
+  cp ~/.config/fish/conf.d/00-local.fish.example \
+     ~/.config/fish/conf.d/00-local.fish
+  ```
+
+  Then uncomment what that machine wants. `./install.sh` prints this reminder whenever the real
+  file is missing, so a shell coming up without its integrations is never a mystery. The `00-`
+  prefix is what puts the `FISH_*` flags in place before `conf.d/50-tools.fish` reads them.
+  Missing is fine — fish sources what is there.
+
+  The two names are deliberately different. If the live file were the tracked one, uncommenting
+  a single line would show up as a modification to a tracked file, and one `git commit -a` later
+  the machine's settings would be in the history.
 - **Hammerspoon** — `~/.$hostname.hammerspoon.lua`, outside the repo, named after
   `hs.host.localizedName()`, and **permission-checked before loading**: owned by you and not
   group- or world-writable, or it is refused. Hammerspoon has no stow-visible drop-in directory,
@@ -230,10 +243,9 @@ a gitignored path is already per-machine, and deriving a hostname to find it add
 that differed across macOS and Linux. If you had a `~/.$hostname.fish`, move its contents into
 `conf.d/00-local.fish`; nothing reads the old path any more.
 
-**A caution worth stating:** `00-local.fish` sits *inside* the repository working tree. It is
-ignored by `fish/.gitignore`, so it cannot be committed by accident — but `git clean -x` or
-`-X` will delete it, since that is exactly what those flags do to ignored files. Keep a copy
-somewhere durable if it holds anything you cannot regenerate.
+Because the live file is in `$HOME` rather than the checkout, `git clean -x` in the repo cannot
+delete it — but nothing backs it up either. Keep a copy somewhere durable if it holds anything
+you cannot regenerate.
 
 `00-local.fish` is also where the fish feature flags go, since which integrations you want
 differs per machine. Each is off unless set to `true`, and each additionally checks the tool is

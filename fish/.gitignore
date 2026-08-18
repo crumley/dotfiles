@@ -30,6 +30,14 @@
 # Order matters: a later pattern wins, which is why this sits below the negation.
 /.config/fish/conf.d/00-local.fish
 
+# The template for it, though, is tracked -- it is the starting point a fresh
+# machine copies. It carries a .example suffix precisely so that the live file
+# and the tracked one can never be the same path: editing a tracked
+# `00-local.fish` would show up as a diff, and one `git commit -a` later the
+# machine's settings would be in the history. fish only sources `*.fish`, so
+# this one is inert where it lands.
+!/.config/fish/conf.d/00-local.fish.example
+
 # Ours, despite having no NN- prefix: `direnv.fish` shadows the identically named
 # vendor snippet that Homebrew and distro packages install, which would otherwise
 # hook direnv unconditionally and make FISH_DIRENV meaningless. The name has to

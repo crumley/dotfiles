@@ -1,0 +1,54 @@
+# Template for conf.d/00-local.fish -- this machine's own fish configuration.
+#
+# This file does nothing. It is tracked in the repository purely as a starting
+# point; the file fish actually reads is `00-local.fish`, without the .example
+# suffix, and that one is never committed.
+#
+#     cp ~/.config/fish/conf.d/00-local.fish.example \
+#        ~/.config/fish/conf.d/00-local.fish
+#
+# Then uncomment what this machine wants and open a new shell. `./install.sh`
+# prints this same reminder whenever the real file is missing.
+#
+# Why a separate .example rather than shipping `00-local.fish` commented out:
+# if the live file were tracked, the moment you uncommented a line it would show
+# up as a modification to a tracked file, and one `git commit -a` later your
+# machine's settings -- or a secret -- would be in the history. Keeping the two
+# names apart makes that impossible rather than merely unlikely.
+#
+# The `00-` prefix is load-bearing. fish sources conf.d/*.fish in sorted order,
+# and conf.d/50-tools.fish reads the FISH_* flags set here, so this file has to
+# come first. Do not rename it to something that sorts later.
+#
+# ---------------------------------------------------------------------------
+# Feature flags
+# ---------------------------------------------------------------------------
+#
+# Each integration is off unless set to `true` here, and each additionally
+# checks that the tool is actually installed -- so enabling one on a machine
+# that lacks the binary is quietly ignored rather than an error.
+#
+# The point of the flags is that a machine which does not use a tool does not
+# get it, even though everything in the Brewfile is installed everywhere.
+
+# set -gx FISH_STARSHIP true    # prompt
+# set -gx FISH_ATUIN true       # shell history, ctrl-r
+# set -gx FISH_MISE true        # runtime version manager
+# set -gx FISH_DIRENV true      # per-directory environments
+# set -gx FISH_ZOXIDE true      # smarter cd
+# set -gx FISH_TMUX true        # auto-attach to tmux on login
+# set -gx FISH_KUBE true        # merge every ~/.kube/*config* into KUBECONFIG
+
+# ---------------------------------------------------------------------------
+# Anything else this machine needs
+# ---------------------------------------------------------------------------
+#
+# Machine-specific paths, work-only helpers, credentials-adjacent settings.
+# Use `set -gx`, not `set -Ux`: universal variables are written into
+# fish_variables and persist independently of this file, so they survive being
+# deleted here and will silently shadow it later. Globals are re-read from this
+# file on every shell start, which is what you want.
+
+# set -gx SOME_API_TOKEN ...
+# fish_add_path /opt/something/bin
+# source ~/some-work-tool/init.fish

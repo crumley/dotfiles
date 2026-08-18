@@ -1,0 +1,21 @@
+# Agent skills to reinstall on a fresh machine, one per line:
+#
+#     <source>  <name>
+#
+# `source` is whatever `skills add` accepts (a GitHub owner/repo, or a URL);
+# `name` is the skill's directory name under ~/.agents/skills. Blank lines and
+# lines starting with # are ignored. `install.sh` walks this file and runs
+# `npx skills add <source> -s <name> -g -y` for each entry.
+#
+# This replaces reading `.skill-lock.json`, which is no longer tracked. The
+# lockfile is written by the skills CLI and rewrites `skillFolderHash` and
+# `updatedAt` whenever a skill updates, so it showed up dirty in this repo
+# constantly and blocked `ward repo refresh` -- while the only fields anything
+# here ever read were the source and the name, which change only when you
+# deliberately add or remove a skill. So: track the intent, ignore the state.
+#
+# The skill bodies themselves live untracked in ~/.agents/skills and are never
+# committed.
+
+crumley/intent-architecture  intent-architecture
+vercel-labs/skills           find-skills

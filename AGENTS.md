@@ -39,10 +39,11 @@ would break one, that is the thing to raise rather than the thing to do.
 4. **A tool may be absent.** Every integration is guarded on the binary existing and degrades
    quietly. On Linux this repo *configures* software; it never installs it.
 5. **Secrets are never committed.** Fish's per-machine config is
-   `fish/.config/fish/conf.d/00-local.fish` — inside the working tree, but gitignored and stowed
-   like anything else. Hammerspoon's is `~/.$hostname.hammerspoon.lua`, outside the repo and
-   permission-checked before loading. Never track either, and never add a `.example` twin under
-   a name stow would link into `$HOME`.
+   `~/.config/fish/conf.d/00-local.fish`, a real file in `$HOME` that the user creates by copying
+   the tracked `00-local.fish.example`. Hammerspoon's is `~/.$hostname.hammerspoon.lua`,
+   permission-checked before loading. Track neither. The `.example` suffix is the whole safety
+   property: if the live file and the tracked template shared a path, uncommenting one line would
+   make the machine's settings a diff away from being committed.
 6. **The `Brewfile` is hand-maintained.** Never run `brew bundle dump --force` against it — see
    below.
 7. **Work reaches `main` only through a pull request.** Do not commit to `main`, do not push to
@@ -130,7 +131,8 @@ layout; fish sources `conf.d/*.fish` automatically, in sorted order, *before* `c
 
 | file | responsibility |
 | --- | --- |
-| `conf.d/00-local.fish` | this machine's own config — **gitignored**, often absent |
+| `conf.d/00-local.fish` | this machine's own config — a real file in `$HOME`, **never in the repo**, often absent |
+| `conf.d/00-local.fish.example` | the tracked, fully commented template it is copied from |
 | `conf.d/05-vendor-optout.fish` | disarms vendor snippets that would ignore the `FISH_*` flags |
 | `conf.d/direnv.fish` | inert; shadows the vendor `direnv.fish` by filename |
 | `conf.d/10-path.fish` | `PATH`; Homebrew discovered, never hardcoded |
@@ -158,7 +160,9 @@ fisher plugins, third-party appends, `conf.d/local.fish` — stays ignored by de
 `conf.d/00-local.fish` is the one deliberate exception: it has a `NN-` prefix (it must sort
 first) but is re-ignored by a pattern *below* the negation, since in gitignore the last matching
 pattern wins. Do not "tidy" that rule by moving it above the negation — that silently makes the
-machine's secrets committable.
+machine's secrets committable. Its template, `00-local.fish.example`, *is* tracked, via a
+negation below that again; fish only sources `*.fish`, so the template is inert where it lands.
+`install.sh` prints a copy-this reminder when the real file is absent.
 
 **Vendor snippets are the thing that quietly breaks the `FISH_*` flags.** fish auto-sources
 `vendor_conf.d` from every directory in `$__fish_vendor_confdirs`, and Homebrew and distro
@@ -214,6 +218,22 @@ is a separate, opt-in manifest of VS Code extensions.
 unreadable dump this file replaced, and it does it silently. `upgrade.sh` runs
 `brew bundle check` instead — the curated manifest audits the machine, not the reverse.
 `./upgrade.sh --dump` writes `Brewfile.generated` for diffing and never touches the `Brewfile`.
+
+### Agent skills
+
+`agents/.agents/skills.list` is the tracked source of truth: one `<source>  <name>` per line,
+comments and blank lines ignored. `install.sh` walks it and runs `npx skills add` for each entry.
+
+**`.skill-lock.json` is deliberately not tracked.** The skills CLI rewrites its
+`skillFolderHash` and `updatedAt` on every skill update, so a stowed, tracked copy left this
+repository permanently dirty — which also blocks `ward repo refresh` in the workspace that
+deploys it. Nothing ever read those fields; only the source and the name were used. Track the
+intent, ignore the state. Do not re-add the lockfile to git to "fix" a fresh machine having no
+skills — add the skill to `skills.list` instead.
+
+The skill bodies live untracked in `~/.agents/skills`, which is why the installer pre-creates
+that directory: without it, stow folds the missing `~/.agents` into a symlink to the checkout and
+every installed skill body lands in the repo as untracked noise.
 
 ### Hammerspoon (macOS only)
 

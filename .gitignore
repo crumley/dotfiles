@@ -23,3 +23,10 @@ ssh/.ssh/asap
 direnv/.config/direnv/lib
 # Optional machine-local Ghostty settings, included by the tracked config.
 ghostty/.config/ghostty/config.local
+
+# Agent skills. The lockfile is written by the skills CLI, which rewrites
+# skillFolderHash and updatedAt whenever a skill updates -- so a stowed, tracked
+# copy showed up dirty in this repo constantly and blocked `ward repo refresh`.
+# The durable intent (which skills, from where) is tracked in
+# agents/.agents/skills.list instead; the lockfile is state, so it is ignored.
+agents/.agents/.skill-lock.json
