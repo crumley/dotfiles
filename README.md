@@ -149,14 +149,10 @@ Two packages install executables into `~/bin` — `git-by-date` and `rclone-cron
 fish config and `~/.profile` put `~/bin` on `$PATH`, which is what makes `git by-date` work in
 Git's subcommand form.
 
-One caveat on `rg`: ripgrep reads `.ripgreprc` **only** when `RIPGREP_CONFIG_PATH` points at
-it — there is no lookup by name or location — and nothing in this repo sets that variable yet.
-So the file is linked but currently inert. Until a shell config sets it, either export it
-yourself or add it to `~/.$hostname.fish`:
-
-```fish
-set -gx RIPGREP_CONFIG_PATH $HOME/.ripgreprc
-```
+One note on `rg`: ripgrep reads `.ripgreprc` **only** when `RIPGREP_CONFIG_PATH` points at it —
+there is no lookup by name or location. Both `conf.d/20-env.fish` and `~/.profile` set it, each
+guarded on the file existing, because pointing the variable at a missing file makes `rg` print
+an error to stderr on every single invocation.
 
 `rg --debug --files 2>&1 | head -1` names the config actually loaded.
 
@@ -217,19 +213,31 @@ machine rather than the other way round. `./upgrade.sh --dump` writes `Brewfile.
 
 ### Host-specific config and secrets
 
-Nothing private is ever committed here. Per-machine settings and secrets live **outside the
-repo**, in files named after the host:
+Nothing private is ever committed here.
 
-- `~/.$hostname.fish` — sourced by fish, and **permission-checked before sourcing**. It must be
-  owned by you and not group- or world-writable, or it is refused with a warning and the rest of
-  the shell config still loads. `chmod 600` it.
-- `~/.$hostname.hammerspoon.lua` — same idea, same check, for Hammerspoon.
+- **fish** — `fish/.config/fish/conf.d/00-local.fish`. It lives in the repo but is gitignored,
+  so it is stowed to `~/.config/fish/conf.d/00-local.fish` like any other fragment and simply
+  never committed. It sorts first, which is what puts the `FISH_*` flags in place before
+  `conf.d/50-tools.fish` reads them. Missing is fine — fish sources what is there.
+- **Hammerspoon** — `~/.$hostname.hammerspoon.lua`, outside the repo, named after
+  `hs.host.localizedName()`, and **permission-checked before loading**: owned by you and not
+  group- or world-writable, or it is refused. Hammerspoon has no stow-visible drop-in directory,
+  so the host-file pattern still earns its keep there.
 
-The hostname is `scutil --get LocalHostName` on macOS, `hostname -s` elsewhere; `FISH_HOSTNAME`
-overrides it.
+Fish used to work the Hammerspoon way — `~/.$hostname.fish`, a derived hostname, and the same
+permission check. It was replaced because the indirection bought nothing: a per-machine file in
+a gitignored path is already per-machine, and deriving a hostname to find it added a moving part
+that differed across macOS and Linux. If you had a `~/.$hostname.fish`, move its contents into
+`conf.d/00-local.fish`; nothing reads the old path any more.
 
-The host file is also where the fish feature flags go, since which integrations you want differs
-per machine. Each is off unless set to `true`, and each additionally checks the tool is installed:
+**A caution worth stating:** `00-local.fish` sits *inside* the repository working tree. It is
+ignored by `fish/.gitignore`, so it cannot be committed by accident — but `git clean -x` or
+`-X` will delete it, since that is exactly what those flags do to ignored files. Keep a copy
+somewhere durable if it holds anything you cannot regenerate.
+
+`00-local.fish` is also where the fish feature flags go, since which integrations you want
+differs per machine. Each is off unless set to `true`, and each additionally checks the tool is
+installed:
 
 ```fish
 set -gx FISH_STARSHIP true    # prompt

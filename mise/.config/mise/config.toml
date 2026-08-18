@@ -20,7 +20,14 @@
 # LTS line. Bump the major deliberately, not by drift.
 node = "24"
 
-python = "3.12"
+# Current stable line. 3.15 exists upstream but is still rc/dev as of this
+# writing, so it is not a candidate.
+python = "3.14"
+
+# Ruby 4.0 has shipped (4.0.6). Deliberately staying on the 3.4 line: a major
+# bump here changes the default for every project that has not pinned its own,
+# and this file is a fallback, not a mandate. Bump it when the projects are
+# ready, not because the number went up.
 ruby = "3.4"
 
 # Rust's own channel name; rustup-style rolling stable is the intended way to
@@ -30,14 +37,17 @@ rust = "stable"
 # Bun is pre-2.0 and still moving; track the 1.x line.
 bun = "1"
 
-# Yarn Classic, deliberately frozen — 1.22.19 is the last release of the 1.x
-# line. Modern Yarn ships per-project via corepack, not globally.
-yarn = "1.22.19"
+# Yarn Classic, frozen at the genuine last 1.x release. This said 1.22.19 and
+# called it "the last release of the 1.x line", which was simply wrong —
+# 1.22.20, .21 and .22 all shipped afterwards. Modern Yarn goes per-project via
+# corepack, not globally, so this is only here for old checkouts.
+yarn = "1.22.22"
 
 # Temurin LTS. Bare "temurin" resolved to whatever the newest Temurin build was
-# on the day you ran it (temurin-26 at time of writing), including non-LTS
-# releases — same drift problem as "latest", with a slower blast radius.
-java = "temurin-21"
+# on the day you ran it, including non-LTS releases — same drift problem as
+# "latest", with a slower blast radius. 25 is the current LTS (Java 21 → 25);
+# the newest build available right now is temurin-26, which is not one.
+java = "temurin-25"
 
 # Removed: `direnv 2.31.0`. It was the only exact pin in the file, at a version
 # from 2021, while Homebrew was independently installing a current direnv — so

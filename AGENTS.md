@@ -17,7 +17,8 @@ is a stow package; its contents are symlinked into `$HOME`.
   they matter on Linux, where they are what `ssh` lands you in.
 - `mise` manages language runtimes. `asdf` is gone.
 - Hammerspoon provides window management and automation; its Spoons are git submodules.
-- Host-specific settings and secrets live **outside the repo**, in `~/.$hostname.*` files.
+- Machine-specific settings and secrets are never committed: fish reads them from the gitignored
+  `conf.d/00-local.fish`, Hammerspoon from `~/.$hostname.hammerspoon.lua`.
 
 ## The invariants
 
@@ -37,8 +38,11 @@ would break one, that is the thing to raise rather than the thing to do.
    at all" as a supported outcome.
 4. **A tool may be absent.** Every integration is guarded on the binary existing and degrades
    quietly. On Linux this repo *configures* software; it never installs it.
-5. **Secrets never enter the repo.** Per-host config is `~/.$hostname.fish` and
-   `~/.$hostname.hammerspoon.lua`, both permission-checked before being sourced.
+5. **Secrets are never committed.** Fish's per-machine config is
+   `fish/.config/fish/conf.d/00-local.fish` — inside the working tree, but gitignored and stowed
+   like anything else. Hammerspoon's is `~/.$hostname.hammerspoon.lua`, outside the repo and
+   permission-checked before loading. Never track either, and never add a `.example` twin under
+   a name stow would link into `$HOME`.
 6. **The `Brewfile` is hand-maintained.** Never run `brew bundle dump --force` against it — see
    below.
 7. **Work reaches `main` only through a pull request.** Do not commit to `main`, do not push to
@@ -126,7 +130,7 @@ layout; fish sources `conf.d/*.fish` automatically, in sorted order, *before* `c
 
 | file | responsibility |
 | --- | --- |
-| `conf.d/00-host.fish` | hostname derivation, then `~/.$FISH_HOSTNAME.fish` |
+| `conf.d/00-local.fish` | this machine's own config — **gitignored**, often absent |
 | `conf.d/10-path.fish` | `PATH`; Homebrew discovered, never hardcoded |
 | `conf.d/20-env.fish` | environment: `EDITOR`, `GPG_TTY`, fzf, ssh agent, `KUBECONFIG` |
 | `conf.d/30-abbr.fish` | abbreviations, interactive only |
@@ -134,11 +138,12 @@ layout; fish sources `conf.d/*.fish` automatically, in sorted order, *before* `c
 | `conf.d/90-tmux.fish` | `FISH_TMUX` auto-attach — last, because it hands over the terminal |
 | `functions/*.fish` | one function per file, autoloaded on first use |
 
-The numbering is load-bearing: `00-host.fish` runs first because the `FISH_*` flags it picks up
-from the host file have to be set before `50-tools.fish` reads them.
+The numbering is load-bearing: `00-local.fish` runs first because the `FISH_*` flags it sets
+have to be in place before `50-tools.fish` reads them. This is also the whole reason it carries
+a `NN-` prefix despite being untracked — nothing else sorts ahead of `10-path.fish`.
 
-Flags, each off unless set to `true` in the host file, and each additionally guarded on the tool
-being installed: `FISH_STARSHIP`, `FISH_ATUIN`, `FISH_MISE`, `FISH_DIRENV`, `FISH_ZOXIDE`,
+Flags, each off unless set to `true` in `00-local.fish`, and each additionally guarded on the
+tool being installed: `FISH_STARSHIP`, `FISH_ATUIN`, `FISH_MISE`, `FISH_DIRENV`, `FISH_ZOXIDE`,
 `FISH_TMUX`, `FISH_KUBE`. (`FISH_DEV`, `FISH_ASDF`, `FISH_ITERM`, `FISH_RPK`, `FISH_GT` and
 `FISH_CARAPACE` were removed and should not come back.)
 
@@ -147,6 +152,11 @@ and an explicit allowlist of function files. `fish/.gitignore` re-opens the stow
 directories and re-includes exactly those, so **a new function file must be added to
 `fish/.gitignore` or it will be silently untracked.** Anything without a numeric prefix —
 fisher plugins, third-party appends, `conf.d/local.fish` — stays ignored by design.
+
+`conf.d/00-local.fish` is the one deliberate exception: it has a `NN-` prefix (it must sort
+first) but is re-ignored by a pattern *below* the negation, since in gitignore the last matching
+pattern wins. Do not "tidy" that rule by moving it above the negation — that silently makes the
+machine's secrets committable.
 
 Plugins are managed by fisher against the tracked `fish_plugins`; `install.sh` bootstraps it
 once via `my_fisher_bootstrap`, not from shell startup.
