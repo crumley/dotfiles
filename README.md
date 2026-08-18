@@ -249,6 +249,14 @@ set -gx FISH_TMUX true        # auto-attach to tmux on login
 set -gx FISH_KUBE true        # merge every ~/.kube/*config* into KUBECONFIG
 ```
 
+The point of the flags is that a machine which does not use a tool does not get it, even when
+the tool is installed — and everything in the `Brewfile` is installed on every macOS machine.
+That needs defending: Homebrew and distro packages ship fish snippets in `vendor_conf.d`, which
+fish sources on every start, and those hook their tool in unconditionally. Both mise and direnv
+did exactly that. They are disarmed by `conf.d/05-vendor-optout.fish` and `conf.d/direnv.fish`
+respectively, so the flags are the real switch. If a flag ever seems to be ignored, look at
+`ls $__fish_vendor_confdirs` for a newly installed package doing the same thing.
+
 Other escape hatches, none of them repo-provided and all of them optional:
 
 | file | read by |

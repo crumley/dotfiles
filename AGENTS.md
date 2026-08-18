@@ -131,6 +131,8 @@ layout; fish sources `conf.d/*.fish` automatically, in sorted order, *before* `c
 | file | responsibility |
 | --- | --- |
 | `conf.d/00-local.fish` | this machine's own config — **gitignored**, often absent |
+| `conf.d/05-vendor-optout.fish` | disarms vendor snippets that would ignore the `FISH_*` flags |
+| `conf.d/direnv.fish` | inert; shadows the vendor `direnv.fish` by filename |
 | `conf.d/10-path.fish` | `PATH`; Homebrew discovered, never hardcoded |
 | `conf.d/20-env.fish` | environment: `EDITOR`, `GPG_TTY`, fzf, ssh agent, `KUBECONFIG` |
 | `conf.d/30-abbr.fish` | abbreviations, interactive only |
@@ -157,6 +159,25 @@ fisher plugins, third-party appends, `conf.d/local.fish` — stays ignored by de
 first) but is re-ignored by a pattern *below* the negation, since in gitignore the last matching
 pattern wins. Do not "tidy" that rule by moving it above the negation — that silently makes the
 machine's secrets committable.
+
+**Vendor snippets are the thing that quietly breaks the `FISH_*` flags.** fish auto-sources
+`vendor_conf.d` from every directory in `$__fish_vendor_confdirs`, and Homebrew and distro
+packages drop snippets there that hook their tool in unconditionally — so merely *installing*
+mise or direnv (both are in the `Brewfile`) activated them regardless of the flag. The flags
+exist so a machine that does not use a tool does not get it; a vendor snippet overrides that.
+
+Two mechanisms, and the choice between them is deliberate:
+
+- **mise** publishes a supported opt-out, `MISE_FISH_AUTO_ACTIVATE=0`, set in
+  `conf.d/05-vendor-optout.fish`. Preferred, because it survives the snippet being renamed.
+- **direnv** publishes none — its snippet is a bare `direnv hook fish | source`. It is shadowed
+  instead by `conf.d/direnv.fish`, an inert file whose *name* must stay byte-identical to the
+  vendor one, since fish runs only the first conf.d file with a given basename and the user's
+  directory wins.
+
+The opt-out cannot live in `50-tools.fish`: that file starts with `status is-interactive; or
+return`, while vendor snippets run regardless. If a `FISH_*` flag ever appears to be ignored,
+check `ls $__fish_vendor_confdirs` before anything else.
 
 Plugins are managed by fisher against the tracked `fish_plugins`; `install.sh` bootstraps it
 once via `my_fisher_bootstrap`, not from shell startup.

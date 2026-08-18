@@ -30,6 +30,12 @@
 # Order matters: a later pattern wins, which is why this sits below the negation.
 /.config/fish/conf.d/00-local.fish
 
+# Ours, despite having no NN- prefix: `direnv.fish` shadows the identically named
+# vendor snippet that Homebrew and distro packages install, which would otherwise
+# hook direnv unconditionally and make FISH_DIRENV meaningless. The name has to
+# match the vendor file's exactly, so it cannot take a numeric prefix.
+!/.config/fish/conf.d/direnv.fish
+
 # Ours: autoloaded functions. Add new ones here when you add the file.
 !/.config/fish/functions/my_*.fish
 !/.config/fish/functions/fish_user_key_bindings.fish
