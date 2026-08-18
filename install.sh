@@ -416,19 +416,48 @@ fi
 # (The skills CLI has no global restore yet: `skills experimental_install` is
 # project-scoped.)
 restore_agent_skills() {
-  local lock="$DOTFILES_TARGET/.agents/.skill-lock.json"
-  [ -f "$lock" ] || return 0
-  if ! have jq || ! have npx; then
-    info "agent skills: skipped (jq or npx missing)"
+  local list="$DOTFILES_TARGET/.agents/skills.list"
+  [ -f "$list" ] || return 0
+  if ! have npx; then
+    info "agent skills: skipped (npx missing)"
     return 0
   fi
   say "Restoring agent skills..."
-  jq -r '.skills | to_entries[] | "\(.value.source)\t\(.key)"' "$lock" |
-    while IFS="$(printf '\t')" read -r src name; do
-      # </dev/null: npx must not eat the loop's stdin, or it swallows the
-      # remaining lockfile lines and silently skips every skill after the first.
-      npx -y skills add "$src" -s "$name" -g -y </dev/null || warn "skill $name failed to install"
-    done
+  # Read the tracked source list rather than .skill-lock.json. The lockfile is
+  # written by the skills CLI and rewrites skillFolderHash/updatedAt on every
+  # skill update, so tracking it meant the repo was permanently dirty -- while
+  # the only things read here were the source and the name. jq is no longer
+  # needed either, which is one fewer thing that has to be installed first.
+  while read -r src name _rest; do
+    case "$src" in ''|\#*) continue ;; esac
+    [ -n "$name" ] || { warn "skills.list: no name for '$src', skipping"; continue; }
+    # </dev/null: npx must not eat the loop's stdin, or it swallows the
+    # remaining lines and silently skips every skill after the first.
+    npx -y skills add "$src" -s "$name" -g -y </dev/null || warn "skill $name failed to install"
+  done <"$list"
+}
+
+# The machine's own fish config is deliberately not in the repository, so a
+# fresh checkout cannot supply it. Say so once, at the end, rather than letting
+# the shell come up silently missing every FISH_* integration -- which is what
+# used to happen and looked like the config was broken.
+check_local_fish() {
+  local conf="$DOTFILES_TARGET/.config/fish/conf.d/00-local.fish"
+  local example="$conf.example"
+  local rel=${conf#"$DOTFILES_TARGET"/}
+  local rel_example=${example#"$DOTFILES_TARGET"/}
+  # Nothing to say if the machine already has one, or if the fish package is not
+  # installed here (in which case the template was never linked either).
+  [ -e "$conf" ] && return 0
+  [ -e "$example" ] || return 0
+  printf '\n'
+  warn "no ~/$rel"
+  info "It holds this machine's own fish settings -- the FISH_* flags that turn on"
+  info "starship, atuin, mise, direnv and the rest. Without it they all stay off."
+  info ""
+  info "  cp ~/$rel_example ~/$rel"
+  info ""
+  info "then uncomment what this machine wants and start a new shell."
 }
 
 # Fish plugins. Bootstrapping used to happen from fish's own startup, curling a
@@ -449,3 +478,6 @@ if [ "$SYSTEM_STEPS" = 1 ]; then
 fi
 
 say "Done."
+
+# Last, so it is the thing still on screen when the run finishes.
+check_local_fish
