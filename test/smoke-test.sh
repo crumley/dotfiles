@@ -265,6 +265,56 @@ try_shell "fish (login)" ".config/fish/config.fish" fish -l -c 'exit 0'
 # only bite outside the login path.
 try_shell "fish (-c)" ".config/fish/config.fish" fish -c 'exit 0'
 
+# Reproduce Ghostty's command from a GUI launcher's system-only environment.
+# On Apple Silicon fish is outside this PATH, so success proves that the login
+# profile discovers the package-manager prefix before resolving fish.
+if run_with_timeout "$SHELL_TIMEOUT" env -i \
+    HOME="$TARGET" USER="${USER:-dotfiles}" LOGNAME="${LOGNAME:-dotfiles}" \
+    PATH=/usr/bin:/bin:/usr/sbin:/sbin TERM="${TERM:-dumb}" LANG="${LANG:-C.UTF-8}" \
+    /bin/sh -l -c 'exec fish -l -c "exit 0"' </dev/null >/dev/null 2>&1
+then
+    pass "Ghostty login bootstrap resolves fish from a system-only PATH"
+else
+    fail "Ghostty login bootstrap could not resolve fish from a system-only PATH"
+fi
+
+# Ghostty injects its fish vendor config into only the initial shell. A tmux
+# pane inherits GHOSTTY_RESOURCES_DIR but not that consumed one-shot injection,
+# so config.fish must source the integration itself. Use a tiny fake resource
+# tree to prove both the nested-shell path and the duplicate-load guard without
+# requiring Ghostty to be installed on the CI runner.
+if have fish; then
+    ghostty_resources="$TARGET/ghostty-resources"
+    ghostty_vendor="$ghostty_resources/shell-integration/fish/vendor_conf.d"
+    mkdir -p "$ghostty_vendor"
+    cat >"$ghostty_vendor/ghostty-shell-integration.fish" <<'EOF'
+set --global DOTFILES_GHOSTTY_LOADS (math "0$DOTFILES_GHOSTTY_LOADS + 1")
+function __ghostty_setup
+end
+EOF
+
+    if run_with_timeout "$SHELL_TIMEOUT" env -i \
+        HOME="$TARGET" PATH="$PATH" TERM="${TERM:-dumb}" LANG="${LANG:-C.UTF-8}" \
+        GHOSTTY_RESOURCES_DIR="$ghostty_resources" TMUX="$TARGET/tmux,1,0" \
+        fish -i -c 'test "$DOTFILES_GHOSTTY_LOADS" = 1' </dev/null >/dev/null 2>&1
+    then
+        pass "tmux fish manually restores Ghostty shell integration"
+    else
+        fail "tmux fish did not restore Ghostty shell integration"
+    fi
+
+    if run_with_timeout "$SHELL_TIMEOUT" env -i \
+        HOME="$TARGET" PATH="$PATH" TERM="${TERM:-dumb}" LANG="${LANG:-C.UTF-8}" \
+        GHOSTTY_RESOURCES_DIR="$ghostty_resources" \
+        XDG_DATA_DIRS="$ghostty_resources/shell-integration" \
+        fish -i -c 'test "$DOTFILES_GHOSTTY_LOADS" = 1' </dev/null >/dev/null 2>&1
+    then
+        pass "initial fish does not double-load injected Ghostty integration"
+    else
+        fail "initial fish double-loaded or lost injected Ghostty integration"
+    fi
+fi
+
 # bash as a login shell reads .bash_profile; as an interactive non-login shell
 # it reads .bashrc. Both paths matter and they source different files.
 try_shell "bash (login)" ".bash_profile" bash -l -c 'exit 0'

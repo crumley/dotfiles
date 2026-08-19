@@ -12,6 +12,19 @@
 #
 # Functions live in functions/, one file per function, autoloaded on first use.
 #
+# Ghostty injects fish integration only into the first shell it launches. That
+# shell may immediately hand the terminal to tmux, whose panes start fresh fish
+# processes after the one-shot XDG_DATA_DIRS injection has been consumed. Load
+# the documented integration manually in those panes. Restricting this to TMUX
+# avoids double-loading it in Ghostty's directly launched fish without relying
+# on private function names from Ghostty's integration implementation.
+if status is-interactive; and set -q TMUX; and set -q GHOSTTY_RESOURCES_DIR
+    set --local ghostty_fish_integration "$GHOSTTY_RESOURCES_DIR/shell-integration/fish/vendor_conf.d/ghostty-shell-integration.fish"
+    if test -r "$ghostty_fish_integration"
+        source "$ghostty_fish_integration"
+    end
+end
+#
 # Machine-local and third-party configuration does NOT belong in this file.
 # Anything that wants to append shell setup should drop a file into
 # ~/.config/fish/conf.d/ whose name does not start with two digits -- e.g.

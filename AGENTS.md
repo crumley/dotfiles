@@ -59,7 +59,6 @@ lib/common.sh       logging, platform detection, path helpers, append_line_once
 lib/packages.sh     THE PLATFORM MAP — discovery, exclusions, macOS-only set
 lib/stow.sh         conflict detection, takeover, pruning, the stow invocation
 macos/defaults.sh   the `defaults write` block, guarded on Darwin
-macos/launchd-path.sh  gives GUI apps a Homebrew-aware PATH without assuming its prefix
 test/run.sh         local entry point for every check CI runs
 test/install-test.sh    the installer's own end-to-end suite
 <package>/          a stow package; contents mirror their layout under $HOME
@@ -165,11 +164,13 @@ file with no include mechanism to redirect, so there is nowhere to point a stub 
 
 ### Fish
 
-Configuration is **split**, not a single file. `config.fish` is a comment block documenting the
-layout; fish sources `conf.d/*.fish` automatically, in sorted order, *before* `config.fish`.
+Configuration is **split**, not a single file. Fish sources `conf.d/*.fish` automatically, in
+sorted order, *before* `config.fish`; that final file documents the layout and restores Ghostty's
+one-shot integration in nested fish shells such as tmux panes.
 
 | file | responsibility |
 | --- | --- |
+| `config.fish` | layout documentation and guarded nested-shell Ghostty integration |
 | `conf.d/00-local.fish` | this machine's own config — a real file in `$HOME`, **never in the repo**, often absent |
 | `conf.d/00-local.fish.example` | the tracked, fully commented template it is copied from |
 | `conf.d/05-vendor-optout.fish` | disarms vendor snippets that would ignore the `FISH_*` flags |
@@ -247,10 +248,12 @@ tmux config lives at `~/.config/tmux/tmux.conf` (tmux 3.1+ search path), **not**
 login shell rather than failing to start sessions. Version-sensitive options are feature-detected
 with `show-options`, not compared against version strings.
 
-Ghostty's `command` is `fish -l` — a bare name, looked up on `PATH`. On macOS,
-`macos/launchd-path.sh` makes that portable assumption true for GUI applications by adding the
-runtime-discovered Homebrew prefix to launchd's user-service PATH; do not replace it with an
-absolute fish path. `config-file = ?config.local` is the per-machine escape hatch.
+Ghostty starts `/bin/sh -l` and has it `exec fish -l`. The login bootstrap is deliberate: macOS
+Spotlight/LaunchServices replaces even a correctly configured user launchd PATH with its system-only
+PATH, so a bare `fish` cannot find Homebrew. `~/.profile` discovers the package-manager prefix without
+embedding it in Ghostty's cross-platform config. The wrapper hides fish from automatic shell detection,
+so `shell-integration = fish` is forced; `config.fish` manually restores that one-shot integration in
+tmux panes. `config-file = ?config.local` is the per-machine escape hatch.
 
 ### Brewfile
 
