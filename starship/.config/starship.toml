@@ -26,9 +26,9 @@
 add_newline = true
 
 # Starship warns on stderr when a module exceeds this. 500ms (the default) is
-# tight for a cold git status over a large repo or a network filesystem; 1s
-# keeps the warning meaningful without crying wolf on a slow Linux VM.
-command_timeout = 1000
+# tight for a cold git status over a large repo or a network filesystem; 2s
+# accommodates a cold scan while keeping the warning meaningful.
+command_timeout = 2000
 
 format = """
 $username\
