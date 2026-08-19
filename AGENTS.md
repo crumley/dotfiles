@@ -59,6 +59,7 @@ lib/common.sh       logging, platform detection, path helpers, append_line_once
 lib/packages.sh     THE PLATFORM MAP — discovery, exclusions, macOS-only set
 lib/stow.sh         conflict detection, takeover, pruning, the stow invocation
 macos/defaults.sh   the `defaults write` block, guarded on Darwin
+macos/launchd-path.sh  gives GUI apps a Homebrew-aware PATH without assuming its prefix
 test/run.sh         local entry point for every check CI runs
 test/install-test.sh    the installer's own end-to-end suite
 <package>/          a stow package; contents mirror their layout under $HOME
@@ -246,8 +247,10 @@ tmux config lives at `~/.config/tmux/tmux.conf` (tmux 3.1+ search path), **not**
 login shell rather than failing to start sessions. Version-sensitive options are feature-detected
 with `show-options`, not compared against version strings.
 
-Ghostty's `command` is `fish -l` — a bare name, looked up on `PATH`. `config-file = ?config.local`
-is the per-machine escape hatch.
+Ghostty's `command` is `fish -l` — a bare name, looked up on `PATH`. On macOS,
+`macos/launchd-path.sh` makes that portable assumption true for GUI applications by adding the
+runtime-discovered Homebrew prefix to launchd's user-service PATH; do not replace it with an
+absolute fish path. `config-file = ?config.local` is the per-machine escape hatch.
 
 ### Brewfile
 

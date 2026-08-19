@@ -90,7 +90,8 @@ install_linux() {
 
 shellcheck_all() {
   (cd "$REPO" && shellcheck -x install.sh upgrade.sh macos/defaults.sh \
-      lib/common.sh lib/packages.sh lib/stow.sh test/install-test.sh)
+      macos/launchd-path.sh lib/common.sh lib/packages.sh lib/stow.sh \
+      test/install-test.sh)
 }
 
 # ---------------------------------------------------------------------------
@@ -262,6 +263,48 @@ assert "install migrates it cleanly" install_into "$h9" -q
 refute "the old symlink is gone" [ -L "$h9/.bashrc" ]
 assert "the home .bashrc is now a real generated stub" [ -f "$h9/.bashrc" ]
 assert "and it sources the tracked file" grep -qF '.bashrc.tracked' "$h9/.bashrc"
+
+group "macOS launchd PATH"
+h10=$(newhome)
+mock_bin="$h10/mock-bin"
+brew_prefix="$h10/homebrew"
+launchd_log="$h10/launchd.log"
+mkdir -p "$mock_bin" "$brew_prefix/bin" "$brew_prefix/sbin"
+cat >"$mock_bin/launchctl" <<'EOF'
+#!/bin/sh
+case "$1" in
+  getenv) printf '%s\n' "${FAKE_LAUNCHD_PATH:-}" ;;
+  *)      printf 'launchctl %s\n' "$*" >>"$FAKE_LAUNCHD_LOG" ;;
+esac
+EOF
+cat >"$mock_bin/sudo" <<'EOF'
+#!/bin/sh
+printf 'sudo %s\n' "$*" >>"$FAKE_LAUNCHD_LOG"
+exec "$@"
+EOF
+chmod +x "$mock_bin/launchctl" "$mock_bin/sudo"
+expected_path="$brew_prefix/bin:$brew_prefix/sbin:/usr/bin:/bin:/usr/sbin:/sbin"
+: >"$launchd_log"
+FAKE_LAUNCHD_LOG="$launchd_log" FAKE_LAUNCHD_PATH='' \
+  PATH="$mock_bin:/usr/bin:/bin" "$REPO/macos/launchd-path.sh" "$brew_prefix" >/dev/null
+assert "persists the detected Homebrew prefix in launchd's user PATH" \
+  grep -qxF "launchctl config user path $expected_path" "$launchd_log"
+assert "uses sudo only for launchd's persistent configuration" \
+  grep -qxF "sudo $mock_bin/launchctl config user path $expected_path" "$launchd_log"
+assert "updates the current login session immediately" \
+  grep -qxF "launchctl setenv PATH $expected_path" "$launchd_log"
+
+: >"$launchd_log"
+FAKE_LAUNCHD_LOG="$launchd_log" FAKE_LAUNCHD_PATH="$expected_path" \
+  PATH="$mock_bin:/usr/bin:/bin" "$REPO/macos/launchd-path.sh" "$brew_prefix" >/dev/null
+assert "an already-correct launchd PATH is a no-op" [ ! -s "$launchd_log" ]
+
+: >"$launchd_log"
+out=$(FAKE_LAUNCHD_LOG="$launchd_log" FAKE_LAUNCHD_PATH='' \
+  DOTFILES_DRY_RUN=1 PATH="$mock_bin:/usr/bin:/bin" \
+  "$REPO/macos/launchd-path.sh" "$brew_prefix")
+assert "launchd PATH dry-run reports the resolved path" grep_out "$expected_path" "$out"
+assert "launchd PATH dry-run changes nothing" [ ! -s "$launchd_log" ]
 
 group "No duplicated lines, ever"
 # shellcheck source-path=SCRIPTDIR
