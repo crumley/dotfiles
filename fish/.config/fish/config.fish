@@ -8,7 +8,8 @@
 #   conf.d/20-env.fish    environment variables
 #   conf.d/30-abbr.fish   abbreviations (interactive only)
 #   conf.d/50-tools.fish  the FISH_* opt-in tool integrations
-#   conf.d/90-tmux.fish   FISH_TMUX auto-attach, last because it may exec
+#   conf.d/90-tmux.fish   FISH_TMUX auto-attach
+#   conf.d/95-ghostty.fish  restore Ghostty integration inside tmux panes
 #
 # Functions live in functions/, one file per function, autoloaded on first use.
 #

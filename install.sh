@@ -96,11 +96,6 @@ Conflicts:
   ever removed. --no-prune turns that off.
 
 Homebrew:
-  On macOS, Homebrew's bin directories are added to launchd's user PATH so GUI
-  applications can resolve commands such as fish without hardcoding Homebrew's
-  machine-dependent prefix. This asks for sudo once and takes full persistent
-  effect after a reboot; --skip-brew suppresses it.
-
   --brew-bundle is opt-in because installing the whole Brewfile takes a long
   time and is rarely what you want on an existing machine. On a fresh Mac, run
   ./install.sh --brew-bundle once. The 92 VS Code extensions are a second,
@@ -259,7 +254,7 @@ ensure_homebrew() {
   if have brew; then return 0; fi
   say "Installing Homebrew..."
   if [ "$DRY_RUN" = 1 ]; then
-    info "would install Homebrew, add its shellenv to ~/.zprofile, and configure the launchd PATH"
+    info "would install Homebrew and add its shellenv to ~/.zprofile"
     return 0
   fi
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -282,17 +277,6 @@ ensure_homebrew() {
 if [ "$SYSTEM_STEPS" = 1 ] && [ "$PLATFORM" = darwin ]; then
   if [ "$SKIP_BREW" = 0 ]; then
     ensure_homebrew
-
-    # Finder/Dock applications inherit launchd's small default PATH and never
-    # run ~/.zprofile. Configure a Homebrew-aware baseline there so portable
-    # GUI configuration can name `fish`, `code`, etc. without embedding this
-    # machine's Homebrew prefix. The helper updates this login session and the
-    # persistent user-service setting; it is a no-op once both brew directories
-    # are already present.
-    if have brew; then
-      brew_prefix=$(brew --prefix)
-      DOTFILES_DRY_RUN=$DRY_RUN "$DOTFILES_REPO/macos/launchd-path.sh" "$brew_prefix"
-    fi
   fi
 
   # `brew bundle` was commented out in the old installer, and that was not

@@ -42,14 +42,6 @@ On a fresh Mac, one extra pass installs the software the configs assume:
 ./install.sh --vscode-extensions    # the 92 editor extensions in Brewfile.vscode
 ```
 
-The normal macOS install also adds the detected Homebrew `bin` and `sbin` directories to
-launchd's user-service `PATH`. Finder, Dock, Spotlight, and login-item applications do not run
-shell profiles, so without this step GUI configuration such as Ghostty's portable
-`command = fish -l` cannot find Homebrew-installed commands. The installer asks for `sudo` only
-when that launchd `PATH` is missing Homebrew, updates the current login session immediately, and
-persists it for subsequent boots. It does not change the account's login shell. `--skip-brew`
-skips this along with all other Homebrew setup.
-
 ### When something is already in the way
 
 A plain `./install.sh` **refuses rather than damages.** If a real file, a directory, or a
@@ -101,7 +93,7 @@ only thing the installer deletes. `--no-prune` turns it off.
 | `--update` | `git pull` and advance submodules before linking |
 | `--brew-bundle` | install the Brewfile (macOS) |
 | `--vscode-extensions` | install `Brewfile.vscode` (separate on purpose) |
-| `--skip-brew` | never install or invoke Homebrew, or configure its launchd `PATH` |
+| `--skip-brew` | never install or invoke Homebrew |
 | `--no-prune` | keep symlinks pointing at files this repo no longer has |
 
 Named packages install a subset: `./install.sh fish git starship`.
@@ -194,8 +186,11 @@ a mechanical cut at that line.
 
 Nothing here hardcodes a Homebrew prefix. `/opt/homebrew`, `/usr/local`,
 `/home/linuxbrew/.linuxbrew` and `~/.linuxbrew` are all discovered at runtime, and no brew at
-all is a supported outcome. On macOS, `brew --prefix` also supplies the launchd GUI-service
-`PATH`; the account's login shell remains unchanged.
+all is a supported outcome. Ghostty also stays prefix-agnostic: it starts a POSIX login shell,
+lets the portable `~/.profile` establish `PATH`, and then replaces that process with fish. This
+is necessary because macOS Spotlight/LaunchServices gives launched apps a system-only `PATH`
+even when the user's launchd domain contains Homebrew. Fish manually restores Ghostty's
+one-shot shell integration in tmux panes.
 
 ## Day to day
 
