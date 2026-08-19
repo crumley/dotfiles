@@ -1,8 +1,15 @@
-# ~/.profile — the environment layer.
+# home/.profile.tracked — the environment layer, the tracked content.
+#
+# Stowed to ~/.profile.tracked, not ~/.profile. install.sh generates the real
+# ~/.profile as a small untracked stub that sources this file, so installers
+# that append straight into ~/.profile (rustup and others fall back to it)
+# land their edits in the stub instead of dirtying the repo. See
+# "Clobber-safe stubs" in AGENTS.md.
 #
 # Read by POSIX login shells (sh, dash, ksh), by display managers, and by
-# ~/.bash_profile, which sources it explicitly. Fish does not read this file;
-# its equivalent lives in fish/.config/fish/config.fish.
+# ~/.bash_profile, which sources it explicitly (by way of the ~/.profile
+# stub). Fish does not read this file; its equivalent lives in
+# fish/.config/fish/config.fish.
 #
 # Rules for this file:
 #   * POSIX sh only. It must parse under dash — no [[ ]], no arrays, no local.

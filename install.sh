@@ -402,6 +402,79 @@ if [ "$PRUNE" = 1 ]; then
   fi
 fi
 
+# ---------------------------------------------------------------------------
+# Clobber-safe stubs
+# ---------------------------------------------------------------------------
+#
+# `git config --global`, and shell installers that append to .bashrc /
+# .bash_profile / .profile, rewrite those files in place. If the path were a
+# stow symlink into this repo, that rewrite would dirty the tracked checkout.
+# So the git, bash, and home packages stow their content under a name nothing
+# else targets (.gitconfig.global, .bashrc.tracked, .bash_profile.tracked,
+# .profile.tracked), and the steps below ensure the real path exists and
+# points at the tracked content -- without ever touching content already
+# there.
+
+# ~/.gitconfig: ensure it exists and starts with an include of
+# ~/.gitconfig.global. Prepended, not appended -- git config --global always
+# appends, so anything it adds afterward comes later in the file and wins,
+# the same "last wins" precedence ~/.gitconfig.local already relies on inside
+# the tracked file.
+ensure_gitconfig_include() {
+  # want is a literal ~/-prefixed string, on purpose: git's own include.path
+  # expands a leading ~/ itself (git-config(1)), and writing it out any other
+  # way would tie the value to $DOTFILES_TARGET instead of the real $HOME a
+  # shell resolves it against later.
+  # shellcheck disable=SC2088
+  local target="$DOTFILES_TARGET/.gitconfig" want='~/.gitconfig.global' marker
+  marker=$(printf '\tpath = %s' "$want")
+  if [ -f "$target" ] && grep -qxF "$marker" "$target"; then
+    return 0
+  fi
+  if [ "$DRY_RUN" = 1 ]; then
+    info "would add 'include.path = $want' to the top of ~/.gitconfig"
+    return 0
+  fi
+  if [ -f "$target" ]; then
+    { printf '[include]\n%s\n\n' "$marker"; cat "$target"; } >"$target.dotfiles-tmp"
+    mv "$target.dotfiles-tmp" "$target"
+  else
+    printf '[include]\n%s\n' "$marker" >"$target"
+  fi
+  info "added include.path = $want to ~/.gitconfig"
+}
+
+# FILE ($1): ensure it exists and sources TRACKED ($2, a bare filename resolved
+# against $HOME at shell-startup time). Never touches FILE's existing content:
+# append_line_once only ever adds the one line, once, and refuses outright if
+# FILE is itself still a stow symlink into the repo (a machine mid-migration
+# from before this existed).
+ensure_shell_stub() {
+  local file=$1 tracked=$2 line
+  line="[ -r \"\$HOME/$tracked\" ] && . \"\$HOME/$tracked\""
+  if [ "$DRY_RUN" = 1 ]; then
+    if [ -f "$file" ] && grep -qxF "$line" "$file"; then
+      return 0
+    fi
+    info "would ensure $file sources \$HOME/$tracked"
+    return 0
+  fi
+  if append_line_once "$file" "$line"; then
+    info "$file now sources \$HOME/$tracked"
+  fi
+}
+
+if printf '%s\n' "$PACKAGES" | grep -qx git; then
+  ensure_gitconfig_include
+fi
+if printf '%s\n' "$PACKAGES" | grep -qx bash; then
+  ensure_shell_stub "$DOTFILES_TARGET/.bashrc" .bashrc.tracked
+  ensure_shell_stub "$DOTFILES_TARGET/.bash_profile" .bash_profile.tracked
+fi
+if printf '%s\n' "$PACKAGES" | grep -qx home; then
+  ensure_shell_stub "$DOTFILES_TARGET/.profile" .profile.tracked
+fi
+
 if [ "$DRY_RUN" = 1 ]; then
   say "Dry run complete; nothing was changed."
   exit 0

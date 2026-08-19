@@ -122,6 +122,44 @@ survives untouched (upstream `settings.rs`, verified against 18.16.1). The failu
 the gap between deleting the file and re-running stow. Do not reintroduce "Atuin overwrites its
 config" into any comment or doc — it is wrong, and it leads to the wrong fix.
 
+## Clobber-safe stubs
+
+The Atuin race is a tool that recreates a *missing* file; a different problem is a tool that
+rewrites an *existing* one it already owns. `git config --global` rewrites `~/.gitconfig`
+directly, and shell installers (nvm, pyenv, rustup, sdkman, ...) routinely append straight into
+`~/.bashrc`, `~/.bash_profile`, and `~/.profile`. If any of those paths were a stow symlink into
+this repo, the rewrite lands in tracked content and the checkout is dirty from then on —
+`--takeover` does not help, because nothing is *in the way* at install time; the file becomes
+dirty afterward, from ordinary use.
+
+The fix is the same shape for both: the `git`, `bash`, and `home` packages stow their content
+under a name nothing else targets (`.gitconfig.global`, `.bashrc.tracked`,
+`.bash_profile.tracked`, `.profile.tracked`), so `git config --global` or an installer's `>>`
+can never reach it. `install.sh` then ensures the real path exists and reaches the tracked
+content — the `ensure_gitconfig_include` and `ensure_shell_stub` functions, run after prune, once
+per relevant package if selected:
+
+- **`~/.gitconfig`** gets `[include]\n\tpath = ~/.gitconfig.global` **prepended** if not already
+  present. Prepended, not appended: `git config --global` always appends, so anything it adds
+  lands later in the file and wins — the same "last wins" precedence `~/.gitconfig.local` and
+  `~/.gitconfig-work` already rely on inside the tracked file itself.
+- **`~/.bashrc`, `~/.bash_profile`, `~/.profile`** each get one line appended via
+  `append_line_once` (`lib/common.sh`) — `[ -r "$HOME/<name>.tracked" ] && . "$HOME/<name>.tracked"`
+  — so the tracked config loads first and whatever a tool appends afterward runs layered on top,
+  never overwritten.
+
+Both are one-way and additive only: neither function ever rewrites content that is already
+there, and `append_line_once` separately refuses to touch a file that is still a stow symlink
+into the repo (a machine mid-migration from before this existed) rather than editing tracked
+content by surprise. This is why the steps run unconditionally (not gated on `--stow-only` or a
+throwaway `--target`) — they are the completion of linking these three packages, not a
+machine-level side effect, and `test/install-test.sh` exercises them the same way it exercises
+stow itself.
+
+`~/.claude/settings.json` and `~/.config/karabiner/karabiner.json` have the same clobber problem
+and deliberately do **not** get this treatment: Claude Code and Karabiner rewrite the *entire*
+file with no include mechanism to redirect, so there is nowhere to point a stub at. Left as-is.
+
 ## Per-package notes
 
 ### Fish
@@ -198,6 +236,8 @@ once via `my_fisher_bootstrap`, not from shell startup.
 - `credential.helper` is a dispatcher chosen at run time: osxkeychain → libsecret → cache.
 - Machine-local overrides go at the bottom so they win: `~/.gitconfig.local`, plus
   `~/.gitconfig-work` for clones under `~/work/`. Git ignores a missing include silently.
+- The tracked file stows to `~/.gitconfig.global`, not `~/.gitconfig` — see "Clobber-safe
+  stubs" below.
 
 ### Terminal
 

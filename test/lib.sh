@@ -108,7 +108,11 @@ have() { command -v "$1" >/dev/null 2>&1; }
 # entry cannot be deleted from one place and linger in the other.
 # ---------------------------------------------------------------------------
 
-KNOWN_BROKEN_PATHS="home/.profile"
+# Empty: the one entry this ever held (home/.profile, an escaped `\$` that
+# broke shellenv on every platform) was fixed by t3 and never fired again.
+# Kept as a list, not deleted outright, because the next genuinely broken file
+# belongs here rather than in a fresh mechanism.
+KNOWN_BROKEN_PATHS=""
 KNOWN_BROKEN_USED=""
 # shellcheck disable=SC2034  # read by syntax.sh and smoke-test.sh, which source this
 KNOWN_BROKEN_REASON=""
@@ -121,19 +125,8 @@ KNOWN_BROKEN_REASON=""
 # would be discarded with it — and a stale entry that never reports itself is
 # exactly the failure mode this list has to avoid.
 known_broken() {
+    # shellcheck disable=SC2034  # read by syntax.sh and smoke-test.sh, which source this
     KNOWN_BROKEN_REASON=""
-    case "$1" in
-        home/.profile)
-            # eval \$($(brew --prefix)/bin/brew shellenv)
-            # The backslash makes it a literal `$`, so this line has never
-            # worked on any platform. macOS's /bin/sh only warns; Ubuntu's dash
-            # refuses to start at all. Owned by t3 (POSIX shell config).
-            # shellcheck disable=SC2016,SC2034  # a literal, not an expansion; read by the scripts that source this
-            KNOWN_BROKEN_REASON='pre-existing breakage, owned by t3: the escaped `\$` on line 1 has never worked'
-            KNOWN_BROKEN_USED="$KNOWN_BROKEN_USED $1"
-            return 0
-            ;;
-    esac
     return 1
 }
 
@@ -198,17 +191,24 @@ repo_files() {
 # shell_dialect PATH
 # Prints the shellcheck dialect for a file ("bash" or "sh"), or nothing if the
 # file is not a shell script. Name-based rules come first because the files that
-# most need checking — .bashrc, .bash_profile, .profile — have neither an
-# extension nor a shebang. Everything else is discovered from its shebang, so a
-# new script added by another task is picked up without editing this list.
+# most need checking — .bashrc.tracked, .bash_profile.tracked, .profile.tracked
+# — have neither an extension nor a shebang. Everything else is discovered
+# from its shebang, so a new script added by another task is picked up
+# without editing this list.
+#
+# .bashrc/.bash_profile/.profile themselves are matched too: they are not
+# tracked any more (install.sh generates them — see "Clobber-safe stubs" in
+# AGENTS.md) so repo_files() will not normally find one, but a dialect is
+# still worth naming in case one turns up in the repo's own working tree.
 shell_dialect() {
     local path="$1" base first
     base=${path##*/}
 
     case "$base" in
-        .bashrc | .bash_profile | .bash_login | .bash_logout | .bash_aliases | .bash_functions)
+        .bashrc | .bashrc.tracked | .bash_profile | .bash_profile.tracked | \
+        .bash_login | .bash_logout | .bash_aliases | .bash_functions)
             printf 'bash\n'; return 0 ;;
-        .profile | .shrc)
+        .profile | .profile.tracked | .shrc)
             printf 'sh\n'; return 0 ;;
         direnvrc | .envrc)
             printf 'bash\n'; return 0 ;;

@@ -1,0 +1,38 @@
+# bash/.bash_profile.tracked — bash login shells, the tracked content.
+#
+# Stowed to ~/.bash_profile.tracked, not ~/.bash_profile. install.sh generates
+# the real ~/.bash_profile as a small untracked stub that sources this file
+# (see "Clobber-safe stubs" in AGENTS.md). Reason: shell installers (nvm,
+# pyenv, rustup, sdkman, ...) routinely append straight into ~/.bash_profile;
+# if that path were this tracked file, their edits would dirty the repo.
+# Whatever they append lands in the stub instead, after the source line the
+# stub adds, so tool hooks still run, just downstream of everything here.
+#
+# The layering, which this repo used to have inverted (.bashrc sourced
+# .bash_profile, so an interactive non-login shell pulled in login-only setup):
+#
+#   ~/.profile       environment; POSIX sh; every login shell reads it
+#   ~/.bash_profile  bash login shells: sources this file. Pulls in
+#                    ~/.profile, then hands off to ~/.bashrc when interactive.
+#   ~/.bashrc        interactive bash: options, history, completion, prompt
+#
+# Bash reads exactly one of ~/.bash_profile, ~/.bash_login, ~/.profile at
+# login, so as soon as the stub exists ~/.profile is skipped unless sourced
+# here by hand.
+
+if [ -r "$HOME/.profile" ]; then
+	# shellcheck source=/dev/null
+	. "$HOME/.profile"
+fi
+
+# A login shell that is also interactive (ssh with a tty, a macOS terminal tab,
+# `bash -l`) gets the interactive layer as well. A login shell that is not
+# interactive (`ssh host command`, some cron and systemd setups) must not.
+case $- in
+	*i*)
+		if [ -r "$HOME/.bashrc" ]; then
+			# shellcheck source=/dev/null
+			. "$HOME/.bashrc"
+		fi
+		;;
+esac

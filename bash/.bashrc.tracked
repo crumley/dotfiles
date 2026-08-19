@@ -1,4 +1,10 @@
-# ~/.bashrc — interactive bash.
+# bash/.bashrc.tracked — interactive bash, the tracked content.
+#
+# Stowed to ~/.bashrc.tracked, not ~/.bashrc. install.sh generates the real
+# ~/.bashrc as a small untracked stub that sources this file, so shell
+# installers (nvm, pyenv, rustup, sdkman, ...) that append straight into
+# ~/.bashrc land their edits in the stub instead of dirtying the repo. See
+# "Clobber-safe stubs" in AGENTS.md.
 #
 # Fish is the primary shell on macOS, but bash is the default login shell on
 # most Linux boxes: it is what ssh lands you in, what runs before fish, and

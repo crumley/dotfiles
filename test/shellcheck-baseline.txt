@@ -25,36 +25,3 @@
 # defect that it can't.
 SC1090 *
 SC1091 *
-
-# --- Debt: pre-modernization files, expected to disappear ------------------
-# Everything below is a real finding in a file that the modernization work is
-# rewriting or deleting. Listed so this check is usable on the current tree.
-# Each of these should go stale — and be deleted — as the other branches land.
-#
-# Verified against the in-flight branches at the time of writing:
-#   * install.sh      — rewritten by t1; the SC2164 `cd` is gone.
-#   * bash/*          — the whole bash/ package is deleted by t3.
-#   * home/.profile   — rewritten by t3; the syntax error is gone.
-# They are kept here anyway, because this branch forks from main and CI has to
-# be green on main-as-it-is, not on main-as-it-will-be.
-
-# install.sh — owned by t1 (installer rewrite)
-SC2164 install.sh
-
-# bash/.bashrc, bash/.bash_profile — owned by t3 (POSIX shell config)
-SC2046 bash/.bashrc
-SC2155 bash/.bash_profile
-
-# home/.profile — owned by t3. This one is a genuine syntax error:
-#   eval \$($(brew --prefix)/bin/brew shellenv)
-# the backslash makes it a literal `$`, so the line has never worked. Baselined
-# only so the rest of the suite is usable; t3's rewrite removes it.
-SC1036 home/.profile
-SC1088 home/.profile
-SC1098 home/.profile
-
-# rclone-cron.sh — trap body is single-quoted-in-double-quotes on purpose here
-# (the pidfile path is fixed and known at trap time). Globbed on the basename
-# because t1 moves this from rclone/.bin/ to rclone/bin/ (a dotdir was never on
-# $PATH, so those scripts had never actually been reachable).
-SC2064 */rclone-cron.sh
