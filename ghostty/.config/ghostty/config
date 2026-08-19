@@ -9,11 +9,16 @@
 # the other side) are accepted and ignored elsewhere, so this file needs no
 # per-platform split.
 
-# Shell. Looked up on PATH rather than hardcoded to a Homebrew prefix, so this
-# works on Apple Silicon, Intel macOS and Linux alike. If fish is not installed,
-# drop `command =` into config.local (see the bottom of this file) to fall back
-# to the login shell.
-command = fish -l
+# Shell. GUI launchers on macOS give applications only the system PATH, even
+# when the user's launchd domain has a richer one. Start a POSIX login shell so
+# ~/.profile can discover Homebrew (or another package manager), then replace
+# it with fish; no package-manager prefix is embedded here. The wrapper hides
+# fish from Ghostty's basename-based shell detection, so force the supported
+# fish integration explicitly. If fish is not installed, set `command =` and
+# `shell-integration = detect` in config.local (see the bottom) to use the
+# account's login shell instead.
+command = /bin/sh -l -c "exec fish -l"
+shell-integration = fish
 
 copy-on-select = clipboard
 mouse-hide-while-typing = true
