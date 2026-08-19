@@ -1,3 +1,16 @@
+# This is the repository's tracked git config. It is stowed to
+# ~/.gitconfig.global, not ~/.gitconfig, on purpose: `git config --global`
+# writes wherever git resolves its global config file to, which by default is
+# ~/.gitconfig -- if that path were a symlink into this repo, any tool that
+# runs `git config --global` (gh, git-lfs, IDE credential setup, ...) would
+# rewrite tracked content and leave this repo permanently dirty.
+#
+# install.sh instead ensures ~/.gitconfig exists and starts with
+# `[include] path = ~/.gitconfig.global`, prepended (never appended) so that
+# anything git config --global adds afterward -- which git always appends --
+# comes later in the file and wins, the same "last wins" precedence
+# ~/.gitconfig.local and ~/.gitconfig-work already rely on below.
+
 [alias]
 	# Everyday sorta commands
 		p = push origin HEAD

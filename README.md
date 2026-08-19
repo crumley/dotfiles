@@ -118,15 +118,15 @@ Nineteen packages. All of them install on Linux except the two marked macOS-only
 | --- | --- | --- |
 | `agents` | `~/.agents/skills.list` | which agent skills to reinstall, and from where |
 | `atuin` | `~/.config/atuin/config.toml` | shell history search |
-| `bash` | `~/.bashrc`, `~/.bash_profile` | interactive bash and login-shell layering |
+| `bash` | `~/.bashrc.tracked`, `~/.bash_profile.tracked` | interactive bash and login-shell layering — see the note below |
 | `claude` | `~/.claude/settings.json` | Claude Code permissions |
 | `direnv` | `~/.config/direnv/direnvrc` | per-directory environments, with the mise hook |
 | `espanso` | `~/.config/espanso/` | text expansion |
 | `fish` | `~/.config/fish/` | the primary shell: `config.fish`, `conf.d/`, `functions/`, `fish_plugins` |
 | `ghostty` | `~/.config/ghostty/config` | terminal |
-| `git` | `~/.gitconfig`, `~/.gitignore_global`, `~/.gitattributes`, `~/bin/git-by-date` | git |
+| `git` | `~/.gitconfig.global`, `~/.gitignore_global`, `~/.gitattributes`, `~/bin/git-by-date` | git — see the note below |
 | `hammerspoon` | `~/.hammerspoon/` | window management and automation — **macOS only** |
-| `home` | `~/.profile`, `~/.inputrc`, `~/.wgetrc`, `~/.hushlogin` | POSIX environment, readline, wget |
+| `home` | `~/.profile.tracked`, `~/.inputrc`, `~/.wgetrc`, `~/.hushlogin` | POSIX environment, readline, wget — see the note below |
 | `karabiner` | `~/.config/karabiner/karabiner.json` | keyboard remapping — **macOS only** |
 | `mise` | `~/.config/mise/config.toml` | language runtime versions |
 | `rclone` | `~/bin/rclone-cron.sh` | the scheduled rclone sync |
@@ -135,6 +135,17 @@ Nineteen packages. All of them install on Linux except the two marked macOS-only
 | `starship` | `~/.config/starship.toml` | prompt |
 | `tmux` | `~/.config/tmux/tmux.conf` | tmux |
 | `vim` | `~/.vimrc`, `~/.gvimrc` | vim, dependency-free and plugin-free |
+
+**`git`, `bash`, and `home` stow to a `.tracked`/`.global` name, not the real path.** `git config
+--global` rewrites `~/.gitconfig` directly, and shell installers (nvm, pyenv, rustup, sdkman, ...)
+routinely append straight into `~/.bashrc`, `~/.bash_profile`, and `~/.profile`. If any of those
+paths were a symlink into this repo, that rewrite would land in the tracked checkout and leave it
+permanently dirty. So the repo's content stows to a name nothing else targets
+(`~/.gitconfig.global`, `~/.bashrc.tracked`, `~/.bash_profile.tracked`, `~/.profile.tracked`),
+and `install.sh` separately ensures the real path exists and reaches it: `~/.gitconfig` gets a
+prepended `include.path`, the shell files get a one-line `source`, in both cases only ever adding
+that one thing and never touching whatever a tool has written there. See "Clobber-safe stubs" in
+`AGENTS.md` for the mechanics.
 
 Packages are **discovered, not listed** — every non-hidden top-level directory is one. Adding
 `zellij/` to the repo is enough to get it installed; no script needs editing.
@@ -279,6 +290,12 @@ Other escape hatches, none of them repo-provided and all of them optional:
 | `~/.gitconfig.local` | `~/.gitconfig`, last, so it wins |
 | `~/.gitconfig-work` | `~/.gitconfig`, for clones under `~/work/` |
 | `~/.config/ghostty/config.local` | `ghostty/config`, included last |
+
+Different from the above: `~/.gitconfig`, `~/.bashrc`, `~/.bash_profile`, and `~/.profile`
+themselves are also not tracked, but `install.sh` writes them (see the note above the package
+table) — they are redirect targets for tools that insist on rewriting their own config file, not
+somewhere to put your own settings. Put those in the escape hatches above instead: they are
+sourced from further down the chain regardless.
 
 ## Testing
 
