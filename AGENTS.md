@@ -164,13 +164,11 @@ file with no include mechanism to redirect, so there is nowhere to point a stub 
 
 ### Fish
 
-Configuration is **split**, not a single file. Fish sources `conf.d/*.fish` automatically, in
-sorted order, *before* `config.fish`; that final file documents the layout and restores Ghostty's
-one-shot integration in nested fish shells such as tmux panes.
+Configuration is **split**, not a single file. `config.fish` documents the layout; fish sources
+`conf.d/*.fish` automatically, in sorted order, *before* that file.
 
 | file | responsibility |
 | --- | --- |
-| `config.fish` | layout documentation and guarded nested-shell Ghostty integration |
 | `conf.d/00-local.fish` | this machine's own config — a real file in `$HOME`, **never in the repo**, often absent |
 | `conf.d/00-local.fish.example` | the tracked, fully commented template it is copied from |
 | `conf.d/05-vendor-optout.fish` | disarms vendor snippets that would ignore the `FISH_*` flags |
@@ -179,7 +177,8 @@ one-shot integration in nested fish shells such as tmux panes.
 | `conf.d/20-env.fish` | environment: `EDITOR`, `GPG_TTY`, fzf, ssh agent, `KUBECONFIG` |
 | `conf.d/30-abbr.fish` | abbreviations, interactive only |
 | `conf.d/50-tools.fish` | the `FISH_*` opt-in tool integrations |
-| `conf.d/90-tmux.fish` | `FISH_TMUX` auto-attach — last, because it hands over the terminal |
+| `conf.d/90-tmux.fish` | `FISH_TMUX` auto-attach; returns immediately inside an existing tmux pane |
+| `conf.d/95-ghostty.fish` | restores Ghostty's one-shot fish integration inside tmux panes |
 | `functions/*.fish` | one function per file, autoloaded on first use |
 
 The numbering is load-bearing: `00-local.fish` runs first because the `FISH_*` flags it sets
