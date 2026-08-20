@@ -1,9 +1,10 @@
 # Opt-in tool integrations.
 #
-# Each block is off unless the matching FISH_* flag is set to "true" -- normally
-# from ~/.$FISH_HOSTNAME.fish, so integrations can differ per machine. Every
-# block additionally checks that the tool is actually installed, so turning a
-# flag on for a host that does not have the tool is quiet rather than an error.
+# Each block is off unless the matching FISH_* flag is set to "true" in the
+# machine-owned conf.d/00-local.fish. That file sorts before this one; the also
+# machine-owned config.fish runs after every conf.d fragment and is too late to
+# set these inputs. Every block additionally checks that the tool is installed,
+# so enabling one without its binary is quiet rather than an error.
 #
 # These all install prompts, keybindings or shell hooks, so none of it is
 # meaningful in a non-interactive shell.
@@ -35,7 +36,7 @@ end
 
 # atuin -- shell history. ATUIN_NOBIND stops atuin binding keys itself; ctrl-r
 # is then bound in exactly one place, functions/fish_user_key_bindings.fish,
-# which fish calls after this file. config.fish used to bind it twice.
+# which fish calls after this file. The old tracked config.fish bound it twice.
 if test "$FISH_ATUIN" = true; and command -q atuin
     set -gx ATUIN_NOBIND true
     atuin init fish | source

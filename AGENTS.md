@@ -18,7 +18,9 @@ is a stow package; its contents are symlinked into `$HOME`.
 - `mise` manages language runtimes. `asdf` is gone.
 - Hammerspoon provides window management and automation; its Spoons are git submodules.
 - Machine-specific settings and secrets are never committed: fish reads them from the gitignored
-  `conf.d/00-local.fish`, Hammerspoon from `~/.$hostname.hammerspoon.lua`.
+  `conf.d/00-local.fish`, Hammerspoon from `~/.$hostname.hammerspoon.lua`. Fish's
+  `~/.config/fish/config.fish` is also machine-owned, so third-party installers can append to it
+  without writing through a symlink into the checkout.
 
 ## The invariants
 
@@ -156,6 +158,11 @@ throwaway `--target`) — they are the completion of linking these three package
 machine-level side effect, and `test/install-test.sh` exercises them the same way it exercises
 stow itself.
 
+Fish needs no generated stub: it natively auto-loads the tracked `conf.d/*.fish` fragments.
+The repo therefore does not provide `~/.config/fish/config.fish` at all. If a third-party tool
+creates or appends to that conventional path, it remains a real, machine-owned file in `$HOME`
+and cannot dirty the checkout.
+
 `~/.claude/settings.json` and `~/.config/karabiner/karabiner.json` have the same clobber problem
 and deliberately do **not** get this treatment: Claude Code and Karabiner rewrite the *entire*
 file with no include mechanism to redirect, so there is nowhere to point a stub at. Left as-is.
@@ -164,8 +171,10 @@ file with no include mechanism to redirect, so there is nowhere to point a stub 
 
 ### Fish
 
-Configuration is **split**, not a single file. `config.fish` documents the layout; fish sources
-`conf.d/*.fish` automatically, in sorted order, *before* that file.
+Configuration is **split**, not a single file. Fish sources `conf.d/*.fish` automatically in
+sorted order, even when `config.fish` is absent. The repo deliberately does not track
+`config.fish`: that conventional path belongs to the machine and to third-party installers that
+insist on appending there.
 
 | file | responsibility |
 | --- | --- |
@@ -194,7 +203,8 @@ tool being installed: `FISH_STARSHIP`, `FISH_ATUIN`, `FISH_MISE`, `FISH_DIRENV`,
 and an explicit allowlist of function files. `fish/.gitignore` re-opens the stow-folded
 directories and re-includes exactly those, so **a new function file must be added to
 `fish/.gitignore` or it will be silently untracked.** Anything without a numeric prefix —
-fisher plugins, third-party appends, `conf.d/local.fish` — stays ignored by design.
+fisher plugins, third-party appends, `conf.d/local.fish` — stays ignored by design. Do not add
+`config.fish` to the package: unlike a drop-in, it is a path installers commonly rewrite.
 
 `conf.d/00-local.fish` is the one deliberate exception: it has a `NN-` prefix (it must sort
 first) but is re-ignored by a pattern *below* the negation, since in gitignore the last matching
@@ -251,8 +261,8 @@ Ghostty starts `/bin/sh -l` and has it `exec fish -l`. The login bootstrap is de
 Spotlight/LaunchServices replaces even a correctly configured user launchd PATH with its system-only
 PATH, so a bare `fish` cannot find Homebrew. `~/.profile` discovers the package-manager prefix without
 embedding it in Ghostty's cross-platform config. The wrapper hides fish from automatic shell detection,
-so `shell-integration = fish` is forced; `config.fish` manually restores that one-shot integration in
-tmux panes. `config-file = ?config.local` is the per-machine escape hatch.
+so `shell-integration = fish` is forced; `conf.d/95-ghostty.fish` manually restores that one-shot
+integration in tmux panes. `config-file = ?config.local` is the per-machine escape hatch.
 
 ### Brewfile
 

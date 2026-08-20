@@ -2,7 +2,8 @@
 
 My personal configuration, managed with [GNU Stow](https://www.gnu.org/software/stow/).
 Each top-level directory is a stow package whose contents are symlinked into `$HOME`, so
-`fish/.config/fish/config.fish` in this repo becomes `~/.config/fish/config.fish` on the machine.
+`fish/.config/fish/conf.d/10-path.fish` in this repo becomes
+`~/.config/fish/conf.d/10-path.fish` on the machine.
 
 Fish is the primary shell; bash is kept as a competent fallback because it is what Linux and
 `ssh` drop you into. Everything here is meant to work on **macOS and Linux** — the installer
@@ -122,7 +123,7 @@ Nineteen packages. All of them install on Linux except the two marked macOS-only
 | `claude` | `~/.claude/settings.json` | Claude Code permissions |
 | `direnv` | `~/.config/direnv/direnvrc` | per-directory environments, with the mise hook |
 | `espanso` | `~/.config/espanso/` | text expansion |
-| `fish` | `~/.config/fish/` | the primary shell: `config.fish`, `conf.d/`, `functions/`, `fish_plugins` |
+| `fish` | `~/.config/fish/` | the primary shell: tracked `conf.d/` fragments, functions, and `fish_plugins`; machine-owned `config.fish` |
 | `ghostty` | `~/.config/ghostty/config` | terminal |
 | `git` | `~/.gitconfig.global`, `~/.gitignore_global`, `~/.gitattributes`, `~/bin/git-by-date` | git — see the note below |
 | `hammerspoon` | `~/.hammerspoon/` | window management and automation — **macOS only** |
@@ -146,6 +147,10 @@ and `install.sh` separately ensures the real path exists and reaches it: `~/.git
 prepended `include.path`, the shell files get a one-line `source`, in both cases only ever adding
 that one thing and never touching whatever a tool has written there. See "Clobber-safe stubs" in
 `AGENTS.md` for the mechanics.
+
+Fish handles the same risk without a stub. It auto-loads the tracked `conf.d/*.fish` fragments,
+so this repo leaves `~/.config/fish/config.fish` entirely machine-owned. Tools can append there
+without writing through a symlink into the checkout.
 
 Packages are **discovered, not listed** — every non-hidden top-level directory is one. Adding
 `zellij/` to the repo is enough to get it installed; no script needs editing.
@@ -230,8 +235,12 @@ machine rather than the other way round. `./upgrade.sh --dump` writes `Brewfile.
 
 Nothing private is ever committed here.
 
-- **fish** — `~/.config/fish/conf.d/00-local.fish`, a real file you create, not a symlink and
-  not in the repo. A commented-out template ships as
+- **fish** — `~/.config/fish/config.fish` is deliberately absent from the package. If a tool
+  such as tec creates or appends to it, it remains a real machine-owned file rather than a
+  symlink into this checkout. Fish reads it after every `conf.d` fragment, so early feature
+  flags do not belong there. Personal settings and secrets belong in
+  `~/.config/fish/conf.d/00-local.fish`, also a real file you create and not part of the repo.
+  A commented-out template ships as
   `conf.d/00-local.fish.example` and is stowed alongside it, so a fresh machine starts with:
 
   ```bash
@@ -288,7 +297,8 @@ Other escape hatches, none of them repo-provided and all of them optional:
 
 | file | read by |
 | --- | --- |
-| `~/.config/fish/conf.d/<name>.fish` | fish — any name **not** starting with two digits; gitignored, and the right home for third-party appends |
+| `~/.config/fish/config.fish` | fish — machine-owned; safe for tools that insist on appending to the conventional startup file |
+| `~/.config/fish/conf.d/<name>.fish` | fish — any name **not** starting with two digits; gitignored, and the preferred home for third-party drop-ins |
 | `~/.profile.local` | `~/.profile` (POSIX environment) |
 | `~/.extra` | `~/.bashrc` (interactive bash) |
 | `~/.gitconfig.local` | `~/.gitconfig`, last, so it wins |
