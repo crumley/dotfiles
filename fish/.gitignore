@@ -7,7 +7,7 @@
 # wholesale. That is the right default -- but it also made it impossible to
 # track the config files this repo actually owns.
 #
-# So: re-open the two directories, re-ignore everything inside them, then
+# So: re-open the directories, re-ignore everything inside them, then
 # re-include exactly the files that are ours. Runtime droppings stay invisible;
 # owned config stays tracked. (Note that a negation alone is not enough -- git
 # will not descend into an excluded directory, so the directory itself has to be
@@ -15,8 +15,10 @@
 
 !/.config/fish/conf.d/
 !/.config/fish/functions/
+!/.config/fish/completions/
 /.config/fish/conf.d/*
 /.config/fish/functions/*
+/.config/fish/completions/*
 
 # Ours: numbered conf.d fragments. Anything without a NN- prefix (fisher
 # plugins, and third-party appends such as `conf.d/local.fish`) stays ignored.
@@ -43,6 +45,11 @@
 # hook direnv unconditionally and make FISH_DIRENV meaningless. The name has to
 # match the vendor file's exactly, so it cannot take a numeric prefix.
 !/.config/fish/conf.d/direnv.fish
+
+# Ours: the ward completion bootstrap -- a lazy autoload stub, not a generated
+# file (see its comments). Everything else fish or a plugin drops into
+# completions/ at runtime stays ignored, same as conf.d and functions above.
+!/.config/fish/completions/ward.fish
 
 # Ours: autoloaded functions. Add new ones here when you add the file.
 !/.config/fish/functions/my_*.fish
