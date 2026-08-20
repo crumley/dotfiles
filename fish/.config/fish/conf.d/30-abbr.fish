@@ -4,8 +4,8 @@
 status is-interactive; or return
 
 # config files
-# Re-sourcing config.fish no longer reloads everything now that configuration is
-# split across conf.d/, so this replaces the shell instead.
+# Sourcing the machine-owned config.fish would not reload the tracked conf.d
+# fragments, so this replaces the shell and runs the complete startup sequence.
 abbr zx 'exec fish'
 
 # directories

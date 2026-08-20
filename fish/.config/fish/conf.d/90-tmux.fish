@@ -1,6 +1,7 @@
 # Auto-attach to tmux. Numbered last because it hands the terminal over.
 #
-# Opt in with `set -gx FISH_TMUX true` in ~/.$FISH_HOSTNAME.fish.
+# Opt in with `set -gx FISH_TMUX true` in the machine-owned
+# conf.d/00-local.fish, which runs before this tracked fragment.
 #
 # The guards matter more than the feature. This must not fire in a script, in a
 # shell fish spawns for command substitution, inside an existing tmux session,

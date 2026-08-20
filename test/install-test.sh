@@ -121,6 +121,9 @@ assert "Ghostty forces fish integration through its shell wrapper" \
   grep -qxF 'shell-integration = fish' "$h1/.config/ghostty/config"
 assert "links are relative, so stow owns them" relative_link "$h1/.config/atuin/config.toml"
 assert "--no-folding: ~/.config is a real directory, not a link into the repo" real_dir "$h1/.config"
+assert "fish's tracked conf.d fragments are linked" [ -L "$h1/.config/fish/conf.d/10-path.fish" ]
+refute "fish's config.fish is machine-owned, not stowed" [ -e "$h1/.config/fish/config.fish" ]
+refute "fish's config.fish is not even a dangling symlink" [ -L "$h1/.config/fish/config.fish" ]
 assert "git-by-date lands in ~/bin, which is on PATH" [ -L "$h1/bin/git-by-date" ]
 assert "rclone-cron.sh lands in ~/bin too" [ -L "$h1/bin/rclone-cron.sh" ]
 refute "nothing is installed into ~/.bin any more" [ -e "$h1/.bin" ]
@@ -232,7 +235,7 @@ assert "git was selected: ~/.gitconfig was generated" [ -f "$h4/.gitconfig" ]
 refute "bash was not selected: ~/.bashrc was not generated" [ -e "$h4/.bashrc" ]
 refute "home was not selected: ~/.profile was not generated" [ -e "$h4/.profile" ]
 
-group "Clobber-safe stubs"
+group "Clobber safety and migrations"
 h7=$(newhome)
 printf '[user]\n\tname = Someone Else\n' >"$h7/.gitconfig"      # pre-existing, unrelated content
 install_into "$h7" -q
@@ -266,6 +269,25 @@ assert "install migrates it cleanly" install_into "$h9" -q
 refute "the old symlink is gone" [ -L "$h9/.bashrc" ]
 assert "the home .bashrc is now a real generated stub" [ -f "$h9/.bashrc" ]
 assert "and it sources the tracked file" grep -qF '.bashrc.tracked' "$h9/.bashrc"
+
+h10=$(newhome)
+install_into "$h10" -q
+printf '# Added by a third-party installer\nset -gx SOME_FISH_TOOL enabled\n' >"$h10/.config/fish/config.fish"
+before=$(snapshot "$h10")
+assert "fish config written by a tool is a real machine-owned file" [ -f "$h10/.config/fish/config.fish" ]
+refute "fish config written by a tool is not a repository symlink" [ -L "$h10/.config/fish/config.fish" ]
+assert "a rerun preserves the tool-written fish config" install_into "$h10" -q
+assert "the tool-written fish config stays byte-identical" same "$before" "$(snapshot "$h10")"
+assert "the tool-written setting remains present" grep -qF 'SOME_FISH_TOOL' "$h10/.config/fish/config.fish"
+
+h11=$(newhome)
+mkdir -p "$h11/.config/fish"
+# Simulates the old layout after this repository stops providing config.fish.
+ln -s "$REPO/fish/.config/fish/config.fish" "$h11/.config/fish/config.fish"
+assert "setup: the old fish config link is dangling" dangling "$h11/.config/fish/config.fish"
+assert "install prunes the obsolete fish config link" install_into "$h11" -q
+refute "the obsolete fish config symlink is gone" [ -L "$h11/.config/fish/config.fish" ]
+refute "the installer leaves machine-owned fish config absent until a tool creates it" [ -e "$h11/.config/fish/config.fish" ]
 
 group "No duplicated lines, ever"
 # shellcheck source-path=SCRIPTDIR

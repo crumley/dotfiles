@@ -20,6 +20,12 @@
 # and conf.d/50-tools.fish reads the FISH_* flags set here, so this file has to
 # come first. Do not rename it to something that sorts later.
 #
+# ~/.config/fish/config.fish has a different job. It is deliberately absent
+# from the dotfiles package so tools such as tec can create or append to that
+# conventional path without dirtying the repository. fish reads config.fish
+# only after every conf.d fragment, which is too late for flags consumed by
+# 50-tools.fish; keep those early machine choices in 00-local.fish.
+#
 # ---------------------------------------------------------------------------
 # Feature flags
 # ---------------------------------------------------------------------------

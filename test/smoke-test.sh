@@ -258,12 +258,13 @@ try_shell() {
 }
 
 # fish: the primary shell, and the one most likely to be macOS-shaped.
-# -l -c runs the login path, which is what sources config.fish and conf.d/*.
-try_shell "fish (login)" ".config/fish/config.fish" fish -l -c 'exit 0'
+# Fish auto-loads conf.d/* even though config.fish is deliberately machine-owned
+# and absent from a clean install.
+try_shell "fish (login)" ".config/fish/conf.d/10-path.fish" fish -l -c 'exit 0'
 
 # fish again, non-login interactive-ish, to catch conf.d ordering problems that
 # only bite outside the login path.
-try_shell "fish (-c)" ".config/fish/config.fish" fish -c 'exit 0'
+try_shell "fish (-c)" ".config/fish/conf.d/10-path.fish" fish -c 'exit 0'
 
 # Reproduce Ghostty's command from a GUI launcher's system-only environment.
 # On Apple Silicon fish is outside this PATH, so success proves that the login
@@ -280,7 +281,7 @@ fi
 
 # Ghostty injects its fish vendor config into only the initial shell. A tmux
 # pane inherits GHOSTTY_RESOURCES_DIR but not that consumed one-shot injection,
-# so config.fish must source the integration itself. Use a tiny fake resource
+# so conf.d/95-ghostty.fish must source the integration itself. Use a tiny fake resource
 # tree to prove both the nested-shell path and the duplicate-load guard without
 # requiring Ghostty to be installed on the CI runner.
 if have fish; then

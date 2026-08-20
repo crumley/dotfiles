@@ -59,7 +59,8 @@ if test -S "$__op_agent"
 end
 
 # Kubernetes: merge every config file under ~/.kube into KUBECONFIG. Opt in with
-# `set -gx FISH_KUBE true` in ~/.$FISH_HOSTNAME.fish.
+# `set -gx FISH_KUBE true` in the machine-owned conf.d/00-local.fish, which runs
+# before this tracked fragment.
 if test "$FISH_KUBE" = true; and test -d $HOME/.kube
     set -l __kubeconfigs (find $HOME/.kube -type f -name '*config*' 2>/dev/null)
     if test (count $__kubeconfigs) -gt 0
