@@ -51,13 +51,25 @@
 # completions/ at runtime stays ignored, same as conf.d and functions above.
 !/.config/fish/completions/ward.fish
 
-# Ours: the ward shorthands (wrr, wrcd, wwcd) -- lazy autoload twins of the
-# ward.fish bootstrap above, one stub per function and one completion
-# bootstrap each. The real definitions come from `ward shell init fish` at
-# first use; nothing generated is tracked.
+# Ours: the ward shorthands (wrr, wrcd, wwcd), adopted as snapshots. These are
+# not stubs and not generated at runtime -- `ward shell adopt fish --all --dir
+# fish/.config/fish` wrote the real definitions here once, and from then on they
+# are this repository's files: edit them, keep them, nothing rewrites them
+# unless the adopt command is run again by name. `ward doctor` reports, per
+# alias, when ward's own definition has moved on; `ward shell diff fish NAME`
+# shows what changed.
+#
+# The three __ward_* files are the picker helpers `wrcd` and `wwcd` call. fish
+# autoloads one function per file by name, so they have to be their own files
+# and they have to be tracked alongside the shorthands that need them --
+# adopting is what keeps the set consistent, and a missing helper only fails at
+# the moment a name does not resolve.
 !/.config/fish/functions/wrr.fish
 !/.config/fish/functions/wrcd.fish
 !/.config/fish/functions/wwcd.fish
+!/.config/fish/functions/__ward_choose.fish
+!/.config/fish/functions/__ward_picker.fish
+!/.config/fish/functions/__ward_picker_present.fish
 !/.config/fish/completions/wrr.fish
 !/.config/fish/completions/wrcd.fish
 !/.config/fish/completions/wwcd.fish
