@@ -189,6 +189,7 @@ insist on appending there.
 | `conf.d/90-tmux.fish` | `FISH_TMUX` auto-attach; returns immediately inside an existing tmux pane |
 | `conf.d/95-ghostty.fish` | restores Ghostty's one-shot fish integration inside tmux panes |
 | `functions/*.fish` | one function per file, autoloaded on first use |
+| `functions/{wrr,wrcd,wwcd}.fish` + `functions/__ward_*.fish` + `completions/{wrr,wrcd,wwcd}.fish` | ward's shorthands, **adopted**: snapshots this repo owns |
 
 The numbering is load-bearing: `00-local.fish` runs first because the `FISH_*` flags it sets
 have to be in place before `50-tools.fish` reads them. This is also the whole reason it carries
@@ -231,6 +232,21 @@ Two mechanisms, and the choice between them is deliberate:
 The opt-out cannot live in `50-tools.fish`: that file starts with `status is-interactive; or
 return`, while vendor snippets run regardless. If a `FISH_*` flag ever appears to be ignored,
 check `ls $__fish_vendor_confdirs` before anything else.
+
+**The ward shorthands are adopted snapshots, not generated at runtime.** `ward shell adopt fish
+--all --dir fish/.config/fish` wrote `functions/{wrr,wrcd,wwcd}.fish`, their `completions/`
+twins, and the three `functions/__ward_*.fish` picker helpers they call. From that moment the
+files are this repository's: ward never rewrites one unless the adopt command names it again,
+`ward doctor` reports per alias when ward's own definition has moved on, and `ward shell diff
+fish NAME` shows what changed. Refresh by re-running the same command and committing the diff —
+do not hand-edit them into a shape a diff can no longer explain.
+
+**Never add a `conf.d/ward.fish` layer to this package.** `ward shell init fish` emits a
+monolithic layer that *defines* all three shorthands at startup, and a defined function always
+wins over an autoloaded one — so an installed layer would silently shadow every adopted file
+here, and the tracked definitions would never run. The two install styles are alternatives, not
+companions; this repo has picked adoption. (`completions/ward.fish` is unrelated: it bootstraps
+ward's *own* completions and defines no shorthand.)
 
 Plugins are managed by fisher against the tracked `fish_plugins`; `install.sh` bootstraps it
 once via `my_fisher_bootstrap`, not from shell startup.

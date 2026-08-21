@@ -1,5 +1,9 @@
-# wrr -- completions, lazily; see completions/wrcd.fish for the idiom. The
-# layer completes wrr by wrapping `ward repo refresh`, so this also pulls in
-# ward's own completions via the ward.fish bootstrap when first needed.
-command -q ward; or return
-ward shell init fish 2>/dev/null | source
+# ward — adopted fish completion for `wrr`.
+#
+# Yours now: `ward shell adopt fish wrr` wrote it, and nothing in ward
+# rewrites it unless you ask for wrr again by name. Track it, edit it,
+# keep it. When ward's own definition moves on, `ward doctor` says so —
+# `ward shell diff fish wrr` shows what changed, and re-running the
+# adopt command takes ward's version.
+
+complete -c wrr -w 'ward repo refresh'
