@@ -51,6 +51,17 @@
 # completions/ at runtime stays ignored, same as conf.d and functions above.
 !/.config/fish/completions/ward.fish
 
+# Ours: the ward shorthands (wrr, wrcd, wwcd) -- lazy autoload twins of the
+# ward.fish bootstrap above, one stub per function and one completion
+# bootstrap each. The real definitions come from `ward shell init fish` at
+# first use; nothing generated is tracked.
+!/.config/fish/functions/wrr.fish
+!/.config/fish/functions/wrcd.fish
+!/.config/fish/functions/wwcd.fish
+!/.config/fish/completions/wrr.fish
+!/.config/fish/completions/wrcd.fish
+!/.config/fish/completions/wwcd.fish
+
 # Ours: autoloaded functions. Add new ones here when you add the file.
 !/.config/fish/functions/my_*.fish
 !/.config/fish/functions/fish_user_key_bindings.fish
