@@ -46,10 +46,14 @@
 # match the vendor file's exactly, so it cannot take a numeric prefix.
 !/.config/fish/conf.d/direnv.fish
 
-# Ours: the ward completion bootstrap -- a lazy autoload stub, not a generated
-# file (see its comments). Everything else fish or a plugin drops into
-# completions/ at runtime stays ignored, same as conf.d and functions above.
+# Ours: completion bootstraps for CLIs that generate their own script (`<cmd>
+# completion fish`) -- lazy autoload stubs, not generated files (ward.fish's
+# comments carry the full reasoning). Everything else fish or a plugin drops
+# into completions/ at runtime stays ignored, same as conf.d and functions
+# above.
 !/.config/fish/completions/ward.fish
+!/.config/fish/completions/b3.fish
+!/.config/fish/completions/d1.fish
 
 # Ours: the ward shorthands (wrr, wrcd, wwcd), adopted as snapshots. These are
 # not stubs and not generated at runtime -- `ward shell adopt fish --all --dir
