@@ -30,3 +30,19 @@ ghostty/.config/ghostty/config.local
 # The durable intent (which skills, from where) is tracked in
 # agents/.agents/skills.list instead; the lockfile is state, so it is ignored.
 agents/.agents/.skill-lock.json
+
+# Claude Code settings. Same trade as the lockfile above: Claude Code rewrites
+# the whole of ~/.claude/settings.json whenever a setting is toggled, so a
+# stowed, tracked copy meant one keystroke in the UI dirtied this repo (and
+# blocked `ward repo refresh`). The tracked intent is the template beside it,
+# claude/.claude/settings.json.example, which install.sh materializes into a
+# real, machine-owned file. This line is what keeps the live name from coming
+# back by accident -- re-adding it to git is not the fix for a fresh machine
+# having no settings; editing the template is.
+#
+# No negation is needed to keep the template: gitignore patterns match whole
+# path components, so `settings.json` never matches `settings.json.example`.
+# That is also why this can be one flat line here rather than the re-open /
+# re-ignore / re-include dance fish/.gitignore has to do -- nothing ignores
+# claude/.claude/ wholesale, so there is no excluded directory to descend into.
+claude/.claude/settings.json

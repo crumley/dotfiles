@@ -120,7 +120,7 @@ Nineteen packages. All of them install on Linux except the two marked macOS-only
 | `agents` | `~/.agents/skills.list` | which agent skills to reinstall, and from where |
 | `atuin` | `~/.config/atuin/config.toml` | shell history search |
 | `bash` | `~/.bashrc.tracked`, `~/.bash_profile.tracked` | interactive bash and login-shell layering — see the note below |
-| `claude` | `~/.claude/settings.json` | Claude Code permissions |
+| `claude` | `~/.claude/settings.json.example` | Claude Code permissions — the live file is yours, see the note below |
 | `direnv` | `~/.config/direnv/direnvrc` | per-directory environments, with the mise hook |
 | `espanso` | `~/.config/espanso/` | text expansion |
 | `fish` | `~/.config/fish/` | the primary shell: tracked `conf.d/` fragments, functions, and `fish_plugins`; machine-owned `config.fish` |
@@ -151,6 +151,11 @@ that one thing and never touching whatever a tool has written there. See "Clobbe
 Fish handles the same risk without a stub. It auto-loads the tracked `conf.d/*.fish` fragments,
 so this repo leaves `~/.config/fish/config.fish` entirely machine-owned. Tools can append there
 without writing through a symlink into the checkout.
+
+**`claude` tracks a template, not the live file.** Claude Code rewrites `~/.claude/settings.json`
+whole whenever a setting is toggled, and there is no include mechanism to redirect, so the repo
+tracks `settings.json.example` and the installer copies it into place once. See "Host-specific
+config and secrets" below.
 
 Packages are **discovered, not listed** — every non-hidden top-level directory is one. Adding
 `zellij/` to the repo is enough to get it installed; no script needs editing.
@@ -256,6 +261,22 @@ Nothing private is ever committed here.
   The two names are deliberately different. If the live file were the tracked one, uncommenting
   a single line would show up as a modification to a tracked file, and one `git commit -a` later
   the machine's settings would be in the history.
+- **Claude Code** — same idea, one step further: `~/.claude/settings.json` is not in the package
+  at all. Claude Code rewrites that file whole whenever you toggle a setting, so a symlink into
+  this checkout meant one keystroke in the UI left the repo dirty. What is tracked is the
+  template beside it, `~/.claude/settings.json.example`; `./install.sh` copies it into place as
+  a real file the first time and never touches it again, so your toggles stay yours. If the
+  template later moves ahead of your file — a new permission in the baseline — fish says so at
+  startup, once, with the two commands that end it:
+
+  ```sh
+  diff ~/.claude/settings.json ~/.claude/settings.json.example   # merge what you want
+  touch ~/.claude/settings.json                                  # or keep what you have
+  ```
+
+  Migrating a machine that has the old symlink: run `./install.sh` **before** deleting the
+  repo's copy of `claude/.claude/settings.json`, and your current settings are copied into
+  `$HOME` intact. Delete it first and you start from the template.
 - **Hammerspoon** — `~/.$hostname.hammerspoon.lua`, outside the repo, named after
   `hs.host.localizedName()`, and **permission-checked before loading**: owned by you and not
   group- or world-writable, or it is refused. Hammerspoon has no stow-visible drop-in directory,

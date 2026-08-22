@@ -316,6 +316,34 @@ EOF
     fi
 fi
 
+# The Claude Code settings notice, conf.d/60-claude.fish. Both halves are the
+# check: a startup notice that cannot stay quiet gets ignored, and one that
+# never fires is decoration. A fresh install leaves the live file and the
+# template with the same mtime, so the quiet half is the shipping state.
+if have fish && [ -f "$TARGET/.claude/settings.json" ]; then
+    claude_startup_output() {
+        run_with_timeout "$SHELL_TIMEOUT" env -i \
+            HOME="$TARGET" PATH="$PATH" TERM="${TERM:-dumb}" LANG="${LANG:-C.UTF-8}" \
+            fish -i -c 'exit 0' </dev/null 2>&1
+    }
+    if claude_startup_output | grep -qF 'settings.json.example is newer'; then
+        fail "the claude settings notice fires on a fresh install, when there is nothing to say"
+    else
+        pass "claude settings notice stays silent when the live file is current"
+    fi
+    # Backdate the live file: the state a `git pull` leaves behind when the
+    # tracked template moves forward and the installer has not been rerun.
+    touch -t 200001010000 "$TARGET/.claude/settings.json"
+    if claude_startup_output | grep -qF 'settings.json.example is newer'; then
+        pass "... and speaks up once the template has moved ahead"
+    else
+        fail "the claude settings notice never fires, even with a newer template"
+    fi
+    touch "$TARGET/.claude/settings.json"
+elif have fish; then
+    skip "no ~/.claude/settings.json in the target — the claude settings notice was not exercised"
+fi
+
 # bash as a login shell reads .bash_profile; as an interactive non-login shell
 # it reads .bashrc. Both paths matter and they source different files.
 try_shell "bash (login)" ".bash_profile" bash -l -c 'exit 0'
