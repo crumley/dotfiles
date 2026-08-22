@@ -42,9 +42,11 @@ newhome() {
 }
 
 STALE_SRC=""
+CLAUDE_SRC=""
 cleanup() {
   local d
   [ -n "$STALE_SRC" ] && rm -f "$STALE_SRC"
+  [ -n "$CLAUDE_SRC" ] && rm -f "$CLAUDE_SRC"
   for d in $HOMES; do
     case "$d" in
       "$HOME"|"$HOME"/*|/|'') printf 'refusing to clean %s\n' "$d" >&2 ;;
@@ -124,6 +126,11 @@ assert "--no-folding: ~/.config is a real directory, not a link into the repo" r
 assert "fish's tracked conf.d fragments are linked" [ -L "$h1/.config/fish/conf.d/10-path.fish" ]
 refute "fish's config.fish is machine-owned, not stowed" [ -e "$h1/.config/fish/config.fish" ]
 refute "fish's config.fish is not even a dangling symlink" [ -L "$h1/.config/fish/config.fish" ]
+assert "the Claude settings template is linked" [ -L "$h1/.claude/settings.json.example" ]
+refute "the live Claude settings are never a symlink into the repo" [ -L "$h1/.claude/settings.json" ]
+assert "the live Claude settings are a real file" [ -f "$h1/.claude/settings.json" ]
+assert "seeded byte-for-byte from the template" \
+  cmp -s "$h1/.claude/settings.json" "$h1/.claude/settings.json.example"
 assert "git-by-date lands in ~/bin, which is on PATH" [ -L "$h1/bin/git-by-date" ]
 assert "rclone-cron.sh lands in ~/bin too" [ -L "$h1/bin/rclone-cron.sh" ]
 refute "nothing is installed into ~/.bin any more" [ -e "$h1/.bin" ]
@@ -288,6 +295,107 @@ assert "setup: the old fish config link is dangling" dangling "$h11/.config/fish
 assert "install prunes the obsolete fish config link" install_into "$h11" -q
 refute "the obsolete fish config symlink is gone" [ -L "$h11/.config/fish/config.fish" ]
 refute "the installer leaves machine-owned fish config absent until a tool creates it" [ -e "$h11/.config/fish/config.fish" ]
+
+# Claude Code settings: the tracked template is ~/.claude/settings.json.example
+# and the live file is machine-owned. Three migration paths, plus the two things
+# that must never be touched.
+#
+# These do not pin the step's position relative to the prune pass, and saying so
+# here is cheaper than someone rediscovering it: prune deletes only dangling
+# links, and a dangling link has no content left to rescue, so both orders end
+# with the same file. The ordering argument lives in install.sh where the
+# ordering does; what these pin is the end state on every path in and out.
+
+# (a) a healthy symlink into the repo -- the content reachable through it is
+# this machine's settings, and it is the only copy. It points at a temporary
+# file in the package rather than the retired settings.json, so that stow has
+# nothing to link at the live path and this stays a migration test rather than
+# a conflict test.
+h12=$(newhome)
+CLAUDE_SRC="$REPO/claude/.claude/settings.json.migration-test"
+printf '{ "migratedFromTheSymlink": true }\n' >"$CLAUDE_SRC"
+mkdir -p "$h12/.claude"
+ln -s "$CLAUDE_SRC" "$h12/.claude/settings.json"
+assert "setup: the live Claude settings are a symlink into the repo" [ -L "$h12/.claude/settings.json" ]
+assert "install migrates it" install_into "$h12" -q
+refute "the symlink into the repo is gone" [ -L "$h12/.claude/settings.json" ]
+assert "the live settings are a real file now" [ -f "$h12/.claude/settings.json" ]
+assert "with this machine's content preserved" grep -qF 'migratedFromTheSymlink' "$h12/.claude/settings.json"
+assert "and the template linked beside it" [ -L "$h12/.claude/settings.json.example" ]
+before=$(snapshot "$h12")
+install_into "$h12" -q
+assert "a migrated machine reruns as a no-op" same "$before" "$(snapshot "$h12")"
+rm -f "$CLAUDE_SRC"; CLAUDE_SRC=""
+
+# (b) a dangling symlink into the repo: the same machine, updated before it was
+# reinstalled, so the content is already gone. Prune would delete the link and
+# leave nothing; the migration seeds the template instead.
+h13=$(newhome)
+mkdir -p "$h13/.claude"
+ln -s "$REPO/claude/.claude/settings.json" "$h13/.claude/settings.json"
+assert "setup: the live Claude settings dangle into the repo" dangling "$h13/.claude/settings.json"
+assert "install migrates it" install_into "$h13" -q
+refute "the dangling symlink is gone" [ -L "$h13/.claude/settings.json" ]
+assert "a real file is there instead -- prune did not just delete it" [ -f "$h13/.claude/settings.json" ]
+assert "seeded from the template" cmp -s "$h13/.claude/settings.json" "$h13/.claude/settings.json.example"
+
+# (c) absent: the fresh-machine path, exercised through a subset install so it
+# also proves the step is per-package and not a global side effect.
+h14=$(newhome)
+assert "installing just the claude package exits 0" install_into "$h14" -q claude
+assert "an absent live file is created" [ -f "$h14/.claude/settings.json" ]
+refute "  ... as a real file, never a link" [ -L "$h14/.claude/settings.json" ]
+assert "  ... from the template" cmp -s "$h14/.claude/settings.json" "$h14/.claude/settings.json.example"
+
+# (d) an existing real file is the end state and is never touched -- that is
+# what stops a toggled setting from being reverted by an install.
+h15=$(newhome)
+mkdir -p "$h15/.claude"
+printf '{ "skipDangerousModePermissionPrompt": true }\n' >"$h15/.claude/settings.json"
+assert "install over real settings exits 0" install_into "$h15" -q
+assert "a machine's own settings survive untouched" \
+  grep -qF 'skipDangerousModePermissionPrompt' "$h15/.claude/settings.json"
+before=$(snapshot "$h15")
+install_into "$h15" -q
+assert "and the rerun is a no-op" same "$before" "$(snapshot "$h15")"
+# The suggestion surface: install says so when the template has moved ahead of
+# the live file. conf.d/60-claude.fish says the same thing at shell startup,
+# from the same mtime comparison.
+touch -t 200001010000 "$h15/.claude/settings.json"
+out=$(install_into "$h15" 2>&1)
+assert "install points out a template that has moved ahead" grep_out 'moved ahead' "$out"
+assert "  ... without rewriting the machine's file" \
+  grep -qF 'skipDangerousModePermissionPrompt' "$h15/.claude/settings.json"
+
+# (e) a symlink pointing somewhere else entirely -- a private settings repo,
+# say. Not this repo's to migrate, and prune never touches it either.
+h16=$(newhome)
+mkdir -p "$h16/.claude"
+printf '{ "fromSomewhereElse": true }\n' >"$h16/settings-elsewhere.json"
+ln -s "$h16/settings-elsewhere.json" "$h16/.claude/settings.json"
+assert "install leaves a foreign symlink alone" install_into "$h16" -q
+assert "  ... it is still a symlink" [ -L "$h16/.claude/settings.json" ]
+assert "  ... still reaching the file it owns" grep -qF 'fromSomewhereElse' "$h16/.claude/settings.json"
+
+# (f) the whole migration end to end, as the machine that prompted it will meet
+# it: a checkout that still has the retired file on disk -- untracked and
+# ignored now, which is what `git pull` leaves behind when the modify/delete
+# conflict over a settings.json this machine had toggled is resolved by keeping
+# the file -- and a home whose live path is the stow symlink to it.
+h17=$(newhome)
+CLAUDE_SRC="$REPO/claude/.claude/settings.json"
+printf '{ "skipDangerousModePermissionPrompt": true }\n' >"$CLAUDE_SRC"
+out=$(install_into "$h17" 2>&1); rc=$?
+assert "install exits 0 with a leftover copy in the checkout" [ "$rc" = 0 ]
+refute "the live path is not a symlink afterwards" [ -L "$h17/.claude/settings.json" ]
+assert "the machine's own toggle survived the migration" \
+  grep -qF 'skipDangerousModePermissionPrompt' "$h17/.claude/settings.json"
+assert "install says the leftover copy has to go" grep_out 'still has claude/.claude/settings.json' "$out"
+rm -f "$CLAUDE_SRC"; CLAUDE_SRC=""
+assert "with the leftover deleted, the next run is clean" install_into "$h17" -q
+refute "  ... the live file is still a real file" [ -L "$h17/.claude/settings.json" ]
+assert "  ... still holding this machine's settings" \
+  grep -qF 'skipDangerousModePermissionPrompt' "$h17/.claude/settings.json"
 
 group "No duplicated lines, ever"
 # shellcheck source-path=SCRIPTDIR

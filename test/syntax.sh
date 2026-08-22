@@ -111,6 +111,12 @@ run_over "lua -p" '*.lua' check_lua
 # --- structured configs ----------------------------------------------------
 section "json"
 run_over "json" '*.json' check_json
+# Templates parse too. `claude/.claude/settings.json.example` is the baseline a
+# machine's real settings.json is copied from, so a stray comma in it is a
+# broken machine one `cp` later -- and the `.example` suffix (which is what
+# keeps the live file and the tracked one from ever sharing a path) is exactly
+# what hides it from the glob above.
+run_over "json" '*.json.example' check_json
 
 section "toml"
 run_over "toml" '*.toml' check_toml

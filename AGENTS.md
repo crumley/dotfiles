@@ -18,7 +18,8 @@ is a stow package; its contents are symlinked into `$HOME`.
 - `mise` manages language runtimes. `asdf` is gone.
 - Hammerspoon provides window management and automation; its Spoons are git submodules.
 - Machine-specific settings and secrets are never committed: fish reads them from the gitignored
-  `conf.d/00-local.fish`, Hammerspoon from `~/.$hostname.hammerspoon.lua`. Fish's
+  `conf.d/00-local.fish`, Hammerspoon from `~/.$hostname.hammerspoon.lua`, Claude Code from a
+  `~/.claude/settings.json` copied out of a tracked template. Fish's
   `~/.config/fish/config.fish` is also machine-owned, so third-party installers can append to it
   without writing through a symlink into the checkout.
 
@@ -40,12 +41,14 @@ would break one, that is the thing to raise rather than the thing to do.
    at all" as a supported outcome.
 4. **A tool may be absent.** Every integration is guarded on the binary existing and degrades
    quietly. On Linux this repo *configures* software; it never installs it.
-5. **Secrets are never committed.** Fish's per-machine config is
-   `~/.config/fish/conf.d/00-local.fish`, a real file in `$HOME` that the user creates by copying
-   the tracked `00-local.fish.example`. Hammerspoon's is `~/.$hostname.hammerspoon.lua`,
-   permission-checked before loading. Track neither. The `.example` suffix is the whole safety
-   property: if the live file and the tracked template shared a path, uncommenting one line would
-   make the machine's settings a diff away from being committed.
+5. **Secrets are never committed, and neither is per-machine state.** Fish's per-machine config
+   is `~/.config/fish/conf.d/00-local.fish`, a real file in `$HOME` that the user creates by
+   copying the tracked `00-local.fish.example`. Hammerspoon's is `~/.$hostname.hammerspoon.lua`,
+   permission-checked before loading. Claude Code's is `~/.claude/settings.json`, copied from the
+   tracked `settings.json.example` by the installer. Track none of them. The `.example` suffix is
+   the whole safety property: if the live file and the tracked template shared a path,
+   uncommenting one line — or toggling one setting — would make the machine's state a diff away
+   from being committed.
 6. **The `Brewfile` is hand-maintained.** Never run `brew bundle dump --force` against it — see
    below.
 7. **Work reaches `main` only through a pull request.** Do not commit to `main`, do not push to
@@ -163,9 +166,41 @@ The repo therefore does not provide `~/.config/fish/config.fish` at all. If a th
 creates or appends to that conventional path, it remains a real, machine-owned file in `$HOME`
 and cannot dirty the checkout.
 
-`~/.claude/settings.json` and `~/.config/karabiner/karabiner.json` have the same clobber problem
-and deliberately do **not** get this treatment: Claude Code and Karabiner rewrite the *entire*
-file with no include mechanism to redirect, so there is nowhere to point a stub at. Left as-is.
+`~/.claude/settings.json` has the same clobber problem and cannot be solved the same way:
+Claude Code rewrites the *entire* file whenever a setting is toggled, with no include mechanism,
+so there is nowhere to point a stub. It gets the other half of the idea instead — the
+`00-local.fish` shape. The repository tracks only `claude/.claude/settings.json.example`
+(stowed to `~/.claude/settings.json.example`); the live path is a real, machine-owned file that
+`install.sh` materializes once, in `ensure_claude_settings`, and never touches again. Root
+`.gitignore` ignores the live name so it cannot come back by accident. Track the intent, ignore
+the state — the same trade as the skills lockfile, with the same `.example` safety property:
+the live file and the tracked one can never be the same path.
+
+**`ensure_claude_settings` runs above the prune block, not below it with the stub functions.**
+It is the step that reads the machine's only copy of its settings — a symlink into this repo —
+and prune's whole business is deleting symlinks into this repo. As prune is written today the
+two cannot actually collide (it removes only *dangling* links, and a dangling link has no
+content left to rescue), and moving the call below prune leaves the suite green; that is a fact
+about prune's current narrowness, not a reason to file it there. Read first, delete second, so
+that widening prune later can never become lost settings. The three paths in and out — repo
+symlink → real file with the content preserved, absent → template copied, real file → untouched
+— plus a foreign symlink left alone and the end-to-end migration are covered in
+`test/install-test.sh`.
+
+Two things follow that are easy to trip over. A machine whose live settings were toggled hits a
+modify/delete conflict on the `git pull` that lands this change: **run `./install.sh` while the
+conflicted file is still on disk** and the content is migrated into `$HOME`; resolve the
+conflict by deleting the file first and it is gone. And a leftover
+`claude/.claude/settings.json` in a checkout keeps stow linking it back over the migrated file,
+so the installer warns about it — and does not delete it, because nothing in this installer ever
+deletes anything inside the repository.
+
+`~/.config/karabiner/karabiner.json` still has the clobber problem and is deliberately left
+as-is. The same shape would fit, but not identically enough to do in passing: Karabiner is
+macOS-only (so half of CI cannot exercise the migration at all), the file is GUI-owned state
+that Karabiner-Elements rewrites on every profile change, and it already has its
+`automatic_backups/` ignored here. Give it this treatment as its own task if it starts dirtying
+the checkout — do not assume the Claude code generalizes to it unread.
 
 ## Per-package notes
 
@@ -186,6 +221,7 @@ insist on appending there.
 | `conf.d/20-env.fish` | environment: `EDITOR`, `GPG_TTY`, fzf, ssh agent, `KUBECONFIG` |
 | `conf.d/30-abbr.fish` | abbreviations, interactive only |
 | `conf.d/50-tools.fish` | the `FISH_*` opt-in tool integrations |
+| `conf.d/60-claude.fish` | says so when `~/.claude/settings.json.example` has moved ahead of the live file; silent otherwise |
 | `conf.d/90-tmux.fish` | `FISH_TMUX` auto-attach; returns immediately inside an existing tmux pane |
 | `conf.d/95-ghostty.fish` | restores Ghostty's one-shot fish integration inside tmux panes |
 | `functions/*.fish` | one function per file, autoloaded on first use |
@@ -305,6 +341,28 @@ skills — add the skill to `skills.list` instead.
 The skill bodies live untracked in `~/.agents/skills`, which is why the installer pre-creates
 that directory: without it, stow folds the missing `~/.agents` into a symlink to the checkout and
 every installed skill body lands in the repo as untracked noise.
+
+### Claude Code
+
+The package tracks exactly one file, `claude/.claude/settings.json.example`, and it is the
+curated baseline: schema, attribution defaults, and the permission allowlist. The live
+`~/.claude/settings.json` is machine-owned and gitignored, because Claude Code rewrites the whole
+file the moment a setting is toggled — see "Clobber-safe stubs" for the mechanics and the
+migration.
+
+Consequences worth keeping straight:
+
+- **Never re-add `claude/.claude/settings.json` to git**, and never edit it in a checkout
+  expecting the change to travel. Machine toggles (`skipDangerousModePermissionPrompt` and the
+  like) belong in the live file only; a permission every machine should have belongs in the
+  template.
+- Changing the template does not change any machine. `install.sh` seeds the live file once and
+  after that treats it as untouchable, so a template edit reaches a machine only when a human
+  merges it — which is what `conf.d/60-claude.fish` and the installer's own note are for. Both
+  ask the same question, `settings.json.example -nt settings.json`, so they can never disagree;
+  `touch ~/.claude/settings.json` is the "I have looked and I am keeping mine" answer.
+- `test/syntax.sh` parses `*.json.example` as JSON alongside `*.json`. A template that does not
+  parse is a broken machine one `cp` later.
 
 ### Hammerspoon (macOS only)
 

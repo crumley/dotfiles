@@ -389,6 +389,145 @@ say "Linking $PKG_COUNT package(s)..."
 dotfiles_stow "$DRY_RUN" $PACKAGES
 
 # ---------------------------------------------------------------------------
+# Claude Code settings -- materialize BEFORE the prune pass below
+# ---------------------------------------------------------------------------
+#
+# Claude Code rewrites the whole of ~/.claude/settings.json whenever a setting
+# is toggled, and offers no include mechanism -- so unlike ~/.gitconfig there is
+# nowhere to aim a stub. This repository therefore tracks only the template,
+# claude/.claude/settings.json.example (stowed as ~/.claude/settings.json.example),
+# and the live path is a real, machine-owned file. Track the intent, ignore the
+# state; the .example suffix is the safety property, exactly as for
+# conf.d/00-local.fish -- the live file and the tracked one can never be the
+# same path.
+#
+# WHY THIS SITS HERE, above the prune block and not below it with
+# ensure_gitconfig_include / ensure_shell_stub:
+#
+#   stow  ->  ensure_claude_settings  ->  prune
+#
+# On a machine installed before this change, ~/.claude/settings.json is a
+# symlink into this repository, and whatever that link still reaches is the only
+# copy of that machine's settings. Prune's business is exactly that shape of
+# path -- a symlink whose destination resolves inside this repo -- so the two
+# steps are looking at the same file for opposite reasons.
+#
+# Being accurate about the danger, because a comment that overstates gets
+# disbelieved: as prune is written today the two cannot actually collide. It
+# removes only *dangling* links, and a dangling link has no content left to
+# rescue, so either order produces the same file. That is a property of prune's
+# current rule, not of this step. Moving the call below the prune block does
+# leave the suite green today -- checked, not assumed -- and it is still the
+# wrong order: the step that reads the machine's only copy has to run before the
+# step whose job is deleting links into this repo, so that widening prune later
+# (a sweep for links no package installs any more, say) can never turn into lost
+# settings. The stubs can live below prune because nothing prunes the paths they
+# write; this cannot.
+#
+# The set this migrates is a superset of the set prune would take -- any symlink
+# into the repo, dangling or not -- so once this has run there is nothing at
+# this path left for prune to find.
+claude_settings_hint() {
+  local live=$1 example=$2 rel
+  rel=${live#"$DOTFILES_TARGET"/}
+  [ -e "$live" ] || return 0
+  [ "$example" -nt "$live" ] || return 0
+  info "the template ~/$rel.example has moved ahead of ~/$rel"
+  info "  diff ~/$rel ~/$rel.example   # merge what you want"
+  info "  touch ~/$rel                 # or keep what this machine has"
+}
+
+ensure_claude_settings() {
+  local live="$DOTFILES_TARGET/.claude/settings.json"
+  local example="$live.example"
+  local rel=${live#"$DOTFILES_TARGET"/}
+  local dir dest src='' what='created from the template'
+
+  # Degrade quietly (invariant 4): no template here means the claude package was
+  # never linked into this target, so there is nothing to migrate to.
+  [ -e "$example" ] || return 0
+
+  # Hard stop, same rule as dotfiles_takeover: never write inside the
+  # repository. If ~/.claude is a directory an old run folded into the checkout,
+  # the "live" file is repository content and materializing over it would put
+  # machine state straight back into git.
+  dir=$(cd -- "$(dirname -- "$live")" 2>/dev/null && pwd -P) || return 0
+  case "$dir" in
+    "$DOTFILES_REPO"|"$DOTFILES_REPO"/*)
+      warn "not migrating ~/$rel: it resolves inside the repository"
+      return 0
+      ;;
+  esac
+
+  if [ -L "$live" ]; then
+    if dest=$(link_target_abs "$live"); then dest=$(normalize_path "$dest"); else dest=''; fi
+    case "$dest" in
+      "$DOTFILES_REPO"/*)
+        # A link into this repository, healthy or dangling. Read it *through*
+        # the link before touching anything: while the file is still there that
+        # content is this machine's settings, and it is the only copy.
+        if [ -e "$live" ]; then
+          src=$live
+          what='migrated from the stow symlink'
+        else
+          what='replaced a dangling symlink with the template'
+        fi
+        ;;
+      *)
+        # Someone else's symlink (a private settings repo, say). Not ours to
+        # migrate, and never pruned either.
+        return 0
+        ;;
+    esac
+  elif [ -e "$live" ]; then
+    # Already a real file: the end state. Never touched -- that is what makes a
+    # rerun free and what keeps a toggled setting from being reverted.
+    claude_settings_hint "$live" "$example"
+    return 0
+  fi
+
+  if [ "$DRY_RUN" = 1 ]; then
+    info "would ensure ~/$rel is a real file ($what)"
+    return 0
+  fi
+
+  [ -n "$src" ] || src=$example
+  if ! cp -p -- "$src" "$live.dotfiles-tmp"; then
+    rm -f -- "$live.dotfiles-tmp"
+    warn "could not write ~/$rel; leaving it as it is"
+    return 0
+  fi
+  # mv, not rm-then-copy. A single rename never opens a window in which a
+  # running Claude Code could recreate the file underneath us -- the same gap
+  # that makes the Atuin case a race rather than a rewrite. cp -p so a mode the
+  # machine chose survives the migration.
+  mv -- "$live.dotfiles-tmp" "$live"
+  info "made ~/$rel a real file ($what)"
+  claude_settings_hint "$live" "$example"
+}
+
+# Before this change the live name was tracked in the package. A copy can still
+# be sitting there on a machine that resolved the modify/delete conflict `git
+# pull` raises over a settings.json it had toggled -- untracked and ignored now,
+# but still on disk, so stow keeps linking it over the real file. Say so; do not
+# delete it. It is inside the repository, and this installer never deletes
+# anything in there (see dotfiles_takeover's hard stop for the same rule).
+warn_stale_claude_settings_in_repo() {
+  local stale="$DOTFILES_REPO/claude/.claude/settings.json"
+  [ -e "$stale" ] || return 0
+  warn "this checkout still has claude/.claude/settings.json"
+  info "It is no longer tracked -- the template is settings.json.example beside"
+  info "it, and your live settings are now a real file in your home directory."
+  info "Delete the leftover copy from the checkout; while it is there stow keeps"
+  info "linking it back over them, and the next run will call that a conflict."
+}
+
+if printf '%s\n' "$PACKAGES" | grep -qx claude; then
+  ensure_claude_settings
+  warn_stale_claude_settings_in_repo
+fi
+
+# ---------------------------------------------------------------------------
 # Prune links to files this repository no longer has
 # ---------------------------------------------------------------------------
 
@@ -414,6 +553,10 @@ fi
 # .profile.tracked), and the steps below ensure the real path exists and
 # points at the tracked content -- without ever touching content already
 # there.
+#
+# Claude Code has the same problem and no include mechanism to redirect, so it
+# gets the other half of the same idea -- a template and a real file, done
+# above in ensure_claude_settings, where it has to run before prune.
 
 # ~/.gitconfig: ensure it exists and starts with an include of
 # ~/.gitconfig.global. Prepended, not appended -- git config --global always
