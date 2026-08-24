@@ -8,9 +8,6 @@ status is-interactive; or return
 # fragments, so this replaces the shell and runs the complete startup sequence.
 abbr zx 'exec fish'
 
-# directories
-abbr b3 'cd ~/Documents/brain3'
-
 # ls -> eza. Guarded because this one shadows a real command: without eza
 # installed, an unguarded abbr would break plain `ls`.
 if command -q eza
