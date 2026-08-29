@@ -1,4 +1,4 @@
-# b3 -- Logseq graph CLI completions.
+# b3 -- Obsidian vault CLI completions.
 #
 # Same lazy bootstrap as ward.fish (see its comments for the full reasoning):
 # fish autoloads this file on the first `b3 <TAB>`, the CLI derives the rules

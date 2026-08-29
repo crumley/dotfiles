@@ -230,7 +230,7 @@ cask "whatsapp"
 cask "spotify"
 cask "vlc"
 cask "vox"                                # audio player
-cask "logseq"                             # notes
+cask "obsidian"                           # notes
 cask "figma"
 cask "google-drive"
 
