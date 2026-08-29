@@ -54,7 +54,7 @@ config.appFilters = {
         allowTitles = 'dendron',
         currentSpace = nil
     }),
-    Logseq = filter.new('Logseq')
+    Obsidian = filter.new('Obsidian')
 }
 
 -- Simple space configuration: index -> default name
@@ -147,7 +147,7 @@ config.key_bindings[hyper] = {
         spoon.AppJump:jump(config.appFilters.Meet)
     end,
     X = function()
-        spoon.AppJump:jump(config.appFilters.Logseq)
+        spoon.AppJump:jump(config.appFilters.Obsidian)
     end,
     C = function()
         spoon.AppJump:jump(config.appFilters.Calendar)
@@ -193,7 +193,7 @@ config.key_bindings[hyperShift] = {
         spoon.AppJump:summon(config.appFilters.Slack)
     end,
     X = function()
-        spoon.AppJump:summon(config.appFilters.Logseq)
+        spoon.AppJump:summon(config.appFilters.Obsidian)
     end,
     Z = function()
         spoon.AppJump:summon(config.appFilters.Meet)
