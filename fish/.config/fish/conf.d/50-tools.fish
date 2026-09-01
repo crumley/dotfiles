@@ -15,8 +15,22 @@ status is-interactive; or return
 # The vendor snippet that would otherwise activate it unconditionally is opted
 # out of in conf.d/05-vendor-optout.fish, which has to run unconditionally and
 # so cannot live in this file (see the is-interactive guard above).
+#
+# --shims, not plain activate: activate resolves tool versions for whatever
+# directory the shell is standing in and prepends the resolved per-version bin
+# dirs to PATH. Its prompt hook keeps that honest interactively, but child
+# processes (agents, git hooks, app launchers) inherit the snapshot and never
+# re-resolve -- inside a repo pinning bun 1.3.14, an inherited PATH still led
+# with installs/bun/1/bin (1.4.0), which wrote a lockfile the pinned toolchain
+# could not parse. The shims dir is version-agnostic and resolves per working
+# directory at exec time, so the inherited PATH is correct everywhere.
 if test "$FISH_MISE" = true; and command -q mise
-    mise activate fish | source
+    mise activate fish --shims | source
+    # Shims export no tool env vars; JAVA_HOME used to arrive via activate's
+    # hook-env, so keep providing it for the tools that read it.
+    if set -l _mise_java (mise where java 2>/dev/null)
+        set -gx JAVA_HOME $_mise_java
+    end
 end
 
 # direnv -- per-directory environments
