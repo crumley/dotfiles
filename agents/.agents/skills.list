@@ -17,5 +17,6 @@
 # The skill bodies themselves live untracked in ~/.agents/skills and are never
 # committed.
 
+crumley/b3                   b3
 crumley/intent-architecture  intent-architecture
 vercel-labs/skills           find-skills
