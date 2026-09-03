@@ -55,7 +55,7 @@
 !/.config/fish/completions/b3.fish
 !/.config/fish/completions/d1.fish
 
-# Ours: the ward shorthands (wrr, wrcd, wwcd), adopted as snapshots. These are
+# Ours: the ward shorthands (wrr, wrcd, wwcd, wws), adopted as snapshots. These are
 # not stubs and not generated at runtime -- `ward shell adopt fish --all --dir
 # fish/.config/fish` wrote the real definitions here once, and from then on they
 # are this repository's files: edit them, keep them, nothing rewrites them
@@ -63,20 +63,26 @@
 # alias, when ward's own definition has moved on; `ward shell diff fish NAME`
 # shows what changed.
 #
-# The three __ward_* files are the picker helpers `wrcd` and `wwcd` call. fish
-# autoloads one function per file by name, so they have to be their own files
-# and they have to be tracked alongside the shorthands that need them --
-# adopting is what keeps the set consistent, and a missing helper only fails at
-# the moment a name does not resolve.
+# The __ward_* files are the helpers the shorthands call: the three picker
+# helpers behind `wrcd`, `wwcd`, and `wws`, and the workspace resolver `wwcd`
+# and `wws` share. fish autoloads one function per file by name, so they have
+# to be their own files and they have to be tracked alongside the shorthands
+# that need them -- adopting is what keeps the set consistent, and a missing
+# helper only fails at the moment a name does not resolve. A new file this
+# allowlist does not name is silently ignored, so an adopt that writes one is
+# not done until its line is added here.
 !/.config/fish/functions/wrr.fish
 !/.config/fish/functions/wrcd.fish
 !/.config/fish/functions/wwcd.fish
+!/.config/fish/functions/wws.fish
 !/.config/fish/functions/__ward_choose.fish
 !/.config/fish/functions/__ward_picker.fish
 !/.config/fish/functions/__ward_picker_present.fish
+!/.config/fish/functions/__ward_workspace_root.fish
 !/.config/fish/completions/wrr.fish
 !/.config/fish/completions/wrcd.fish
 !/.config/fish/completions/wwcd.fish
+!/.config/fish/completions/wws.fish
 
 # Ours: autoloaded functions. Add new ones here when you add the file.
 !/.config/fish/functions/my_*.fish
