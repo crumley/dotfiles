@@ -145,3 +145,10 @@ jobs:
       # config that assumes Homebrew, or that aborts when atuin is missing.
       - name: Shell startup smoke test
         run: ./test/run.sh smoke
+
+      # The switchboard package is macOS-only, so without this it would be
+      # exercised on exactly one machine in the world. Its suite runs the real
+      # wrapper against a stubbed `d1`, `security` and `op` in a throwaway home,
+      # which needs no macOS at all — so it runs on both halves of the matrix.
+      - name: Switchboard runner suite
+        run: ./test/run.sh switchboard

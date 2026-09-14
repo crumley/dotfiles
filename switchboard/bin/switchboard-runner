@@ -1,0 +1,319 @@
+#!/usr/bin/env bash
+#
+# switchboard-runner — one tick of the night shift on this Mac.
+#
+# A LaunchAgent runs this once a minute (see
+# ~/.config/switchboard/com.crumley.switchboard-runner.plist, which install.sh
+# copies into ~/Library/LaunchAgents). Every tick it runs
+#
+#     d1 switchboard pull --runner mac --json
+#
+# which claims whatever Switchboard has queued for this machine, runs each
+# claimed entry as `claude -p` in the Ward workspace, and reports. Most minutes
+# there is nothing queued and this exits 0 having said nothing at all; when
+# there is, the run can take up to the job's timeout — 45 minutes for `ff2k`.
+#
+# Everything below exists because launchd is not a shell:
+#
+#   * launchd starts a job with a system-only PATH and no useful working
+#     directory, so `d1` — registered by `bun link`, which puts it in
+#     ~/.bun/bin — is simply not findable. The plist runs this through
+#     `/bin/sh -lc`, which loads ~/.profile (Homebrew, ~/.local/bin, ~/bin) the
+#     same way Ghostty does, and `discover_path` below adds the rest. Nothing
+#     is hardcoded as the only answer; the inherited PATH always wins.
+#
+#   * `d1`'s configuration rule is "the environment wins, the vault is the
+#     fallback" — and the fallback is 1Password. **Every `op` call from a
+#     launchd agent is a fresh process the 1Password app may ask to approve,
+#     and once a minute is not acceptable.** So this wrapper's job is to make
+#     sure both values are already in the environment before `d1` starts, and
+#     they are: SWITCHBOARD_URL from ~/.config/switchboard/runner.env or the
+#     login keychain, SWITCHBOARD_TOKEN_MAC from the login keychain only. `op`
+#     is then never reached. That is the whole point of this file.
+#
+#   * launchd does not expand `~` in StandardOutPath, so the plist sets no log
+#     paths at all and the logging happens here instead.
+#
+# Precedence, one rule, stated once: **the exported environment wins, then
+# ~/.config/switchboard/runner.env, then the login keychain.** It is the same
+# shape as `d1`'s own rule with the keychain standing in for the vault, and it
+# is what makes a rehearsal by hand possible:
+#
+#     switchboard-runner --dry-run     # print the plan; claim nothing
+#     switchboard-runner --once        # claim and work exactly one entry
+#
+# Any arguments are passed straight through to `d1 switchboard pull`, so those
+# two rehearse exactly what launchd runs, in exactly the environment it builds.
+#
+# Full Disk Access is NOT needed: this touches ~/w/main, the checkouts named in
+# runner.env, and ~/Library/Logs — none of the TCC-protected folders. If a
+# checkout is ever moved under ~/Documents, ~/Desktop or ~/Downloads, the agent
+# needs the grant (System Settings → Privacy & Security → Full Disk Access),
+# and the symptom is a run that works by hand and fails from launchd. The same
+# note is at the bottom of rclone/bin/rclone-cron.sh, for the same reason.
+#
+# bash 3.2 clean: that is what /bin/bash is on macOS.
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Locations. Every one is overridable, which is also how the test suite runs
+# this on Linux with stubs and without a keychain.
+# ---------------------------------------------------------------------------
+
+ENV_FILE=${SWITCHBOARD_RUNNER_ENV:-$HOME/.config/switchboard/runner.env}
+LOG_FILE=${SWITCHBOARD_RUNNER_LOG:-$HOME/Library/Logs/switchboard-runner.log}
+LOCK_DIR=${SWITCHBOARD_RUNNER_LOCK:-${TMPDIR:-/tmp}/switchboard-runner.lock}
+LOG_MAX_BYTES=${SWITCHBOARD_RUNNER_LOG_MAX_BYTES:-1048576}
+
+# The names this wrapper is responsible for putting in `d1`'s environment.
+# SWITCHBOARD_CHECKOUT_FF2K is read by the checkout-aware runner (dayone f10t9);
+# until that lands it is harmless, and setting it now means nothing has to be
+# touched here when it does.
+RUNNER_ENV_KEYS="SWITCHBOARD_URL SWITCHBOARD_TOKEN_MAC WARD_WORKSPACE DAYONE_HOME SWITCHBOARD_CHECKOUT_FF2K"
+
+# The two the runner cannot reach Switchboard without, and which therefore fall
+# back to the login keychain. The token is only ever here — never in a file.
+KEYCHAIN_KEYS="SWITCHBOARD_TOKEN_MAC SWITCHBOARD_URL"
+
+# ---------------------------------------------------------------------------
+# Logging
+#
+# One timestamped line per interesting tick, in a file this script opens itself.
+# A tick with nothing queued logs nothing: at 1440 ticks a day, "nothing
+# happened" is the one thing a log must not record.
+# ---------------------------------------------------------------------------
+
+open_log() {
+    local dir
+    dir=$(dirname -- "$LOG_FILE")
+    mkdir -p -- "$dir" 2>/dev/null || true
+    rotate_log
+}
+
+# Keep the file from growing forever, with one generation of history. `wc -c`
+# rather than `stat`: BSD and GNU spell `stat` differently and this script runs
+# on both (macOS in production, Linux in the test suite).
+rotate_log() {
+    local size
+    [ -f "$LOG_FILE" ] || return 0
+    size=$(wc -c <"$LOG_FILE" 2>/dev/null | tr -d ' ') || return 0
+    case "$size" in
+        '' | *[!0-9]*) return 0 ;;
+    esac
+    if [ "$size" -gt "$LOG_MAX_BYTES" ]; then
+        mv -f -- "$LOG_FILE" "$LOG_FILE.1" 2>/dev/null || true
+    fi
+}
+
+log() {
+    local line
+    line="$(date '+%Y-%m-%dT%H:%M:%S%z') $*"
+    printf '%s\n' "$line" >>"$LOG_FILE" 2>/dev/null || true
+    if [ -t 1 ]; then
+        printf '%s\n' "$line"
+    fi
+}
+
+# Copy a captured stream into the log, indented, so a multi-line failure stays
+# visually one event. Empty files are skipped.
+log_stream() {
+    local file=$1
+    [ -s "$file" ] || return 0
+    sed 's/^/    /' "$file" >>"$LOG_FILE" 2>/dev/null || true
+}
+
+die() {
+    log "error: $*"
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
+# PATH
+#
+# Appended, never prepended: the environment wins. Under launchd the inherited
+# PATH is nearly empty and these are what make `d1` findable; in a terminal
+# they are already there and this changes nothing.
+# ---------------------------------------------------------------------------
+
+path_append() {
+    [ -d "$1" ] || return 0
+    case ":${PATH}:" in
+        *":$1:"*) return 0 ;;
+    esac
+    PATH="${PATH:+$PATH:}$1"
+}
+
+discover_path() {
+    local prefix
+    # Homebrew, wherever this machine keeps it — discovered, never hardcoded
+    # (invariant 3). "No Homebrew at all" is a supported outcome.
+    if [ -n "${HOMEBREW_PREFIX:-}" ]; then
+        path_append "$HOMEBREW_PREFIX/bin"
+        path_append "$HOMEBREW_PREFIX/sbin"
+    else
+        for prefix in /opt/homebrew /usr/local "$HOME/.linuxbrew" /home/linuxbrew/.linuxbrew; do
+            if [ -x "$prefix/bin/brew" ]; then
+                path_append "$prefix/bin"
+                path_append "$prefix/sbin"
+                break
+            fi
+        done
+    fi
+    path_append "$HOME/.local/bin"
+    path_append "$HOME/bin"
+    # `mise run link` in the dayone checkout registers `d1` with `bun link`,
+    # which writes it into bun's global bin directory. ~/.profile does not add
+    # that one, so without this line the agent finds no `d1` at all.
+    path_append "${BUN_INSTALL:-$HOME/.bun}/bin"
+    path_append "${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}/shims"
+    path_append /usr/bin
+    path_append /bin
+    path_append /usr/sbin
+    path_append /sbin
+    export PATH
+}
+
+# ---------------------------------------------------------------------------
+# Configuration: the env file, then the keychain
+# ---------------------------------------------------------------------------
+
+# Source ~/.config/switchboard/runner.env, but let an already-exported value
+# win. Sourcing is last-wins by nature, so the pre-existing values are saved
+# and put back afterwards — that is what makes
+# `SWITCHBOARD_URL=https://staging… switchboard-runner --dry-run` mean what it
+# looks like it means.
+load_env_file() {
+    local key value
+    [ -r "$ENV_FILE" ] || return 0
+    for key in $RUNNER_ENV_KEYS; do
+        eval "__pre_$key=\${$key:-}"
+    done
+    # shellcheck source=/dev/null
+    . "$ENV_FILE"
+    for key in $RUNNER_ENV_KEYS; do
+        eval "value=\${__pre_$key}"
+        if [ -n "$value" ]; then
+            eval "$key=\$value"
+        fi
+        eval "unset __pre_$key"
+    done
+}
+
+# A value sourced from the env file is a shell variable, not necessarily an
+# exported one. `d1` is a child process, so anything it must see is exported
+# here rather than relying on the file having said `export`.
+export_runner_env() {
+    local key value
+    for key in $RUNNER_ENV_KEYS; do
+        eval "value=\${$key:-}"
+        if [ -n "$value" ]; then
+            eval "export $key"
+        fi
+    done
+}
+
+# The login keychain, which is where the token lives and the only place it
+# lives. `security` is resolved through PATH so the test suite can stub it;
+# under launchd PATH always has /usr/bin.
+keychain_value() {
+    local name=$1 account
+    account=${USER:-${LOGNAME:-}}
+    if [ -z "$account" ]; then
+        account=$(id -un 2>/dev/null) || account=''
+    fi
+    [ -n "$account" ] || return 1
+    command -v security >/dev/null 2>&1 || return 127
+    security find-generic-password -a "$account" -s "$name" -w 2>/dev/null
+}
+
+load_keychain() {
+    local key value rc
+    for key in $KEYCHAIN_KEYS; do
+        eval "value=\${$key:-}"
+        if [ -n "$value" ]; then
+            continue
+        fi
+        rc=0
+        value=$(keychain_value "$key") || rc=$?
+        if [ "$rc" -eq 127 ]; then
+            die "security(1) is not on PATH, so $key cannot be read from the login keychain. This wrapper expects macOS; elsewhere, export $key (and the other names in $ENV_FILE) yourself."
+        fi
+        if [ "$rc" -ne 0 ] || [ -z "$value" ]; then
+            die "$key is not set and is not in the login keychain. Add it with: security add-generic-password -U -T /usr/bin/security -a \"\$USER\" -s $key -w '<value from the Day One vault>'   (-T is what keeps the keychain from asking for approval on every read; SWITCHBOARD_URL may instead be set in $ENV_FILE, but SWITCHBOARD_TOKEN_MAC must not — a token does not belong in a file.)"
+        fi
+        eval "$key=\$value"
+        eval "export $key"
+    done
+}
+
+# ---------------------------------------------------------------------------
+# One tick
+# ---------------------------------------------------------------------------
+
+open_log
+discover_path
+load_env_file
+export_runner_env
+load_keychain
+
+# Interlock, the same shape as rclone-cron.sh: `mkdir` is atomic on every POSIX
+# filesystem, which makes a directory the simplest correct lock. An ff2k run can
+# take 45 minutes and the agent ticks every 60 seconds, so without this a long
+# run would be started on top of itself forty times. A tick that finds the lock
+# is not an error — it is the normal state while a run is in progress — so it
+# exits 0 and, deliberately, logs nothing.
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+    if [ -t 1 ]; then
+        printf 'switchboard-runner: a run already holds %s; skipping this tick\n' "$LOCK_DIR" >&2
+    fi
+    exit 0
+fi
+# shellcheck disable=SC2064  # expand LOCK_DIR now, on purpose: it never changes
+trap "rm -rf -- '$LOCK_DIR'" EXIT
+printf '%s\n' "$$" >"$LOCK_DIR/pid"
+
+D1=$(command -v d1 2>/dev/null) || D1=''
+if [ -z "$D1" ]; then
+    die "d1 is not on PATH (looked in: $PATH). Register it from the dayone checkout with: mise run link"
+fi
+
+OUT="$LOCK_DIR/stdout"
+ERR="$LOCK_DIR/stderr"
+
+# Deliberately NOT `exec`: exec would replace this shell with `d1` and throw
+# away the EXIT trap with it, leaving $LOCK_DIR behind forever — after which
+# every later tick skips and the night shift quietly stops happening. The same
+# mistake, and the same reasoning, as in rclone-cron.sh.
+#
+# ${@+"$@"} rather than "$@" so `set -u` does not trip on bash 3.2 when there
+# are no arguments.
+set +e
+"$D1" switchboard pull --runner mac --json ${@+"$@"} >"$OUT" 2>"$ERR"
+STATUS=$?
+set -e
+
+if [ -t 1 ]; then
+    cat "$OUT"
+    cat "$ERR" >&2
+fi
+
+# `--json` puts the PullSummary on stdout; `"claimed": 0` is the quiet minute,
+# which is almost all of them. Matching on the summary rather than on a prose
+# string means a shape change fails towards noise (a logged line) rather than
+# towards silence, which is the right way round for something nobody watches.
+if [ "$STATUS" -eq 0 ] &&
+    grep -q '"claimed"[[:space:]]*:[[:space:]]*0[[:space:],]*$' "$OUT"; then
+    exit 0
+fi
+
+CLAIMED=$(sed -n 's/.*"claimed"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$OUT" | head -1)
+if [ "$STATUS" -eq 0 ]; then
+    log "ok: claimed ${CLAIMED:-?} run(s)"
+else
+    log "d1 switchboard pull exited $STATUS"
+fi
+log_stream "$OUT"
+log_stream "$ERR"
+
+exit "$STATUS"

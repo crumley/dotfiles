@@ -41,7 +41,13 @@ DOTFILES_NOT_PACKAGES="lib bin macos scripts script test tests docs"
 #            espanso packages and the Wayland build is upstream-flagged
 #            experimental -- but that is a packaging matter, and this installer
 #            does not install packages on Linux anyway.
-DOTFILES_DARWIN_ONLY="hammerspoon karabiner"
+#
+# One went the other way. `switchboard` is a launchd agent and the wrapper
+# launchd runs; launchd, the login keychain and `security` are Darwin and have
+# no Linux equivalent worth pretending about. The same night shift's Linux half
+# is a systemd timer provisioned by Ansible on the dev VM, which is not this
+# repository's business.
+DOTFILES_DARWIN_ONLY="hammerspoon karabiner switchboard"
 
 # Packages that are Linux-only. None today; kept so the map is symmetric and
 # the next person has an obvious place to put one.

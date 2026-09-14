@@ -607,8 +607,79 @@ ensure_shell_stub() {
   fi
 }
 
+# ~/Library/LaunchAgents/com.crumley.switchboard-runner.plist: a real copy of
+# the tracked plist, not a symlink to it.
+#
+# Stow would happily link it, and that is exactly the thing not to rely on:
+# Apple documents nothing about launchd following a symlink in
+# ~/Library/LaunchAgents (launchd.plist(5) and the retired Daemons and Services
+# Programming Guide describe the directory and the format and are silent on
+# symlinks), and an agent that works until the next reboot and then quietly
+# does not is the worst failure available here. So the package stows the plist
+# to ~/.config/switchboard/ beside runner.env -- inert there, and out of the
+# path of anything that rewrites the live file -- and this copies it across.
+#
+# The tracked file is the source of truth: it carries no username, no home
+# path and no machine state (see the comment inside it), so a live copy that
+# differs is stale, not customized, and is replaced. That makes "is this
+# machine current?" a byte comparison rather than a judgement call.
+#
+# Nothing here runs `launchctl`. Loading and unloading a user agent is a
+# machine-level act and is the human's, so this prints the command instead.
+ensure_switchboard_agent() {
+  local rel=.config/switchboard/com.crumley.switchboard-runner.plist
+  local src="$DOTFILES_TARGET/$rel"
+  local dir="$DOTFILES_TARGET/Library/LaunchAgents"
+  local live="$dir/com.crumley.switchboard-runner.plist"
+  local real
+
+  if [ ! -e "$src" ]; then
+    # A dry run only simulated the stow, so the stowed path is not there yet.
+    # Report against the repository's copy, which is what would be linked.
+    if [ "$DRY_RUN" = 1 ] && [ -e "$DOTFILES_REPO/switchboard/$rel" ]; then
+      src="$DOTFILES_REPO/switchboard/$rel"
+    else
+      # Degrade quietly (invariant 4): no stowed plist means the switchboard
+      # package was never linked into this target.
+      return 0
+    fi
+  fi
+
+  if [ -f "$live" ] && [ ! -L "$live" ] && cmp -s "$src" "$live"; then
+    return 0
+  fi
+
+  if [ "$DRY_RUN" = 1 ]; then
+    info "would install ~/Library/LaunchAgents/com.crumley.switchboard-runner.plist"
+    return 0
+  fi
+
+  mkdir -p -- "$dir"
+  # Same hard stop as dotfiles_takeover: never write inside the repository.
+  real=$(cd -- "$dir" 2>/dev/null && pwd -P) || return 0
+  case "$real" in
+    "$DOTFILES_REPO" | "$DOTFILES_REPO"/*)
+      warn "not installing the switchboard LaunchAgent: ~/Library/LaunchAgents resolves inside the repository"
+      return 0
+      ;;
+  esac
+
+  if ! cp -- "$src" "$live.dotfiles-tmp"; then
+    rm -f -- "$live.dotfiles-tmp"
+    warn "could not write ~/Library/LaunchAgents/com.crumley.switchboard-runner.plist"
+    return 0
+  fi
+  mv -- "$live.dotfiles-tmp" "$live"
+  info "installed ~/Library/LaunchAgents/com.crumley.switchboard-runner.plist"
+  info "  load it:  launchctl bootstrap gui/\$(id -u) ~/Library/LaunchAgents/com.crumley.switchboard-runner.plist"
+  info "  reload:   launchctl bootout gui/\$(id -u)/com.crumley.switchboard-runner  # then bootstrap again"
+}
+
 if printf '%s\n' "$PACKAGES" | grep -qx git; then
   ensure_gitconfig_include
+fi
+if printf '%s\n' "$PACKAGES" | grep -qx switchboard; then
+  ensure_switchboard_agent
 fi
 if printf '%s\n' "$PACKAGES" | grep -qx bash; then
   ensure_shell_stub "$DOTFILES_TARGET/.bashrc" .bashrc.tracked
