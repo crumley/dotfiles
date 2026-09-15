@@ -9,6 +9,7 @@
 #   test/run.sh syntax           # parse checks: fish, bash, lua, json, toml, yaml
 #   test/run.sh install          # test/install-test.sh — the installer's own suite
 #   test/run.sh smoke            # install into a throwaway home, then start the shells
+#   test/run.sh switchboard      # the launchd wrapper, against stubs
 #   test/run.sh lint syntax      # any combination
 #
 # Optional linters that are not installed are reported as SKIP, loudly, and do
@@ -35,7 +36,7 @@ for arg in "$@"; do
     case "$arg" in
         -h | --help) usage 0 ;;
         all) want_all=1 ;;
-        lint | syntax | install | smoke) checks="$checks $arg" ;;
+        lint | syntax | install | smoke | switchboard) checks="$checks $arg" ;;
         *)
             printf 'run.sh: unknown argument %s\n\n' "$arg" >&2
             usage 1
@@ -47,7 +48,7 @@ done
 # looks equivalent and is not: "install" contains "all", so `run.sh install`
 # quietly ran the entire suite.
 if [ "$want_all" = 1 ] || [ -z "$checks" ]; then
-    checks="lint syntax install smoke"
+    checks="lint syntax install smoke switchboard"
 fi
 
 rc=0
@@ -66,6 +67,12 @@ for check in $checks; do
         # ubuntu-latest / macos-latest matrix, which is the part it could not
         # give itself.
         install) script="$TESTS_DIR/install-test.sh" ;;
+        # The switchboard package's own suite: the launchd wrapper run against
+        # a stubbed `d1`, `security` and `op` in a throwaway home. It needs no
+        # macOS, so it runs on both halves of the matrix -- which is the point,
+        # since the wrapper is macOS-only and would otherwise be tested nowhere
+        # but on Ryan's laptop.
+        switchboard) script="$TESTS_DIR/switchboard-test.sh" ;;
         *) continue ;;
     esac
 

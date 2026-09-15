@@ -113,7 +113,7 @@ mkdir /tmp/fakehome && ./install.sh --target /tmp/fakehome --takeover
 
 ## What's in it
 
-Nineteen packages. All of them install on Linux except the two marked macOS-only.
+Twenty packages. All of them install on Linux except the three marked macOS-only.
 
 | package | lands at | configures |
 | --- | --- | --- |
@@ -134,6 +134,7 @@ Nineteen packages. All of them install on Linux except the two marked macOS-only
 | `rg` | `~/.ripgreprc` | ripgrep defaults — see the note below |
 | `ssh` | `~/.ssh/config` | ssh, and the 1Password agent socket on either platform |
 | `starship` | `~/.config/starship.toml` | prompt |
+| `switchboard` | `~/bin/switchboard-runner`, `~/.config/switchboard/` | the night shift's launchd agent — **macOS only**, see the note below |
 | `tmux` | `~/.config/tmux/tmux.conf` | tmux |
 | `vim` | `~/.vimrc`, `~/.gvimrc` | vim, dependency-free and plugin-free |
 
@@ -166,9 +167,9 @@ are platform-specific.
 Not packages: `lib/` (installer machinery), `macos/` (the `defaults write` block), `test/`,
 and `.github/`.
 
-Two packages install executables into `~/bin` — `git-by-date` and `rclone-cron.sh`. Both the
-fish config and `~/.profile` put `~/bin` on `$PATH`, which is what makes `git by-date` work in
-Git's subcommand form.
+Three packages install executables into `~/bin` — `git-by-date`, `rclone-cron.sh` and
+`switchboard-runner`. Both the fish config and `~/.profile` put `~/bin` on `$PATH`, which is what
+makes `git by-date` work in Git's subcommand form.
 
 One note on `rg`: ripgrep reads `.ripgreprc` **only** when `RIPGREP_CONFIG_PATH` points at it —
 there is no lookup by name or location. Both `conf.d/20-env.fish` and `~/.profile` set it, each
@@ -179,8 +180,9 @@ an error to stderr on every single invocation.
 
 ## Platform support
 
-Everything is expected to work on Linux except `hammerspoon` and `karabiner`, whose
-applications genuinely do not exist there. `ghostty` and `espanso` both ship for Linux and their
+Everything is expected to work on Linux except `hammerspoon`, `karabiner` and `switchboard`,
+whose applications genuinely do not exist there — the last of those is a launchd agent that reads
+the login keychain, and Linux has neither. `ghostty` and `espanso` both ship for Linux and their
 configs are platform-independent, so they stow everywhere.
 
 **The installer does not install Linux packages.** That is deliberate: on Linux this repo
@@ -332,6 +334,139 @@ table) — they are redirect targets for tools that insist on rewriting their ow
 somewhere to put your own settings. Put those in the escape hatches above instead: they are
 sourced from further down the chain regardless.
 
+## The night shift (`switchboard`, macOS only)
+
+Switchboard is a Cloudflare Worker that holds a schedule and queues work for the machines that
+can do it. This package is the Mac's half: a LaunchAgent that, every five minutes, runs
+
+```sh
+d1 switchboard pull --runner mac --json
+```
+
+through `~/bin/switchboard-runner`. Most ticks that claims nothing and exits 0 in silence.
+When something is queued — the `ff2k` fantasy-football week, which needs the Chrome on this
+machine that is logged into Yahoo — it runs it as `claude -p` in the Ward workspace and reports
+to Slack. A run can take up to the job's timeout, 45 minutes for `ff2k`.
+
+**The agent only runs while the Mac is awake, and that is the design.** Nothing wakes it: no
+`caffeinate`, no `pmset` schedule, no wake-on-LAN. Switchboard expires a slot that aged out and
+collapses a backlog into one catch-up run, so a Mac opened on Monday morning does the right
+thing rather than replaying the weekend. If a slot mattered and was missed, one line appears in
+`#switchboard-ops`.
+
+### What has to be true on this Mac first
+
+| | |
+| --- | --- |
+| `d1` | registered from the dayone checkout: `mise run link`, then `mise run link-status` |
+| `ward` | on `PATH` |
+| `claude` | installed and logged in (`claude`, then `/login`) — an unauthenticated `claude -p` fails every run |
+| the Ward workspace | at `~/w/main` (or `WARD_WORKSPACE`), clean, and pushable without a prompt — the 1Password SSH agent, already configured by the `ssh` package |
+| the `ff2k` checkout | wherever `SWITCHBOARD_CHECKOUT_FF2K` says, with `uv` on `PATH` |
+| Chrome | open and logged into Yahoo when an `ff2k` slot comes round |
+
+### Setting it up
+
+1. **Put the two values in the login keychain.** Both come from the Day One 1Password vault;
+   `d1 secrets get NAME` prints one. The token is the Mac's own bearer token, separate from the
+   VM's so either can be revoked alone.
+
+   ```sh
+   security add-generic-password -T /usr/bin/security -a "$USER" \
+     -s SWITCHBOARD_TOKEN_MAC -w '<value from the Day One vault>'
+   security add-generic-password -T /usr/bin/security -a "$USER" \
+     -s SWITCHBOARD_URL -w 'https://<the worker>.workers.dev'
+   ```
+
+   **`-T /usr/bin/security` is the flag that matters.** An item added without it has an empty
+   trusted-application list, so every read pops the "security wants to use your confidential
+   information" dialog — every five minutes, forever, and never while you are looking. Naming
+   `/usr/bin/security` as trusted is exactly as wide as it needs to be: the same binary is what
+   the wrapper runs. (`-A`, which trusts everything, is not the answer.) If a dialog does appear
+   during the rehearsal below, answer **Always Allow**, not Allow.
+
+   Read one back with `security find-generic-password -a "$USER" -s SWITCHBOARD_TOKEN_MAC -w`,
+   replace one by adding `-U` to the same command. The login keychain is unlocked at login, so
+   an agent running in `gui/$(id -u)` always finds it open.
+
+   **This is the whole reason the wrapper exists.** `d1`'s rule is "the environment wins, the
+   vault is the fallback", and the fallback is 1Password — which from a launchd agent means an
+   `op` process the 1Password app may ask you to approve, every five minutes, forever. The wrapper
+   puts both values in the environment before `d1` starts, so `op` is never reached.
+
+2. **Write the per-machine env file.**
+
+   ```sh
+   cp ~/.config/switchboard/runner.env.example ~/.config/switchboard/runner.env
+   $EDITOR ~/.config/switchboard/runner.env
+   ```
+
+   It is a real machine-owned file in `$HOME`, never in this repo — the same shape as
+   `~/.config/fish/conf.d/00-local.fish`. Its keys are `WARD_WORKSPACE`, `DAYONE_HOME`,
+   `SWITCHBOARD_CHECKOUT_FF2K` and, optionally, `SWITCHBOARD_URL`. `SWITCHBOARD_TOKEN_MAC` is
+   deliberately not among them: a token belongs in the keychain.
+
+   Precedence is one rule: **the exported environment wins, then `runner.env`, then the login
+   keychain.**
+
+3. **Rehearse it by hand, in one command.** This is the same script, in the same environment,
+   that launchd will run — the only difference is that you are watching.
+
+   ```sh
+   switchboard-runner --dry-run     # prints the plan; claims nothing, sends nothing
+   switchboard-runner --once        # claims and works exactly one entry
+   switchboard-runner               # one real tick, as launchd runs it
+   ```
+
+   Any arguments are passed straight through to `d1 switchboard pull`. Do the `--dry-run` first:
+   a dry run is the only one that cannot consume a queued slot, because pulling *claims*.
+
+4. **Load the agent.**
+
+   ```sh
+   launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.crumley.switchboard-runner.plist
+   ```
+
+   `./install.sh` puts that plist there, as a real file. It is **copied, not symlinked**: Apple
+   documents nothing either way about launchd following a symlink in `~/Library/LaunchAgents`,
+   and an agent that works until the next reboot and then quietly does not is the worst failure
+   available here. The tracked copy lives at `~/.config/switchboard/` and carries no username and
+   no home path, so the installed copy is a byte-for-byte match and a rerun refreshes a stale one.
+
+### Operating it
+
+```sh
+launchctl print gui/$(id -u)/com.crumley.switchboard-runner   # state, last exit status, next run
+launchctl bootout gui/$(id -u)/com.crumley.switchboard-runner # stop it
+launchctl kickstart -k gui/$(id -u)/com.crumley.switchboard-runner  # run a tick now
+tail -f ~/Library/Logs/switchboard-runner.log                 # what it has been doing
+```
+
+Editing `runner.env` needs no reload; the wrapper sources it every tick. Replacing the plist
+needs `bootout` and then `bootstrap` again.
+
+The log gets **one timestamped line per interesting tick** and nothing at all on a quiet one —
+at 1440 ticks a day, "nothing happened" is the one thing a log must not record. A claimed run,
+or any failure, gets its line plus `d1`'s own output indented beneath it. The file rotates to
+`switchboard-runner.log.1` past a megabyte.
+
+A tick that finds another run in progress exits 0 without a word: the lock is a directory under
+`$TMPDIR`, `switchboard-runner.lock`, holding the running process's pid. That is what keeps a
+45-minute `ff2k` run from being started on top of itself forty times. If a run is ever killed so
+hard the lock survives it, `rm -rf "$TMPDIR/switchboard-runner.lock"`.
+
+### Full Disk Access is not needed
+
+The wrapper touches `~/w/main`, the checkouts named in `runner.env`, and `~/Library/Logs` —
+none of the TCC-protected folders. Do not grant it anything.
+
+That changes if a checkout ever moves under `~/Documents`, `~/Desktop`, `~/Downloads`, or an
+iCloud or external volume: a background agent reading those needs Full Disk Access, and the
+symptom is a job that works when you run `switchboard-runner` from a terminal (your terminal has
+the grant) and fails from launchd. The fix is to keep checkouts somewhere ordinary — `~/src`,
+`~/w` — rather than to hand a background agent the whole disk. The same trap is written up at
+the bottom of `rclone/bin/rclone-cron.sh`, which hit it with cron and `~/Documents`.
+
 ## Testing
 
 ```sh
@@ -340,6 +475,7 @@ sourced from further down the chain regardless.
 ./test/run.sh syntax     # parse checks: fish, bash/sh, lua, json, toml, yaml, Brewfile
 ./test/run.sh install    # the installer's own end-to-end suite
 ./test/run.sh smoke      # install into a throwaway home, then start the shells against it
+./test/run.sh switchboard  # the launchd wrapper, against a stubbed d1, security and op
 ```
 
 Nothing touches your real home directory: the install and smoke checks work inside a `mktemp`
@@ -348,6 +484,7 @@ installed are reported as a loud `SKIP` — never silently counted as a pass.
 
 CI (`.github/workflows/ci.yml`) runs exactly these scripts, so there is no second copy of the
 logic to drift: shellcheck on Ubuntu (gate at `severity>=warning`, a `style` pass as advisory),
-parse checks on Ubuntu and macOS, and the installer suite plus the shell-startup smoke test on
-both. Putting the install path on a two-OS matrix is the point — it is what actually answers
+parse checks on Ubuntu and macOS, and the installer suite, the shell-startup smoke test and the
+switchboard suite on both. The switchboard package is macOS-only but its suite needs no macOS —
+running it on Linux too is what keeps it from being exercised on exactly one machine in the world. Putting the install path on a two-OS matrix is the point — it is what actually answers
 "does a clean install work on Linux?"

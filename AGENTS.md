@@ -31,7 +31,7 @@ would break one, that is the thing to raise rather than the thing to do.
 1. **The platform map lives in `lib/packages.sh`, and only there.** It holds exactly two facts:
    which top-level directories are not stow packages (`DOTFILES_NOT_PACKAGES`), and which
    packages are platform-specific (`DOTFILES_DARWIN_ONLY`, `DOTFILES_LINUX_ONLY`). Today
-   macOS-only is exactly `hammerspoon karabiner`.
+   macOS-only is exactly `hammerspoon karabiner switchboard`.
 2. **Packages are discovered, not listed.** Adding a directory is the whole change needed to
    get it installed. There is no list of packages in `install.sh` and there must not be one
    again — a hardcoded list is precisely why `starship` sat in this repo for years without ever
@@ -66,6 +66,7 @@ lib/stow.sh         conflict detection, takeover, pruning, the stow invocation
 macos/defaults.sh   the `defaults write` block, guarded on Darwin
 test/run.sh         local entry point for every check CI runs
 test/install-test.sh    the installer's own end-to-end suite
+test/switchboard-test.sh  the launchd wrapper, against stubbed d1/security/op
 <package>/          a stow package; contents mirror their layout under $HOME
 ```
 
@@ -93,7 +94,7 @@ mkdir -p /tmp/fakehome && ./install.sh --target /tmp/fakehome --takeover
 The checks:
 
 ```sh
-./test/run.sh                 # lint, syntax, install, smoke
+./test/run.sh                 # lint, syntax, install, smoke, switchboard
 ./test/run.sh lint syntax     # any combination
 ```
 
@@ -364,6 +365,46 @@ Consequences worth keeping straight:
   `touch ~/.claude/settings.json` is the "I have looked and I am keeping mine" answer.
 - `test/syntax.sh` parses `*.json.example` as JSON alongside `*.json`. A template that does not
   parse is a broken machine one `cp` later.
+
+### Switchboard (macOS only)
+
+The night shift's Mac half: `bin/switchboard-runner` (stowed to `~/bin`) and the LaunchAgent
+plist that runs it every five minutes (the VM's timer is the one-minute one: it is woken for a job and should notice it fast; the Mac is never woken and its slots are on the hour). The operating story — keychain items, `runner.env`,
+`launchctl bootstrap`, the log, TCC — is in the README section of the same name. What an agent
+changing this needs to know is narrower:
+
+- **The wrapper exists to keep `op` out of the loop.** `d1 switchboard pull` resolves its
+  configuration as "the environment wins, the vault is the fallback", and on the Mac that
+  fallback is 1Password. From launchd, every `op` call is a fresh process the 1Password app may
+  ask to approve — every tick, forever. So the wrapper's contract is that `SWITCHBOARD_URL`
+  and `SWITCHBOARD_TOKEN_MAC` are **always** in the environment before `d1` starts. Anything
+  that could leave one of them unset must fail the tick loudly instead, and
+  `test/switchboard-test.sh` asserts a stub `op` is never invoked. Do not soften that into a
+  warning.
+
+- **`SWITCHBOARD_CHECKOUT_FF2K`, `WARD_WORKSPACE` and `DAYONE_HOME` are an interface**, shared
+  with dayone's checkout-aware runner. They are spelled the same on both sides on purpose; a
+  rename here is a rename there.
+
+- **Never `exec` the `d1` call.** `exec` throws away the EXIT trap along with the shell, the
+  lock directory survives forever, and every later tick skips — the night shift stops happening
+  and nothing says so. `rclone/bin/rclone-cron.sh` carries the same warning for the same reason.
+
+- **The plist is copied, not stowed into place.** It is tracked at
+  `switchboard/.config/switchboard/com.crumley.switchboard-runner.plist` and `install.sh`
+  (`ensure_switchboard_agent`) copies it to `~/Library/LaunchAgents/`. Apple documents nothing
+  either way about launchd following a symlink there, and "works until the next reboot" is the
+  worst failure mode available. The tracked file carries no username and no home path — launchd
+  expands neither — which is why the job runs through `/bin/sh -lc`, the same login-shell trick
+  Ghostty uses to get a real `PATH`. Keep it that way: rendering a path into the installed copy
+  would put machine state in a generated file and make "is this machine current?" a judgement
+  instead of a byte comparison.
+
+- **It is macOS-only but tested everywhere.** `test/switchboard-test.sh` runs the real wrapper
+  against a throwaway `$HOME` with a stubbed `d1`, `security` and `op`, so it runs on both halves
+  of the CI matrix. Without that, the package would be exercised on exactly one machine in the
+  world. What genuinely cannot be checked from Linux — that launchd loads the agent, that
+  `security` does not prompt, that `d1` finds `claude` — is listed at the top of that file.
 
 ### Hammerspoon (macOS only)
 

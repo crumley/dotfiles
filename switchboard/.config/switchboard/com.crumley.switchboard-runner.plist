@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.crumley.switchboard-runner — the night shift's clock on this Mac.
+
+  THIS FILE IS NOT LOADED FROM WHERE IT IS STOWED. It lives here, in
+  ~/.config/switchboard/, beside runner.env, and `install.sh` copies it to
+  ~/Library/LaunchAgents/com.crumley.switchboard-runner.plist. Two reasons, and
+  the second is the load-bearing one:
+
+    * Apple documents nothing either way about launchd following a symlink in
+      ~/Library/LaunchAgents. launchd.plist(5) and the (now retired) Daemons and
+      Services Programming Guide describe the directory and the file format and
+      say nothing about symlinks; `launchctl bootstrap` takes a path and
+      resolves it, but the per-user domain's own scan at login is not specified.
+      An agent that works until the next reboot and then silently does not is
+      the worst failure available here, so this does not rely on an answer
+      nobody has published.
+
+    * Keeping the live path out of the stow tree is the same trade this repo
+      already makes for ~/.claude/settings.json: the tracked file and the live
+      file can never be the same path, so nothing that rewrites the live one can
+      dirty the checkout.
+
+  There is no username and no absolute home path anywhere below, because
+  launchd expands nothing in ProgramArguments — not `~`, not `$HOME`. The job is
+  therefore run through `/bin/sh -lc`, which is a login shell: it reads
+  ~/.profile, which discovers Homebrew and puts ~/.local/bin and ~/bin on PATH.
+  Ghostty is started the same way in this repo and for the same reason (see
+  AGENTS.md, "Terminal"): Spotlight/LaunchServices hand a process a system-only
+  PATH. The alternative — having the installer render the absolute path into a
+  copy of this file — was rejected because it puts machine state into a
+  generated file and makes "is the installed copy current?" a fuzzy question
+  instead of a byte comparison.
+
+  StandardOutPath / StandardErrorPath are deliberately absent: launchd does not
+  expand `~` in them either, and the wrapper writes ~/Library/Logs/switchboard-runner.log
+  itself. What escapes the wrapper entirely (it could not even be started) shows
+  up as the last exit status in `launchctl print gui/$(id -u)/com.crumley.switchboard-runner`.
+
+  KeepAlive is deliberately absent too. This is a one-shot command that exits 0
+  most ticks; KeepAlive would restart it in a tight loop.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.crumley.switchboard-runner</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/sh</string>
+		<string>-lc</string>
+		<string>exec "$HOME/bin/switchboard-runner"</string>
+	</array>
+
+	<!-- Every five minutes. The VM's timer ticks once a minute because the VM
+	     is woken for one job and should notice it and stop again quickly; this
+	     Mac is never woken, the ff2k slots are on the hour, and the cadence
+	     calls them "when to sit down", not deadlines. Five minutes keeps a
+	     gameday check well inside its 90-minute window and cuts the empty
+	     polls (a login shell, a bun process, a keychain read and one request
+	     to the Worker each) from 1,440 a day to 288. The runner's own lock is
+	     what keeps a 45-minute ff2k run from being started on top of itself. -->
+	<key>StartInterval</key>
+	<integer>300</integer>
+
+	<!-- Run one tick as soon as the agent is bootstrapped, so `launchctl
+	     bootstrap` is immediately verifiable rather than five minutes of silence. -->
+	<key>RunAtLoad</key>
+	<true/>
+
+	<!-- Background: lower CPU and I/O priority, and no App Nap surprises. This
+	     runs while Ryan is using the machine. -->
+	<key>ProcessType</key>
+	<string>Background</string>
+</dict>
+</plist>
