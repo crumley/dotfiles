@@ -337,13 +337,13 @@ sourced from further down the chain regardless.
 ## The night shift (`switchboard`, macOS only)
 
 Switchboard is a Cloudflare Worker that holds a schedule and queues work for the machines that
-can do it. This package is the Mac's half: a LaunchAgent that, once a minute, runs
+can do it. This package is the Mac's half: a LaunchAgent that, every five minutes, runs
 
 ```sh
 d1 switchboard pull --runner mac --json
 ```
 
-through `~/bin/switchboard-runner`. Most minutes that claims nothing and exits 0 in silence.
+through `~/bin/switchboard-runner`. Most ticks that claims nothing and exits 0 in silence.
 When something is queued — the `ff2k` fantasy-football week, which needs the Chrome on this
 machine that is logged into Yahoo — it runs it as `claude -p` in the Ward workspace and reports
 to Slack. A run can take up to the job's timeout, 45 minutes for `ff2k`.
@@ -380,7 +380,7 @@ thing rather than replaying the weekend. If a slot mattered and was missed, one 
 
    **`-T /usr/bin/security` is the flag that matters.** An item added without it has an empty
    trusted-application list, so every read pops the "security wants to use your confidential
-   information" dialog — once a minute, forever, and never while you are looking. Naming
+   information" dialog — every five minutes, forever, and never while you are looking. Naming
    `/usr/bin/security` as trusted is exactly as wide as it needs to be: the same binary is what
    the wrapper runs. (`-A`, which trusts everything, is not the answer.) If a dialog does appear
    during the rehearsal below, answer **Always Allow**, not Allow.
@@ -391,7 +391,7 @@ thing rather than replaying the weekend. If a slot mattered and was missed, one 
 
    **This is the whole reason the wrapper exists.** `d1`'s rule is "the environment wins, the
    vault is the fallback", and the fallback is 1Password — which from a launchd agent means an
-   `op` process the 1Password app may ask you to approve, once a minute, forever. The wrapper
+   `op` process the 1Password app may ask you to approve, every five minutes, forever. The wrapper
    puts both values in the environment before `d1` starts, so `op` is never reached.
 
 2. **Write the per-machine env file.**

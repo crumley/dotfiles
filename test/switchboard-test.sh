@@ -8,8 +8,8 @@
 # The wrapper's job is to build an environment for `d1 switchboard pull` out of
 # almost nothing, and *that* is what is tested here: precedence, the keychain
 # read, the lock, argument pass-through, what reaches the log, and the property
-# the whole design exists for -- that `op` is never invoked, because once a
-# minute the 1Password app would ask to approve it.
+# the whole design exists for -- that `op` is never invoked, because every
+# tick the 1Password app would ask to approve it.
 #
 # Every test runs the real wrapper against a throwaway $HOME with stubs on PATH:
 # a `d1` that records its argv and environment, a `security` backed by a
@@ -283,7 +283,7 @@ BOX=$(newbox)
 printf 'keychain-token\n' >"$BOX/keychain/SWITCHBOARD_TOKEN_MAC"
 printf 'https://keychain.example\n' >"$BOX/keychain/SWITCHBOARD_URL"
 run_box "$BOX"
-same 'a minute with nothing queued logs nothing' "$(logtext "$BOX")" ''
+same 'a tick with nothing queued logs nothing' "$(logtext "$BOX")" ''
 
 printf '{\n  "claimed": 1,\n  "reports": []\n}\n' >"$BOX/d1.stdout"
 run_box "$BOX"
@@ -325,7 +325,7 @@ group 'the LaunchAgent'
 assert 'the plist is tracked outside ~/Library/LaunchAgents' test -f "$PLIST"
 lacks 'it hardcodes no home directory' "$(cat "$PLIST")" '/Users/'
 lacks 'it hardcodes no /home path either' "$(cat "$PLIST")" '/home/'
-contains 'it ticks once a minute' "$(tr -d ' \n\t' <"$PLIST")" '<key>StartInterval</key><integer>60</integer>'
+contains 'it ticks every five minutes' "$(tr -d ' \n\t' <"$PLIST")" '<key>StartInterval</key><integer>300</integer>'
 contains 'it runs at load' "$(tr -d ' \n\t' <"$PLIST")" '<key>RunAtLoad</key><true/>'
 contains 'it is a background job' "$(tr -d ' \n\t' <"$PLIST")" '<key>ProcessType</key><string>Background</string>'
 lacks 'it sets no KeepAlive (this is one-shot, not a daemon)' \

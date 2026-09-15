@@ -369,14 +369,14 @@ Consequences worth keeping straight:
 ### Switchboard (macOS only)
 
 The night shift's Mac half: `bin/switchboard-runner` (stowed to `~/bin`) and the LaunchAgent
-plist that runs it once a minute. The operating story — keychain items, `runner.env`,
+plist that runs it every five minutes (the VM's timer is the one-minute one: it is woken for a job and should notice it fast; the Mac is never woken and its slots are on the hour). The operating story — keychain items, `runner.env`,
 `launchctl bootstrap`, the log, TCC — is in the README section of the same name. What an agent
 changing this needs to know is narrower:
 
 - **The wrapper exists to keep `op` out of the loop.** `d1 switchboard pull` resolves its
   configuration as "the environment wins, the vault is the fallback", and on the Mac that
   fallback is 1Password. From launchd, every `op` call is a fresh process the 1Password app may
-  ask to approve — once a minute, forever. So the wrapper's contract is that `SWITCHBOARD_URL`
+  ask to approve — every tick, forever. So the wrapper's contract is that `SWITCHBOARD_URL`
   and `SWITCHBOARD_TOKEN_MAC` are **always** in the environment before `d1` starts. Anything
   that could leave one of them unset must fail the tick loudly instead, and
   `test/switchboard-test.sh` asserts a stub `op` is never invoked. Do not soften that into a

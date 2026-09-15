@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  com.crumley.switchboard-runner — the night shift's minute hand on this Mac.
+  com.crumley.switchboard-runner — the night shift's clock on this Mac.
 
   THIS FILE IS NOT LOADED FROM WHERE IT IS STOWED. It lives here, in
   ~/.config/switchboard/, beside runner.env, and `install.sh` copies it to
@@ -39,7 +39,7 @@
   up as the last exit status in `launchctl print gui/$(id -u)/com.crumley.switchboard-runner`.
 
   KeepAlive is deliberately absent too. This is a one-shot command that exits 0
-  most minutes; KeepAlive would restart it in a tight loop.
+  most ticks; KeepAlive would restart it in a tight loop.
 -->
 <plist version="1.0">
 <dict>
@@ -53,13 +53,19 @@
 		<string>exec "$HOME/bin/switchboard-runner"</string>
 	</array>
 
-	<!-- Once a minute. The runner's own lock is what keeps a 45-minute ff2k
-	     run from being started on top of itself. -->
+	<!-- Every five minutes. The VM's timer ticks once a minute because the VM
+	     is woken for one job and should notice it and stop again quickly; this
+	     Mac is never woken, the ff2k slots are on the hour, and the cadence
+	     calls them "when to sit down", not deadlines. Five minutes keeps a
+	     gameday check well inside its 90-minute window and cuts the empty
+	     polls (a login shell, a bun process, a keychain read and one request
+	     to the Worker each) from 1,440 a day to 288. The runner's own lock is
+	     what keeps a 45-minute ff2k run from being started on top of itself. -->
 	<key>StartInterval</key>
-	<integer>60</integer>
+	<integer>300</integer>
 
 	<!-- Run one tick as soon as the agent is bootstrapped, so `launchctl
-	     bootstrap` is immediately verifiable rather than a minute of silence. -->
+	     bootstrap` is immediately verifiable rather than five minutes of silence. -->
 	<key>RunAtLoad</key>
 	<true/>
 

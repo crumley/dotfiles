@@ -2,14 +2,14 @@
 #
 # switchboard-runner — one tick of the night shift on this Mac.
 #
-# A LaunchAgent runs this once a minute (see
+# A LaunchAgent runs this every five minutes (see
 # ~/.config/switchboard/com.crumley.switchboard-runner.plist, which install.sh
 # copies into ~/Library/LaunchAgents). Every tick it runs
 #
 #     d1 switchboard pull --runner mac --json
 #
 # which claims whatever Switchboard has queued for this machine, runs each
-# claimed entry as `claude -p` in the Ward workspace, and reports. Most minutes
+# claimed entry as `claude -p` in the Ward workspace, and reports. Most ticks
 # there is nothing queued and this exits 0 having said nothing at all; when
 # there is, the run can take up to the job's timeout — 45 minutes for `ff2k`.
 #
@@ -25,7 +25,7 @@
 #   * `d1`'s configuration rule is "the environment wins, the vault is the
 #     fallback" — and the fallback is 1Password. **Every `op` call from a
 #     launchd agent is a fresh process the 1Password app may ask to approve,
-#     and once a minute is not acceptable.** So this wrapper's job is to make
+#     and a prompt every tick is not acceptable.** So this wrapper's job is to make
 #     sure both values are already in the environment before `d1` starts, and
 #     they are: SWITCHBOARD_URL from ~/.config/switchboard/runner.env or the
 #     login keychain, SWITCHBOARD_TOKEN_MAC from the login keychain only. `op`
@@ -298,7 +298,7 @@ if [ -t 1 ]; then
     cat "$ERR" >&2
 fi
 
-# `--json` puts the PullSummary on stdout; `"claimed": 0` is the quiet minute,
+# `--json` puts the PullSummary on stdout; `"claimed": 0` is the quiet tick,
 # which is almost all of them. Matching on the summary rather than on a prose
 # string means a shape change fails towards noise (a logged line) rather than
 # towards silence, which is the right way round for something nobody watches.
