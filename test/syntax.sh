@@ -118,6 +118,9 @@ run_over "json" '*.json' check_json
 # what hides it from the glob above.
 run_over "json" '*.json.example' check_json
 
+section "plist"
+run_over "plist" '*.plist' check_plist
+
 section "toml"
 run_over "toml" '*.toml' check_toml
 

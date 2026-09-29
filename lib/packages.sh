@@ -41,7 +41,12 @@ DOTFILES_NOT_PACKAGES="lib bin macos scripts script test tests docs"
 #            espanso packages and the Wayland build is upstream-flagged
 #            experimental -- but that is a packaging matter, and this installer
 #            does not install packages on Linux anyway.
-DOTFILES_DARWIN_ONLY="hammerspoon karabiner"
+#
+# One went the other way. `b3sync` is a launchd agent and the wrapper it runs
+# (Hammerspoon's brainsync.lua calls the same wrapper), and launchd is Darwin.
+# The wrapper itself is portable -- its test suite runs on Linux -- but nothing
+# on Linux would ever call it.
+DOTFILES_DARWIN_ONLY="hammerspoon karabiner b3sync"
 
 # Packages that are Linux-only. None today; kept so the map is symmetric and
 # the next person has an obvious place to put one.

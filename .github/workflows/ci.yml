@@ -117,17 +117,17 @@ jobs:
         with:
           submodules: false
 
-      - name: Install stow and fish (Linux)
+      - name: Install stow, fish and lua (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq stow fish
+          sudo apt-get install -y -qq stow fish lua5.4
           stow --version | head -1
 
-      - name: Install stow and fish (macOS)
+      - name: Install stow, fish and lua (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install --quiet stow fish
+          brew install --quiet stow fish lua
           stow --version | head -1
 
       # The installer's own suite. Every test inside it installs into a
@@ -139,6 +139,13 @@ jobs:
       # answer: does a clean install work on Linux?
       - name: Installer end-to-end suite
         run: ./test/run.sh install
+
+      # The b3sync package is macOS-only, so without this it would be exercised
+      # on exactly one kind of machine. Its suite runs the real runner against a
+      # stubbed b3 in a throwaway home, and brainsync.lua under a fake hs (the
+      # reason lua is installed above) -- neither needs macOS.
+      - name: b3sync suite
+        run: ./test/run.sh b3sync
 
       # Complementary to the above: install, then actually start fish, bash and
       # sh against the result. Parsing is not loading — this is what catches a

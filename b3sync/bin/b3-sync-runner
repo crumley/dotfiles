@@ -1,0 +1,469 @@
+#!/usr/bin/env bash
+#
+# b3-sync-runner -- commit this laptop's hand edits to the vault, then converge.
+#
+# Runs
+#
+#     b3 sync --commit --json [ARGS...]
+#
+# and appends one timestamped line per run to ~/Library/Logs/b3-sync.log:
+# what was committed / pulled / pushed, which files were deferred because they
+# were still being edited, or why it failed. The same line is printed on stdout,
+# which is what the Hammerspoon hotkey shows in its alert.
+#
+# Three things call it, all through `/bin/sh -lc` so they see one environment:
+#
+#   * the LaunchAgent com.crumley.b3-sync at fixed times of day, default settle
+#     (~/.config/b3sync/com.crumley.b3-sync.plist, which install.sh copies into
+#     ~/Library/LaunchAgents);
+#   * Hammerspoon's brainsync.lua: lock or sleep ("leaving") and the hotkey run
+#     `--settle 0`; wake or unlock ("arriving") runs the default settle;
+#   * you, from a terminal: `b3-sync-runner --dry-run` first, then
+#     `b3-sync-runner`.
+#
+# Runner flags, consumed here and never passed on:
+#
+#   --dry-run        print what would run; run nothing, lock nothing, log nothing
+#   --reason WORD    a label for the log line (schedule, leave, arrive, hotkey);
+#                    default `manual`
+#   -h, --help       this text
+#
+# Everything else goes straight through to `b3 sync`, so
+# `b3-sync-runner --settle 0` means exactly what it says.
+#
+# Exit status: 0 unless b3 itself failed. A missing b3, a run queued behind one
+# already in progress, and a sync that deferred files still being edited are
+# all normal outcomes -- each gets its log line and exits 0. A b3 failure (a
+# rebase conflict, a push that would not go) also raises a macOS notification:
+# a conflict that lives only in a log file is not loud.
+#
+# Why a wrapper at all, rather than `b3 sync` straight from the plist:
+#
+#   * launchd starts a job with a system-only PATH, and `b3` is a bun script
+#     (`#!/usr/bin/env bun`) registered with `bun link` into ~/.bun/bin. The
+#     login shell (~/.profile) brings Homebrew, ~/.local/bin and ~/bin;
+#     `discover_path` below appends the rest. Appended, never prepended: the
+#     inherited PATH always wins.
+#   * launchd will not expand `~` in StandardOutPath, so the plist sets no log
+#     paths and the logging happens here.
+#   * Triggers overlap. launchd runs a calendar job missed during sleep at the
+#     next wake -- exactly when Hammerspoon fires its "arriving" sync -- and a
+#     lid closed 30 seconds after the 18:00 run started sends a "leaving" sync
+#     into the middle of it. One `mkdir` lock keeps two git processes off the
+#     same repository, and a trigger that finds it held is queued, not dropped
+#     (see "The queue" below).
+#
+# b3 finds its vault itself (B3_HOME, else ~/.config/b3/config.json). Nothing
+# here names a vault path, and a B3_HOME exported only by fish is invisible to
+# launchd -- `b3 setup` writing the config file is what makes the agent work.
+#
+# bash 3.2 clean: that is what /bin/bash is on macOS.
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Locations. Every one is overridable, which is also how the test suite runs
+# this on Linux against a throwaway home.
+# ---------------------------------------------------------------------------
+
+LOG_FILE=${B3SYNC_LOG:-$HOME/Library/Logs/b3-sync.log}
+LOG_MAX_BYTES=${B3SYNC_LOG_MAX_BYTES:-1048576}
+# The lock lives under $HOME, not $TMPDIR: launchd and Hammerspoon do not
+# necessarily agree on TMPDIR, and a lock the two triggers see at different
+# paths locks nothing.
+LOCK_DIR=${B3SYNC_LOCK:-$HOME/Library/Caches/b3-sync-runner.lock}
+# Beside the lock, not inside it: it has to outlive the lock's release.
+PENDING="$LOCK_DIR.pending"
+# A lock older than this is taken over whatever its pid file says. b3 sync is
+# a pull and a push of a notes repository; a run holding the lock this long is
+# hung, and a pid recorded before a reboot may belong to someone else by now.
+LOCK_STALE_MINUTES=${B3SYNC_LOCK_STALE_MINUTES:-15}
+PYTHON=${B3SYNC_PYTHON:-python3}
+# b3's own default for --settle, per its contract. Used only to compare two
+# queued requests; a run that asked for no --settle still passes none.
+B3_DEFAULT_SETTLE=5
+
+usage() {
+    sed -n '2,/^# bash 3.2/p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+DRY_RUN=0
+REASON=manual
+PASS=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --dry-run) DRY_RUN=1 ;;
+        --reason)
+            [ $# -ge 2 ] || { printf 'b3-sync-runner: --reason needs a word\n' >&2; exit 2; }
+            REASON=$2
+            shift
+            ;;
+        --reason=*) REASON=${1#*=} ;;
+        -h | --help) usage; exit 0 ;;
+        *) PASS+=("$1") ;;
+    esac
+    shift
+done
+
+# The --settle this run asked for, or `default` when it named none.
+requested_settle() {
+    local want=default prev='' arg
+    for arg in ${PASS[@]+"${PASS[@]}"}; do
+        if [ "$prev" = --settle ]; then want=$arg; fi
+        case "$arg" in --settle=*) want=${arg#*=} ;; esac
+        prev=$arg
+    done
+    printf '%s\n' "$want"
+}
+
+# ---------------------------------------------------------------------------
+# Logging and noise
+# ---------------------------------------------------------------------------
+
+# Keep the file from growing forever, with one generation of history. `wc -c`
+# rather than `stat`: BSD and GNU spell `stat` differently and this runs on
+# both (macOS in production, Linux in the test suite).
+rotate_log() {
+    local size
+    [ -f "$LOG_FILE" ] || return 0
+    size=$(wc -c <"$LOG_FILE" 2>/dev/null | tr -d ' ') || return 0
+    case "$size" in
+        '' | *[!0-9]*) return 0 ;;
+    esac
+    if [ "$size" -gt "$LOG_MAX_BYTES" ]; then
+        mv -f -- "$LOG_FILE" "$LOG_FILE.1" 2>/dev/null || true
+    fi
+}
+
+# The summary goes to the log with a timestamp and the reason, and to stdout
+# bare -- stdout is what Hammerspoon's alert shows, and launchd discards it.
+report() {
+    printf '%s [%s] %s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$REASON" "$*" >>"$LOG_FILE" 2>/dev/null || true
+    printf '%s\n' "$*"
+}
+
+# A macOS user notification. osascript exists only on macOS, so asking for it
+# is the platform check; elsewhere this is silent. The message travels as an
+# argument, not spliced into the AppleScript, so no quoting can break it.
+notify() {
+    command -v osascript >/dev/null 2>&1 || return 0
+    osascript -e 'on run argv' \
+        -e 'display notification (item 1 of argv) with title "b3 sync failed" sound name "Basso"' \
+        -e 'end run' "$1" >/dev/null 2>&1 || true
+}
+
+# ---------------------------------------------------------------------------
+# PATH. Appended, never prepended: the environment wins. Under launchd the
+# inherited PATH is nearly empty and these are what make `b3` (and the `bun`
+# its shebang names) findable; in a terminal they are already there and this
+# changes nothing.
+# ---------------------------------------------------------------------------
+
+path_append() {
+    [ -d "$1" ] || return 0
+    case ":${PATH}:" in
+        *":$1:"*) return 0 ;;
+    esac
+    PATH="${PATH:+$PATH:}$1"
+}
+
+discover_path() {
+    local prefix=''
+    # Homebrew, wherever this machine keeps it -- asked, never hardcoded
+    # (invariant 3). The login shell has normally run `brew shellenv` already;
+    # if not, a `brew` on PATH knows its own prefix. No Homebrew is fine.
+    if [ -n "${HOMEBREW_PREFIX:-}" ]; then
+        prefix=$HOMEBREW_PREFIX
+    elif command -v brew >/dev/null 2>&1; then
+        prefix=$(brew --prefix 2>/dev/null) || prefix=''
+    fi
+    if [ -n "$prefix" ]; then
+        path_append "$prefix/bin"
+        path_append "$prefix/sbin"
+    fi
+    path_append "$HOME/.local/bin"
+    path_append "$HOME/bin"
+    # `mise run link` in the b3 checkout registers `b3` with `bun link`, which
+    # writes it into bun's global bin -- a directory ~/.profile does not add.
+    path_append "${BUN_INSTALL:-$HOME/.bun}/bin"
+    # The vault's git hooks run tools through mise; its shims make them
+    # resolvable without an activated shell.
+    path_append "${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}/shims"
+    path_append /usr/bin
+    path_append /bin
+    path_append /usr/sbin
+    path_append /sbin
+    export PATH
+}
+
+# ---------------------------------------------------------------------------
+# The lock
+# ---------------------------------------------------------------------------
+
+# True when the lock was left by a run that is gone: its pid is not alive, or
+# it is older than LOCK_STALE_MINUTES. A lock with no pid file yet is a run
+# that has just started, not a dead one.
+lock_is_stale() {
+    local pid
+    if [ -n "$(find "$LOCK_DIR" -maxdepth 0 -mmin +"$LOCK_STALE_MINUTES" 2>/dev/null)" ]; then
+        return 0
+    fi
+    [ -f "$LOCK_DIR/pid" ] || return 1
+    pid=$(cat "$LOCK_DIR/pid" 2>/dev/null) || return 1
+    case "$pid" in
+        '' | *[!0-9]*) return 1 ;;
+    esac
+    ! kill -0 "$pid" 2>/dev/null
+}
+
+take_lock() {
+    mkdir -p -- "$(dirname -- "$LOCK_DIR")" 2>/dev/null || true
+    if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+        lock_is_stale || return 1
+        rm -rf -- "$LOCK_DIR"
+        mkdir "$LOCK_DIR" 2>/dev/null || return 1
+    fi
+    printf '%s\n' "$$" >"$LOCK_DIR/pid"
+    HOLDING=1
+}
+
+release_lock() {
+    [ "$HOLDING" = 1 ] || return 0
+    rm -rf -- "$LOCK_DIR"
+    HOLDING=0
+}
+
+# ---------------------------------------------------------------------------
+# The queue
+#
+# A trigger that finds the lock held must not be lost: the 18:00 run can defer
+# a page being typed, and the lid closing thirty seconds later is precisely the
+# "leaving" sync that has to happen. So instead of skipping, the waiter writes
+# $PENDING -- one line, `SETTLE REASON` -- and exits 0. However many triggers
+# wait, there is one marker, holding the strictest settle any of them asked for
+# (the fewest minutes; 0 beats everything). The holder, once its own run is
+# done and the lock released, takes the marker and runs once more with that
+# settle. A marker written in the gap between a run and its release is picked
+# up by the same check, because the check happens after the release.
+# ---------------------------------------------------------------------------
+
+settle_minutes() {
+    case "$1" in
+        default | '' | *[!0-9]*) printf '%s\n' "$B3_DEFAULT_SETTLE" ;;
+        *) printf '%s\n' "$1" ;;
+    esac
+}
+
+queue_request() {
+    local want=$1 have='' tmp
+    if [ -f "$PENDING" ]; then
+        read -r have _ <"$PENDING" 2>/dev/null || true
+    fi
+    if [ -n "$have" ] &&
+        [ "$(settle_minutes "$have")" -le "$(settle_minutes "$want")" ]; then
+        return 0
+    fi
+    tmp="$PENDING.$$"
+    # Written aside and renamed into place, so the holder never reads half a
+    # line.
+    if printf '%s %s\n' "$want" "$REASON" >"$tmp" 2>/dev/null; then
+        mv -f -- "$tmp" "$PENDING" 2>/dev/null || rm -f -- "$tmp"
+    fi
+}
+
+# Moves the marker aside atomically and prints its `SETTLE REASON`. Fails when
+# there is none -- or when another run took it first.
+claim_request() {
+    local taken="$PENDING.$$.taken" line=''
+    [ -f "$PENDING" ] || return 1
+    mv -- "$PENDING" "$taken" 2>/dev/null || return 1
+    read -r line <"$taken" 2>/dev/null || true
+    rm -f -- "$taken"
+    printf '%s\n' "${line:-default queued}"
+}
+
+# ---------------------------------------------------------------------------
+# Reading b3's answer
+#
+# b3's --json contract: on success one document on stdout -- `pulled`,
+# `pushed`, and with --commit `committed`, `deferred` (paths) and `converged`;
+# on failure one `{"error", "hint"}` object on stderr and exit 1. python3 reads
+# it because it is the parser every Mac with the command line tools has (git,
+# which b3 needs, comes from the same place); without it the line says so
+# rather than guessing at JSON with sed.
+#
+# The program is a single-quoted string rather than a heredoc inside $(...):
+# bash 3.2 mis-parses quotes and parentheses in a heredoc nested in a command
+# substitution. So: no single quotes inside it.
+# ---------------------------------------------------------------------------
+
+SUMMARIZE_PY='
+import json, sys
+
+status, out_path, err_path = int(sys.argv[1]), sys.argv[2], sys.argv[3]
+
+def load(path):
+    try:
+        with open(path) as f:
+            text = f.read()
+    except OSError:
+        return None, ""
+    try:
+        return json.loads(text), text
+    except ValueError:
+        return None, text
+
+def count(value):
+    # committed may be a count, a list of paths, or a boolean: say a number.
+    if isinstance(value, bool):
+        return 1 if value else 0
+    if isinstance(value, (int, float)):
+        return int(value)
+    if isinstance(value, (list, tuple)):
+        return len(value)
+    return 0
+
+if status != 0:
+    doc, text = load(err_path)
+    if isinstance(doc, dict) and doc.get("error"):
+        msg = str(doc["error"])
+    else:
+        lines = [l.strip() for l in text.splitlines() if l.strip()]
+        msg = lines[-1] if lines else "no output"
+    print("error: b3 sync exited %d: %s" % (status, " ".join(msg.split())))
+    sys.exit(0)
+
+doc, text = load(out_path)
+if not isinstance(doc, dict):
+    print("ok: b3 sync exited 0 (output was not JSON)")
+    sys.exit(0)
+
+committed = count(doc.get("committed"))
+pulled = count(doc.get("pulled"))
+pushed = count(doc.get("pushed"))
+deferred = [str(p) for p in (doc.get("deferred") or [])]
+
+if deferred:
+    shown = ", ".join(deferred[:5]) + (", ..." if len(deferred) > 5 else "")
+    print("deferred %d file(s) still being edited (%s); committed %d; not converged -- the next sync picks them up"
+          % (len(deferred), shown, committed))
+elif committed == 0 and pulled == 0 and pushed == 0:
+    print("ok: already converged")
+else:
+    print("ok: committed %d, pulled %d, pushed %d" % (committed, pulled, pushed))
+'
+
+# summarize STATUS STDOUT_FILE STDERR_FILE -> one line on stdout.
+summarize() {
+    local status=$1 out=$2 err=$3 line=''
+    if command -v "$PYTHON" >/dev/null 2>&1; then
+        line=$("$PYTHON" -c "$SUMMARIZE_PY" "$status" "$out" "$err" 2>/dev/null) || line=''
+    fi
+    if [ -n "$line" ]; then
+        printf '%s\n' "$line"
+    elif [ "$status" -eq 0 ]; then
+        printf 'ok: b3 sync exited 0 (no %s to read its summary)\n' "$PYTHON"
+    else
+        printf 'error: b3 sync exited %s: %s\n' "$status" \
+            "$(grep -v '^[[:space:]]*$' "$err" 2>/dev/null | tail -1 | tr -s ' \t' ' ')"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# One run of b3, with the lock already held. Sets STATUS.
+# ---------------------------------------------------------------------------
+
+sync_once() {
+    local out="$LOCK_DIR/stdout" err="$LOCK_DIR/stderr" line
+    # Deliberately NOT `exec`: exec would replace this shell with b3 and throw
+    # away the EXIT trap with it, stranding the lock -- after which every later
+    # trigger queues behind a run that no longer exists, until the stale-lock
+    # timeout, and nothing syncs in between.
+    #
+    # ${PASS[@]+"${PASS[@]}"} rather than "${PASS[@]}" so `set -u` does not
+    # trip on bash 3.2 when there are no arguments.
+    set +e
+    "$B3" sync --commit --json ${PASS[@]+"${PASS[@]}"} >"$out" 2>"$err"
+    STATUS=$?
+    set -e
+
+    if [ -t 1 ] && [ -s "$err" ]; then
+        cat "$err" >&2
+    fi
+    line=$(summarize "$STATUS" "$out" "$err")
+    report "$line"
+    if [ "$STATUS" -ne 0 ]; then
+        # Keep b3's own words (its error and hint) beneath the line, indented,
+        # so a failure is diagnosable from the log alone.
+        [ -s "$err" ] && sed 's/^/    /' "$err" >>"$LOG_FILE" 2>/dev/null
+        notify "${line#error: } -- see ~/Library/Logs/b3-sync.log"
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+discover_path
+
+B3=$(command -v b3 2>/dev/null) || B3=''
+
+if [ "$DRY_RUN" = 1 ]; then
+    printf 'b3-sync-runner: dry run -- nothing will run\n'
+    if [ -n "$B3" ]; then
+        printf 'would run: %s sync --commit --json%s\n' "$B3" "$(printf ' %s' ${PASS[@]+"${PASS[@]}"})"
+    else
+        printf 'would skip: b3 is not on PATH (%s)\n' "$PATH"
+    fi
+    printf 'log:  %s\n' "$LOG_FILE"
+    printf 'lock: %s\n' "$LOCK_DIR"
+    exit 0
+fi
+
+mkdir -p -- "$(dirname -- "$LOG_FILE")" 2>/dev/null || true
+rotate_log
+
+# Invariant 4: a tool may be absent. No b3 is a machine this has not been set
+# up on yet, not a failure -- say so once per run and leave.
+if [ -z "$B3" ]; then
+    report "skipped: b3 not found on PATH -- install it from its checkout with: mise run link"
+    exit 0
+fi
+
+HOLDING=0
+if ! take_lock; then
+    queue_request "$(requested_settle)"
+    report "queued: a sync is already running; it will run once more when done (settle $(requested_settle))"
+    exit 0
+fi
+# shellcheck disable=SC2064  # expand LOCK_DIR now, on purpose: it never changes
+trap "rm -rf -- '$LOCK_DIR'" EXIT
+
+WORST=0
+STATUS=0
+sync_once
+[ "$STATUS" -ne 0 ] && WORST=$STATUS
+
+# Drain the queue. Release first, then look: a waiter that wrote its marker
+# while b3 was finishing is seen here rather than stranded. If another run
+# grabs the lock in between, that run drains the marker instead.
+while :; do
+    release_lock
+    trap - EXIT
+    [ -f "$PENDING" ] || break
+    take_lock || break
+    # shellcheck disable=SC2064
+    trap "rm -rf -- '$LOCK_DIR'" EXIT
+    request=$(claim_request) || continue
+    settle=${request%% *}
+    REASON="${request#* } (queued)"
+    PASS=()
+    if [ "$settle" != default ]; then
+        PASS=(--settle "$settle")
+    fi
+    sync_once
+    [ "$STATUS" -ne 0 ] && WORST=$STATUS
+done
+
+exit "$WORST"

@@ -95,5 +95,12 @@ for modifier, modifierTable in pairs(config.key_bindings) do
     end
 end
 
+-- Brain sync: `b3 sync` when this machine is left (lock/sleep) and arrived at
+-- (wake/unlock), plus a hotkey. A no-op unless the host settings file says
+-- brainSync = true -- see brainsync.lua. Global so `hs -c 'BrainSync.run()'`
+-- can reach it.
+BrainSync = require('brainsync')
+BrainSync.start(localSettings)
+
 -- Uncomment to generate new annotations
 -- spoon.SpoonInstall:andUse('EmmyLua')

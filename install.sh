@@ -618,6 +618,77 @@ if printf '%s\n' "$PACKAGES" | grep -qx home; then
   ensure_shell_stub "$DOTFILES_TARGET/.profile" .profile.tracked
 fi
 
+# ~/Library/LaunchAgents/com.crumley.b3-sync.plist: a real copy of the tracked
+# plist, not a symlink to it.
+#
+# Stow would happily link it, and that is exactly the thing not to rely on:
+# Apple documents nothing about launchd following a symlink in
+# ~/Library/LaunchAgents, and an agent that works until the next reboot and
+# then quietly does not is the worst failure available. So the package stows
+# the plist to ~/.config/b3sync/, where it is inert, and this copies it across.
+#
+# The tracked file carries no username, no home path and no machine state, so a
+# live copy that differs is stale, not customized, and is replaced: "is this
+# machine current?" is a byte comparison.
+#
+# Nothing here runs `launchctl`. Loading a user agent is a machine-level act
+# and the human's, so this prints the command instead -- and, like every step
+# here, it writes only under $DOTFILES_TARGET, so a throwaway --target never
+# reaches the real ~/Library.
+ensure_b3sync_agent() {
+  local name=com.crumley.b3-sync
+  local rel=.config/b3sync/$name.plist
+  local src="$DOTFILES_TARGET/$rel"
+  local dir="$DOTFILES_TARGET/Library/LaunchAgents"
+  local live="$dir/$name.plist"
+  local real
+
+  if [ ! -e "$src" ]; then
+    # A dry run only simulated the stow, so the stowed path is not there yet.
+    # Report against the repository's copy, which is what would be linked.
+    if [ "$DRY_RUN" = 1 ] && [ -e "$DOTFILES_REPO/b3sync/$rel" ]; then
+      src="$DOTFILES_REPO/b3sync/$rel"
+    else
+      # Degrade quietly (invariant 4): the package was never linked here.
+      return 0
+    fi
+  fi
+
+  if [ -f "$live" ] && [ ! -L "$live" ] && cmp -s "$src" "$live"; then
+    return 0
+  fi
+
+  if [ "$DRY_RUN" = 1 ]; then
+    info "would install ~/Library/LaunchAgents/$name.plist"
+    return 0
+  fi
+
+  mkdir -p -- "$dir"
+  # Same hard stop as dotfiles_takeover: never write inside the repository.
+  real=$(cd -- "$dir" 2>/dev/null && pwd -P) || return 0
+  case "$real" in
+    "$DOTFILES_REPO" | "$DOTFILES_REPO"/*)
+      warn "not installing the b3 sync LaunchAgent: ~/Library/LaunchAgents resolves inside the repository"
+      return 0
+      ;;
+  esac
+
+  if ! cp -- "$src" "$live.dotfiles-tmp"; then
+    rm -f -- "$live.dotfiles-tmp"
+    warn "could not write ~/Library/LaunchAgents/$name.plist"
+    return 0
+  fi
+  mv -- "$live.dotfiles-tmp" "$live"
+  info "installed ~/Library/LaunchAgents/$name.plist"
+  info "  rehearse: b3-sync-runner --dry-run && b3-sync-runner"
+  info "  load it:  launchctl bootstrap gui/\$(id -u) ~/Library/LaunchAgents/$name.plist"
+  info "  reload:   launchctl bootout gui/\$(id -u)/$name  # then bootstrap again"
+}
+
+if printf '%s\n' "$PACKAGES" | grep -qx b3sync; then
+  ensure_b3sync_agent
+fi
+
 if [ "$DRY_RUN" = 1 ]; then
   say "Dry run complete; nothing was changed."
   exit 0
