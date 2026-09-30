@@ -113,12 +113,13 @@ mkdir /tmp/fakehome && ./install.sh --target /tmp/fakehome --takeover
 
 ## What's in it
 
-Nineteen packages. All of them install on Linux except the two marked macOS-only.
+Twenty packages. All of them install on Linux except the three marked macOS-only.
 
 | package | lands at | configures |
 | --- | --- | --- |
 | `agents` | `~/.agents/skills.list` | which agent skills to reinstall, and from where |
 | `atuin` | `~/.config/atuin/config.toml` | shell history search |
+| `b3sync` | `~/bin/b3-sync-runner`, `~/.config/b3sync/` | brain sync's launchd agent and the runner it shares with Hammerspoon — **macOS only**, see "Brain sync" below |
 | `bash` | `~/.bashrc.tracked`, `~/.bash_profile.tracked` | interactive bash and login-shell layering — see the note below |
 | `claude` | `~/.claude/settings.json.example` | Claude Code permissions — the live file is yours, see the note below |
 | `direnv` | `~/.config/direnv/direnvrc` | per-directory environments, with the mise hook |
@@ -166,9 +167,9 @@ are platform-specific.
 Not packages: `lib/` (installer machinery), `macos/` (the `defaults write` block), `test/`,
 and `.github/`.
 
-Two packages install executables into `~/bin` — `git-by-date` and `rclone-cron.sh`. Both the
-fish config and `~/.profile` put `~/bin` on `$PATH`, which is what makes `git by-date` work in
-Git's subcommand form.
+Three packages install executables into `~/bin` — `git-by-date`, `rclone-cron.sh` and
+`b3-sync-runner`. Both the fish config and `~/.profile` put `~/bin` on `$PATH`, which is what
+makes `git by-date` work in Git's subcommand form.
 
 One note on `rg`: ripgrep reads `.ripgreprc` **only** when `RIPGREP_CONFIG_PATH` points at it —
 there is no lookup by name or location. Both `conf.d/20-env.fish` and `~/.profile` set it, each
@@ -179,9 +180,9 @@ an error to stderr on every single invocation.
 
 ## Platform support
 
-Everything is expected to work on Linux except `hammerspoon` and `karabiner`, whose
-applications genuinely do not exist there. `ghostty` and `espanso` both ship for Linux and their
-configs are platform-independent, so they stow everywhere.
+Everything is expected to work on Linux except `hammerspoon`, `karabiner` and `b3sync`, whose
+applications genuinely do not exist there (the last is a launchd agent). `ghostty` and `espanso`
+both ship for Linux and their configs are platform-independent, so they stow everywhere.
 
 **The installer does not install Linux packages.** That is deliberate: on Linux this repo
 configures whatever happens to be there and stays out of your package manager's way. No `apt`,
@@ -201,6 +202,94 @@ lets the portable `~/.profile` establish `PATH`, and then replaces that process 
 is necessary because macOS Spotlight/LaunchServices gives launched apps a system-only `PATH`
 even when the user's launchd domain contains Homebrew. Fish manually restores Ghostty's
 one-shot shell integration in tmux panes.
+
+## Brain sync (`b3sync`, macOS only)
+
+The Obsidian vault is edited by hand on two laptops. `b3 sync --commit` commits this machine's
+hand edits (files touched in the last `--settle` minutes, default 5, are deferred rather than
+committed half-typed) and then converges with the other machine. This package, with a module in
+the `hammerspoon` package, runs it at the moments that matter:
+
+| when | runs | why |
+| --- | --- | --- |
+| **leaving** — the screen locks or the Mac sleeps (Hammerspoon) | `b3-sync-runner --settle 0` | typing has stopped; commit everything |
+| **arriving** — wake or unlock, after 5 s for Wi-Fi (Hammerspoon) | `b3-sync-runner` | pull what the other laptop pushed |
+| **hyper+shift+B**, or `hs -c 'BrainSync.run()'` | `b3-sync-runner --settle 0` | asked for on purpose, so nothing is deferred |
+| **08:00, 13:00, 18:00** (launchd, `com.crumley.b3-sync`) | `b3-sync-runner` | the backstop for a day spent at one machine |
+
+All four go through `~/bin/b3-sync-runner` via `/bin/sh -lc`, so they share one environment,
+one log and one lock. It runs `b3 sync --commit --json` and writes one line per run to
+`~/Library/Logs/b3-sync.log`. A trigger that arrives while a sync is running is queued, not
+dropped: the runner holding the lock runs once more when it finishes, with the strictest settle
+any waiter asked for. A b3 failure — a rebase conflict, a push that will not go — exits non-zero
+and raises a macOS notification as well as logging.
+
+### Setting it up
+
+1. **b3 has to work from a login shell, not just from fish.** `b3 sync` by hand works, and
+   `b3 setup` has written `~/.config/b3/config.json` — a `B3_HOME` exported only in fish is
+   invisible to launchd.
+2. **`./install.sh`** links the runner into `~/bin` and copies the plist to
+   `~/Library/LaunchAgents/com.crumley.b3-sync.plist` — a real copy, not a symlink, for the same
+   reason as any LaunchAgent here: nothing documents launchd following one.
+3. **Rehearse it**, in launchd's own near-empty environment:
+
+   ```sh
+   env -i HOME="$HOME" /bin/sh -lc '"$HOME/bin/b3-sync-runner" --dry-run'   # finds b3? runs nothing
+   b3-sync-runner                                                          # one real sync
+   tail -1 ~/Library/Logs/b3-sync.log
+   ```
+
+4. **Load the agent** (the installer prints this and never runs it):
+
+   ```sh
+   launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.crumley.b3-sync.plist
+   ```
+
+5. **Opt this machine into the Hammerspoon hooks** in `~/.$hostname.hammerspoon.lua`, then
+   reload Hammerspoon (hyper+R):
+
+   ```lua
+   brainSync = true,
+   -- brainSyncHotkey = { mods = {"ctrl", "cmd", "option", "shift"}, key = "B" },  -- the default
+   -- brainSyncHotkey = false,                                                   -- no hotkey
+   ```
+
+   Without that key, or without a `b3` it can find (`~/bin`, `~/.local/bin`, `~/.bun/bin`,
+   Homebrew, then the login shell's `PATH`), the module does nothing; the Hammerspoon console
+   says which. For `hs -c 'BrainSync.run()'` from Raycast or a Shortcut, the `hs` CLI needs
+   `require("hs.ipc")` at the top of that settings file and `hs.ipc.cliInstall()` run once in
+   the console.
+
+### Operating it
+
+```sh
+tail -f ~/Library/Logs/b3-sync.log                        # what it has been doing, and why
+launchctl print gui/$(id -u)/com.crumley.b3-sync          # loaded? last exit status?
+launchctl kickstart gui/$(id -u)/com.crumley.b3-sync      # run the scheduled sync now
+launchctl bootout gui/$(id -u)/com.crumley.b3-sync        # stop the timer
+```
+
+A log line reads `2026-09-29T18:00:02-0500 [schedule] ok: committed 1, pulled 2, pushed 1`; the
+bracket says which trigger ran it (`schedule`, `leave`, `arrive`, `hotkey`, `manual`, or
+`… (queued)`). A deferral names the files and exits 0 — the next sync picks them up. The file
+rotates to `b3-sync.log.1` past a megabyte.
+
+**To change the schedule**, edit the `Hour`/`Minute` entries in
+`b3sync/.config/b3sync/com.crumley.b3-sync.plist` in this checkout, rerun `./install.sh`, then
+`bootout` and `bootstrap` again — launchd reads a plist only when it is loaded. A time missed
+while the Mac slept runs once at the next wake.
+
+The lock is `~/Library/Caches/b3-sync-runner.lock`, holding the running pid; a waiting trigger
+leaves `b3-sync-runner.lock.pending` beside it. A lock whose pid is gone, or older than 15
+minutes, is taken over by the next run, so a crash cannot stop syncing for good.
+
+**Not verifiable off this Mac, so check once:** that `launchctl print` shows the agent loaded
+and, after 08:00, run; that the rehearsal above finds `b3` (and the `bun` its shebang needs);
+that a lid close leaves a `[leave]` line timestamped *before* the sleep rather than at the next
+wake; that a failure's notification actually shows (macOS may file it under Script Editor in
+Notifications settings); and, if the vault's remote is SSH through 1Password, that a push from
+the agent is not waiting on an approval prompt.
 
 ## Day to day
 
@@ -339,6 +428,7 @@ sourced from further down the chain regardless.
 ./test/run.sh lint       # shellcheck over every shell script
 ./test/run.sh syntax     # parse checks: fish, bash/sh, lua, json, toml, yaml, Brewfile
 ./test/run.sh install    # the installer's own end-to-end suite
+./test/run.sh b3sync     # the brain sync runner, plist and Hammerspoon hooks, against a stubbed b3
 ./test/run.sh smoke      # install into a throwaway home, then start the shells against it
 ```
 

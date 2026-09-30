@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.crumley.b3-sync: commit this laptop's vault edits and converge, at fixed
+  times of day, for the days nothing else triggers a sync.
+
+  THIS FILE IS NOT LOADED FROM WHERE IT IS STOWED. It lives in
+  ~/.config/b3sync/, and `install.sh` copies it to
+  ~/Library/LaunchAgents/com.crumley.b3-sync.plist: Apple documents nothing
+  either way about launchd following a symlink in ~/Library/LaunchAgents, and
+  an agent that works until the next reboot and then quietly does not is the
+  worst failure available. The copy is byte-identical on every machine because
+  nothing below names a user or a home directory.
+
+  launchd expands nothing in ProgramArguments (not `~`, not `$HOME`), so the
+  job runs through `/bin/sh -lc`: a login shell reads ~/.profile, which finds
+  Homebrew and puts ~/.local/bin and ~/bin on PATH, and then `$HOME` means
+  what it says. Ghostty is started the same way in this repo, for the same
+  reason.
+
+  StandardOutPath / StandardErrorPath are deliberately absent: launchd does not
+  expand `~` in them either, and the runner writes ~/Library/Logs/b3-sync.log
+  itself. A job that could not even start shows up as the last exit status in
+  `launchctl print gui/$(id -u)/com.crumley.b3-sync`.
+
+  The Hammerspoon hooks (brainsync.lua) are the main triggers: leaving on
+  lock/sleep, arriving on wake/unlock. This timer is the backstop for a day
+  spent at one machine with the lid open.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.crumley.b3-sync</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/sh</string>
+		<string>-lc</string>
+		<string>exec "$HOME/bin/b3-sync-runner" --reason schedule</string>
+	</array>
+
+	<!-- Three times a day, local time. A time that passes while the Mac is
+	     asleep is run once at the next wake (launchd coalesces missed calendar
+	     events), which is also when Hammerspoon's arriving sync fires; the
+	     runner's lock queues one behind the other. To change the schedule,
+	     edit this file in the dotfiles checkout, rerun ./install.sh, then
+	     bootout and bootstrap the agent again. -->
+	<key>StartCalendarInterval</key>
+	<array>
+		<dict>
+			<key>Hour</key>
+			<integer>8</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>13</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>18</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+		</dict>
+	</array>
+
+	<!-- Not at load: bootstrapping the agent, or logging in, is not a moment
+	     to sync by itself; unlocking the screen at login already is one. -->
+	<key>RunAtLoad</key>
+	<false/>
+
+	<!-- Background: lower CPU and I/O priority. This runs while the machine is
+	     in use. KeepAlive is absent on purpose: this is a one-shot command,
+	     and KeepAlive would restart it in a loop. -->
+	<key>ProcessType</key>
+	<string>Background</string>
+</dict>
+</plist>

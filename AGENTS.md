@@ -31,7 +31,7 @@ would break one, that is the thing to raise rather than the thing to do.
 1. **The platform map lives in `lib/packages.sh`, and only there.** It holds exactly two facts:
    which top-level directories are not stow packages (`DOTFILES_NOT_PACKAGES`), and which
    packages are platform-specific (`DOTFILES_DARWIN_ONLY`, `DOTFILES_LINUX_ONLY`). Today
-   macOS-only is exactly `hammerspoon karabiner`.
+   macOS-only is exactly `hammerspoon karabiner b3sync`.
 2. **Packages are discovered, not listed.** Adding a directory is the whole change needed to
    get it installed. There is no list of packages in `install.sh` and there must not be one
    again — a hardcoded list is precisely why `starship` sat in this repo for years without ever
@@ -65,6 +65,7 @@ lib/packages.sh     THE PLATFORM MAP — discovery, exclusions, macOS-only set
 lib/stow.sh         conflict detection, takeover, pruning, the stow invocation
 macos/defaults.sh   the `defaults write` block, guarded on Darwin
 test/run.sh         local entry point for every check CI runs
+test/b3sync-test.sh the brain sync runner, plist and Hammerspoon hooks, against stubs
 test/install-test.sh    the installer's own end-to-end suite
 <package>/          a stow package; contents mirror their layout under $HOME
 ```
@@ -371,6 +372,41 @@ Spoons are git submodules. `install.sh` checks them out at their pinned commits 
 `--update` moves them forward. One (`BrowserManager`) is declared with an SSH remote, so it
 cannot clone without key access — CI checks out with `submodules: false` for that reason, and
 the installer warns and continues rather than failing.
+
+### b3sync (macOS only)
+
+Brain sync: `bin/b3-sync-runner` (stowed to `~/bin`), the LaunchAgent that runs it at 08:00,
+13:00 and 18:00, and `hammerspoon/.hammerspoon/brainsync.lua`, which runs it on lock/sleep
+(`--settle 0`), wake/unlock (default settle) and a hotkey (`--settle 0`). The operating story is
+the README's "Brain sync" section. What an agent changing it needs to know:
+
+- **The runner is built against b3's `sync --commit --json` contract**: stdout carries
+  `committed`, `deferred`, `converged`, `pulled`, `pushed`; a failure is `{"error", "hint"}` on
+  stderr and exit 1; a deferral exits 0. Parsing it is cosmetic — the exit status alone decides
+  success — so a contract change degrades the log line, never the sync.
+- **The plist is copied, not stowed into place.** It is tracked at
+  `b3sync/.config/b3sync/com.crumley.b3-sync.plist` and `ensure_b3sync_agent` in `install.sh`
+  copies it to `~/Library/LaunchAgents/`. It names no user and no home path (launchd expands
+  neither), which is why the job runs through `/bin/sh -lc`, and why a differing copy is stale
+  rather than customized.
+- **The installer never runs `launchctl`.** Loading an agent is the human's act; it prints the
+  `bootstrap` line instead.
+- **PATH is appended to, never prepended.** The runner adds Homebrew (asked via
+  `HOMEBREW_PREFIX` or `brew --prefix`, never a literal prefix), `~/.local/bin`, `~/bin`,
+  `~/.bun/bin` — where `bun link` puts `b3` — and mise's shims after whatever it inherited.
+- **One lock, and it queues rather than drops.** A trigger that finds the lock held writes a
+  marker beside it with the strictest settle asked for; the holder runs once more after
+  releasing. Dropping it loses exactly the sync that matters — the lid closing just after the
+  18:00 run deferred the page being typed. The lock is under `~/Library/Caches`, not `$TMPDIR`,
+  because launchd and Hammerspoon need not agree on `$TMPDIR`.
+- **Never `exec` the b3 call.** `exec` discards the EXIT trap, strands the lock, and every
+  later trigger queues behind a run that no longer exists until the stale-lock timeout.
+- **The Hammerspoon module is a no-op unless opted in** (`brainSync = true` in the host settings
+  file) **and** a `b3` and the runner resolve. It never blocks the main thread: `hs.task` only.
+- **Tested everywhere.** `test/b3sync-test.sh` runs the real runner against a stubbed `b3` and
+  `osascript` in a throwaway home, and `brainsync.lua` under a fake `hs`
+  (`test/b3sync-hammerspoon.lua`), on both halves of the CI matrix. What only a Mac can answer
+  is listed at the top of that file.
 
 ## Conventions
 

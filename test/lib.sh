@@ -285,6 +285,20 @@ check_yaml() {
     fi
 }
 
+# A property list that does not parse is a LaunchAgent macOS silently refuses
+# to load, which is the exact failure a parse check should catch before a
+# machine does. `plutil` is macOS-only, so Python's plistlib carries Linux --
+# and both understand the XML format this repo writes.
+check_plist() {
+    if have plutil; then
+        plutil -lint -s "$1"
+    elif have python3; then
+        python3 -c 'import plistlib,sys; plistlib.load(open(sys.argv[1],"rb"))' "$1"
+    else
+        return 127
+    fi
+}
+
 check_lua() {
     if have luac; then
         luac -p "$1"
