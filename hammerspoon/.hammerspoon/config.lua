@@ -57,13 +57,10 @@ config.appFilters = {
     Obsidian = filter.new('Obsidian')
 }
 
--- Simple space configuration: index -> default name
+-- Space configuration: index -> default name. Only the first space is
+-- dedicated; every other space is unnamed until renamed (hyper+G).
 config.spaceConfig = {
-    [1] = "Communicate",
-    [2] = "Park",
-    [3] = "Today",
-    [4] = "Code"
-    -- Index 5+ are unmanaged and can be renamed to anything
+    [1] = "Today"
 }
 
 config.key_bindings = {}

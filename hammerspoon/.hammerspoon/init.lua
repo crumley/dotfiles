@@ -60,6 +60,10 @@ spoon.SpaceManager.logger.setLogLevel('DEBUG')
 spoon.SpaceManager.dockOnPrimaryOnly = true
 spoon.SpaceManager.desktopLozenge = true
 spoon.SpaceManager.spaceConfig = config.spaceConfig
+-- Chrome windows carry the name of the space they are on, and a fresh Chrome
+-- window named for the date opens on Today (space 1) once a day.
+spoon.SpaceManager.chromeWindowNames = true
+spoon.SpaceManager.dailyWindow = true
 spoon.SpaceManager:start()
 
 -- Configure BrowserManager
