@@ -37,6 +37,11 @@ package.path = package.path .. ";" .. os.getenv("HOME") .. "/Documents/code/hamm
 
 logger.i('Starting...', hs.inspect(package.path))
 
+-- Command-line access: `hs -c 'lua'` runs code in this instance and prints the
+-- result, so state can be inspected without the console (e.g. what AppJump
+-- sees for an app: hs -c 'return hs.inspect(hs.application.get("Ghostty"):allWindows())').
+require("hs.ipc")
+
 -- Configigure SpoonInstall (todo am I even using this?)
 hs.loadSpoon("SpoonInstall")
 spoon.SpoonInstall.use_syncinstall = true
@@ -67,7 +72,9 @@ spoon.SpaceManager:start()
 
 -- Configure AppJump
 hs.loadSpoon('AppJump')
-spoon.AppJump.logger.setLogLevel('info')
+-- 'debug' traces every jump (window chosen, why, its spaces before and after)
+-- in the console; drop back to 'info' once the Ghostty tab/space jumping is settled.
+spoon.AppJump.logger.setLogLevel('debug')
 
 -- Configure Unsplashed
 hs.loadSpoon('Unsplashed')
