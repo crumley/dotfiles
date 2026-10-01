@@ -60,7 +60,9 @@ Options:
                           DOTFILES_TARGET. When DIR is not your real home, the
                           machine-level steps below are skipped automatically.
       --stow-only         Only link packages: no Homebrew, no macOS defaults,
-                          no agent skills, no submodules.
+                          no agent skills. Submodules are still checked out at
+                          the commits this tree pins, so a merged change is
+                          complete. This is what the post-merge hook runs.
       --update            git pull, and update submodules to their latest
                           remote commits, before linking.
       --skip-brew         Never install or invoke Homebrew (macOS).
@@ -169,6 +171,13 @@ SYSTEM_STEPS=1
 if [ "$STOW_ONLY" = 1 ] || [ "$DOTFILES_TARGET" != "$HOME_RESOLVED" ]; then
   SYSTEM_STEPS=0
 fi
+# Steps that belong to this checkout rather than to the machine -- checking
+# out the submodules the tree pins, registering the post-merge hook -- run
+# whenever we are installing into the real home, --stow-only included: that is
+# the mode the hook itself runs, and a throwaway target (the tests) is the one
+# case that must stay off the network and out of the repository's config.
+REAL_HOME=0
+[ "$DOTFILES_TARGET" = "$HOME_RESOLVED" ] && REAL_HOME=1
 
 have stow || die "GNU Stow is not installed. macOS: brew install stow. Debian/Ubuntu: apt install stow. Fedora: dnf install stow."
 
@@ -232,19 +241,39 @@ update_repo() {
     return 0
   fi
 
-  # Without --update we still make sure submodules are checked out at the
-  # commits this repository pins -- Hammerspoon's Spoons are submodules and an
-  # empty directory would stow as nothing at all. We do not move them forward.
+  # Without --update we still put submodules at the commits this tree pins --
+  # Hammerspoon's Spoons are submodules: an empty directory would stow as
+  # nothing at all, and after a merge that bumps a pin the old files would
+  # stay linked. We do not move them past the pin.
   [ -f "$DOTFILES_REPO/.gitmodules" ] || return 0
   if [ "$DRY_RUN" = 1 ]; then
-    info "would check out any missing submodules"
+    info "would check out submodules at the commits this tree pins"
     return 0
   fi
   git -C "$DOTFILES_REPO" submodule update --init --recursive >/dev/null 2>&1 ||
     warn "some submodules are not checked out (a private one needs SSH access); continuing"
 }
 
-[ "$SYSTEM_STEPS" = 1 ] && update_repo
+# Register .githooks/ as this checkout's hooks directory, so a fast-forward
+# (git pull, or Ward refreshing repos/dotfiles) relinks on its own -- see
+# .githooks/post-merge. Only the checkout that was installed from gets it,
+# which is what keeps a second clone from relinking the home directory.
+install_hooks() {
+  have git || return 0
+  git -C "$DOTFILES_REPO" rev-parse --git-dir >/dev/null 2>&1 || return 0
+  [ "$(git -C "$DOTFILES_REPO" config --get core.hooksPath 2>/dev/null)" = ".githooks" ] && return 0
+  if [ "$DRY_RUN" = 1 ]; then
+    info "would set core.hooksPath to .githooks (post-merge relinks after a pull)"
+    return 0
+  fi
+  git -C "$DOTFILES_REPO" config core.hooksPath .githooks &&
+    info "registered .githooks (post-merge relinks after a pull)"
+}
+
+if [ "$REAL_HOME" = 1 ]; then
+  update_repo
+  install_hooks
+fi
 
 # ---------------------------------------------------------------------------
 # macOS: Homebrew and system preferences
