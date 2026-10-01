@@ -45,9 +45,42 @@ require("hs.ipc")
 -- Configigure SpoonInstall (todo am I even using this?)
 hs.loadSpoon("SpoonInstall")
 spoon.SpoonInstall.use_syncinstall = true
-spoon.SpoonInstall:andUse('ReloadConfiguration', {
-    start = false
-})
+
+-- Reload when the configuration changes on disk. ~/.hammerspoon is stow links
+-- into the dotfiles checkout, and a change to a link's target raises no event
+-- under ~/.hammerspoon, so the real directory is watched too. That is how a
+-- merged change goes live: the checkout's post-merge hook checks out the
+-- pinned Spoons and relinks (dotfiles .githooks/post-merge), the files change
+-- here, and this reloads. One reload per burst, a second after the last .lua
+-- change, so a relink of many files is not many reloads. Global so the
+-- watchers are not collected.
+ConfigWatchers = {}
+do
+    local pending
+    local function onChange(paths)
+        for _, path in ipairs(paths) do
+            if path:match("%.lua$") then
+                if pending then
+                    pending:stop()
+                end
+                pending = hs.timer.doAfter(1, function()
+                    logger.i('Configuration changed on disk, reloading')
+                    hs.reload()
+                end)
+                return
+            end
+        end
+    end
+    local dirs = { hs.configdir }
+    local real = hs.fs.pathToAbsolute(hs.configdir .. "/init.lua")
+    local realDir = real and real:match("^(.*)/[^/]*$")
+    if realDir and realDir ~= hs.configdir then
+        table.insert(dirs, realDir)
+    end
+    for _, dir in ipairs(dirs) do
+        ConfigWatchers[dir] = hs.pathwatcher.new(dir, onChange):start()
+    end
+end
 
 -- Configure Hammerdora
 hs.loadSpoon('Watermelon')

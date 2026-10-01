@@ -90,7 +90,7 @@ only thing the installer deletes. `--no-prune` turns it off.
 | `-f`, `--force`, `--takeover` | move conflicts to `~/.dotfiles-backup/<timestamp>/`, then link |
 | `-t`, `--target DIR` | link into `DIR` instead of `$HOME` (also `DOTFILES_TARGET`) |
 | `--list` | print the packages this platform would install |
-| `--stow-only` | link only: no Homebrew, no macOS defaults, no agent skills, no submodules |
+| `--stow-only` | link only: no Homebrew, no macOS defaults, no agent skills; submodules still land on the commits the tree pins |
 | `--update` | `git pull` and advance submodules before linking |
 | `--brew-bundle` | install the Brewfile (macOS) |
 | `--vscode-extensions` | install `Brewfile.vscode` (separate on purpose) |
@@ -317,6 +317,16 @@ to `DOTFILES_DARWIN_ONLY` or `DOTFILES_LINUX_ONLY` in `lib/packages.sh`.
 ```sh
 ./install.sh --update      # git pull + submodules, then relink
 ./upgrade.sh               # brew update && brew upgrade, then audit against the Brewfile
+```
+
+**A merged change deploys itself.** The installer registers `.githooks/` as the
+checkout's hooks directory, and `.githooks/post-merge` runs the link-only install after
+any fast-forward -- a `git pull`, or Ward refreshing `repos/dotfiles` -- so submodules
+land on the commits the new tree pins and new or removed files are linked or swept.
+Hammerspoon watches its real config directory and reloads itself when those files
+change. Nothing to remember after merging; a linked worktree never triggers it.
+
+```sh
 ```
 
 `upgrade.sh` deliberately does **not** run `brew bundle dump`. The `Brewfile` is hand-maintained;

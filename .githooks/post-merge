@@ -1,0 +1,28 @@
+#!/bin/sh
+# .githooks/post-merge -- make a merged change live, with nothing to remember.
+#
+# A fast-forward lands here: `git pull`, or Ward refreshing the canonical
+# checkout (`git fetch` + `git merge --ff-only`). The new tree may pin
+# different submodule commits (the Hammerspoon Spoons) and may add or remove
+# files, and ~/ is linked to this checkout file by file (lib/stow.sh explains
+# why folding is off). So: check out what the tree pins, then relink every
+# package -- the installer's link-only mode, which is idempotent -- and the
+# change is deployed. Hammerspoon watches its real config directory and
+# reloads itself when the files change (hammerspoon/.hammerspoon/init.lua).
+#
+# install.sh registers this directory as core.hooksPath on the checkout it
+# installed from, so only that checkout runs it. A merge must never fail
+# because of deployment, so this always exits 0.
+set -u
+
+repo=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+
+# Only the main checkout is linked into the home directory. A linked worktree
+# (a `git worktree add`, Ward's worktrees/) shares core.hooksPath with it and
+# must never relink the home directory to itself.
+[ "$(git rev-parse --git-dir)" = "$(git rev-parse --git-common-dir)" ] || exit 0
+
+if ! "$repo/install.sh" --stow-only --quiet; then
+  echo "post-merge: ./install.sh --stow-only failed; run it by hand to finish deploying" >&2
+fi
+exit 0
