@@ -115,6 +115,11 @@ hs.loadSpoon('AppJump')
 -- 'debug' traces every jump (window chosen, why, its spaces before and after)
 -- in the console; drop back to 'info' once the Ghostty tab/space jumping is settled.
 spoon.AppJump.logger.setLogLevel('debug')
+-- The window picker (hyper+`) labels each window with its space as
+-- SpaceManager names it. Neither spoon knows the other; this line joins them.
+spoon.AppJump.spaceLabel = function(spaceId)
+    return spoon.SpaceManager:spaceLabel(spaceId)
+end
 
 -- Configure Unsplashed
 hs.loadSpoon('Unsplashed')
