@@ -97,6 +97,9 @@ spoon.SpaceManager.spaceConfig = config.spaceConfig
 -- window named for the date opens on Today (space 1) once a day.
 spoon.SpaceManager.chromeWindowNames = true
 spoon.SpaceManager.dailyWindow = true
+-- Links clicked in other apps open in a Chrome window on the space showing
+-- (Hammerspoon becomes the default browser; macOS asks once).
+spoon.SpaceManager.linkRouting = true
 spoon.SpaceManager:start()
 
 -- Configure BrowserManager
