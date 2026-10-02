@@ -112,6 +112,10 @@ config.key_bindings[hyper] = {
     ['\\'] = function()
         hs.grid.maximizeWindow(hs.window.focusedWindow())
     end,
+    ['`'] = function()
+        -- Like cmd+`, but a list of the frontmost app's windows on every space
+        spoon.AppJump:chooseWindow()
+    end,
 
     A = function()
         spoon.AppJump:jump(config.appFilters.Code)
