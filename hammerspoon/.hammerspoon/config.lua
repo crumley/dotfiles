@@ -104,7 +104,8 @@ config.key_bindings[hyper] = {
         hs.reload()
     end,
     U = function()
-        hs.spaces.toggleMissionControl()
+        -- Mission Control with a legend of space names (hot corner: no legend)
+        spoon.SpaceManager:toggleMissionControl()
     end,
     P = function()
         hs.openConsole()
