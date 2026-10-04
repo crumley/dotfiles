@@ -95,10 +95,13 @@ spoon.SpaceManager.desktopLozenge = true
 spoon.SpaceManager.spaceConfig = config.spaceConfig
 -- Chrome windows carry the name of the space they are on.
 spoon.SpaceManager.chromeWindowNames = true
+-- ...and keep a pinned tab showing that space's number and color (drawn by
+-- the SpaceManager extension, below).
+spoon.SpaceManager.chromeWindowLabels = true
 -- Links clicked in other apps open in the 📥 Inbox when it is on the space
 -- showing, else in a Chrome window there, else in the Inbox wherever it is
 -- (or a new one here). Hammerspoon becomes the default browser; macOS asks
--- once. The Inbox's tabs are grouped by day by the SpaceManager Inbox
+-- once. The Inbox's tabs are grouped by day by the SpaceManager
 -- extension: load Spoons/SpaceManager.spoon/chrome-extension unpacked.
 spoon.SpaceManager.linkRouting = true
 spoon.SpaceManager.inbox = true
