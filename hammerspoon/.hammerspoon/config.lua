@@ -113,10 +113,6 @@ config.key_bindings[hyper] = {
     ['\\'] = function()
         hs.grid.maximizeWindow(hs.window.focusedWindow())
     end,
-    ['`'] = function()
-        -- Like cmd+`, but a list of the frontmost app's windows on every space
-        spoon.AppJump:chooseWindow()
-    end,
 
     A = function()
         spoon.AppJump:jump(config.appFilters.Code)
@@ -133,6 +129,11 @@ config.key_bindings[hyper] = {
     G = function()
         -- Open SpaceManager menu (previously was "Start Focus")
         spoon.SpaceManager:show()
+    end,
+    TAB = function()
+        -- Like cmd+`, but a list of the frontmost app's windows on every space
+        -- (Tab rather than `, which some keyboards lack)
+        spoon.AppJump:chooseWindow()
     end,
     RETURN = function()
         local screenId = hsscreen.primaryScreen():getUUID()
