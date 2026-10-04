@@ -93,13 +93,16 @@ spoon.SpaceManager.logger.setLogLevel('DEBUG')
 spoon.SpaceManager.dockOnPrimaryOnly = true
 spoon.SpaceManager.desktopLozenge = true
 spoon.SpaceManager.spaceConfig = config.spaceConfig
--- Chrome windows carry the name of the space they are on, and a fresh Chrome
--- window named for the date opens on Today (space 1) once a day.
+-- Chrome windows carry the name of the space they are on.
 spoon.SpaceManager.chromeWindowNames = true
-spoon.SpaceManager.dailyWindow = true
--- Links clicked in other apps open in a Chrome window on the space showing
--- (Hammerspoon becomes the default browser; macOS asks once).
+-- Links clicked in other apps open in the 📥 Inbox when it is on the space
+-- showing, else in a Chrome window there, else in the Inbox wherever it is
+-- (or a new one here). Hammerspoon becomes the default browser; macOS asks
+-- once. The Inbox's tabs are grouped by day by the SpaceManager Inbox
+-- extension: load Spoons/SpaceManager.spoon/chrome-extension unpacked.
 spoon.SpaceManager.linkRouting = true
+spoon.SpaceManager.inbox = true
+spoon.SpaceManager.linkRoutingNoChrome = "inbox"
 spoon.SpaceManager:start()
 
 -- Configure BrowserManager
