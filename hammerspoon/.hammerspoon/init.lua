@@ -102,10 +102,16 @@ spoon.SpaceManager.chromeWindowLabels = true
 -- showing, else in a Chrome window there, else in the Inbox wherever it is
 -- (or a new one here). Hammerspoon becomes the default browser; macOS asks
 -- once. The Inbox's tabs are grouped by day by the SpaceManager
--- extension: load Spoons/SpaceManager.spoon/chrome-extension unpacked.
+-- extension: load Spoons/SpaceManager.spoon/chrome-extension unpacked (or see
+-- chromeExtension, below).
 spoon.SpaceManager.linkRouting = true
 spoon.SpaceManager.inbox = true
 spoon.SpaceManager.linkRoutingNoChrome = "inbox"
+-- Where Chrome cannot install extensions (the work laptop), the host settings
+-- file says chromeExtension = false: the label and Inbox pages then open from
+-- the spoon's folder, Hammerspoon pins them, and the Inbox gets a divider tab
+-- per day instead of day groups.
+spoon.SpaceManager.chromeExtension = localSettings.chromeExtension ~= false
 spoon.SpaceManager:start()
 
 -- Configure BrowserManager
