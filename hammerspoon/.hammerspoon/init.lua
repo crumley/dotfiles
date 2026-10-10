@@ -106,6 +106,9 @@ spoon.SpaceManager.chromeWindowLabels = true
 -- chromeExtension, below).
 spoon.SpaceManager.linkRouting = true
 spoon.SpaceManager.inbox = true
+-- With no Inbox anywhere, the first Chrome window on space 1 becomes it,
+-- instead of another "🟥 01 - Today".
+spoon.SpaceManager.inboxSpace = 1
 spoon.SpaceManager.linkRoutingNoChrome = "inbox"
 -- Where Chrome cannot install extensions (the work laptop), the host settings
 -- file says chromeExtension = false: the label and Inbox pages then open from
