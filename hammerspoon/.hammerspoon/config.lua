@@ -4,8 +4,9 @@ local hstimer = require("hs.timer")
 local hsspaces = require("hs.spaces")
 local hsscreen = require("hs.screen")
 
-local wm = require('wm')
-wm:init()
+hs.window.animationDuration = 0
+hs.grid.setGrid({ w = 6, h = 4 })
+hs.grid.setMargins({ w = 0, h = 0 })
 
 local mutable = require('mutable')
 mutable.enableAppMute = true
@@ -20,6 +21,11 @@ config.appFilters = {
     -- Browser
     Arc = filter.new('Arc'),
     Chrome = filter.new('Google Chrome'),
+    -- SpaceManager's window name stays in the title as the active tab changes.
+    ChromeInbox = filter.new(false):setAppFilter('Google Chrome', {
+        allowTitles = '^📥 Inbox %- ',
+        currentSpace = nil
+    }),
     ChromeCanary = filter.new('Google Chrome Canary'),
 
     -- Nerd
@@ -68,24 +74,12 @@ config.key_bindings = {}
 config.key_bindings[""] = {
     F17 = function()
         mutable:toggleMicMute()
-    end,
-    F18 = function()
-        wm:action("rotate")
-    end,
-    F19 = function()
-        wm:horizontal_cycle()
     end
 }
 
 config.key_bindings[hyper] = {
     ["1"] = function()
-        wm:action("rotate")
-    end,
-    ["2"] = function()
-        wm:horizontal_cycle()
-    end,
-    ["4"] = function()
-        wm:showMenu()
+        spoon.AppJump:jump(config.appFilters.ChromeInbox)
     end,
     ["5"] = function()
         spoon.SpaceManager:show()
@@ -217,14 +211,6 @@ config.key_bindings[hyperShift] = {
                 activate
             end tell
         ]], nil))
-    end,
-
-    -- Window resizing fns
-    N = function()
-        wm:action("left")
-    end,
-    M = function()
-        wm:action("right")
     end,
 
     R = function()
