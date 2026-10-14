@@ -9,6 +9,7 @@
 #   test/run.sh syntax           # parse checks: fish, bash, lua, json, toml, yaml
 #   test/run.sh install          # test/install-test.sh — the installer's own suite
 #   test/run.sh b3sync           # the b3 sync runner, plist and Hammerspoon hooks, against stubs
+#   test/run.sh hammerspoon      # keybindings and Inbox filter, against stubs
 #   test/run.sh smoke            # install into a throwaway home, then start the shells
 #   test/run.sh lint syntax      # any combination
 #
@@ -35,7 +36,7 @@ want_all=0
 for arg in "$@"; do
     case "$arg" in
         -h | --help) usage 0 ;;
-        b3sync) checks="$checks $arg" ;;
+        b3sync | hammerspoon) checks="$checks $arg" ;;
         all) want_all=1 ;;
         lint | syntax | install | smoke) checks="$checks $arg" ;;
         *)
@@ -55,7 +56,7 @@ if [ "$want_all" = 1 ] || [ -z "$checks" ]; then
 fi
 # A package's own suite joins "everything" on its own line.
 if [ "$want_all" = 1 ]; then
-    checks="$checks b3sync"
+    checks="$checks b3sync hammerspoon"
 fi
 
 rc=0
@@ -68,6 +69,7 @@ for check in $checks; do
         # a fake hs. It needs no macOS, so it runs on both halves of the matrix
         # -- the package is macOS-only and would otherwise be tested nowhere.
         b3sync) script="$TESTS_DIR/b3sync-test.sh" ;;
+        hammerspoon) script="$TESTS_DIR/hammerspoon-test.sh" ;;
         lint) script="$TESTS_DIR/lint.sh" ;;
         syntax) script="$TESTS_DIR/syntax.sh" ;;
         smoke) script="$TESTS_DIR/smoke-test.sh" ;;
