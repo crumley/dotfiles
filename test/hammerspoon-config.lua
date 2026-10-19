@@ -1,6 +1,6 @@
 -- Run from the repo root: lua test/hammerspoon-config.lua
 -- Load the real configuration without macOS or any Spoons installed.
-local grid, margins, muted, jumped, shown
+local grid, margins, muted, jumped, shown, missionControlToggled
 hs = {
     window = {},
     grid = {
@@ -33,7 +33,10 @@ end
 -- Requiring wm would fail: no stub, no Spoons, and no configuration search path.
 spoon = {
     AppJump = { jump = function(_, value) jumped = value end },
-    SpaceManager = { show = function() shown = true end }
+    SpaceManager = {
+        show = function() shown = true end,
+        toggleMissionControl = function() missionControlToggled = true end
+    }
 }
 local config = dofile('hammerspoon/.hammerspoon/config.lua')
 local hyper, hyperShift
@@ -78,6 +81,11 @@ config.key_bindings[''].F17()
 assert(muted, 'F17 mic mute must be preserved')
 hyper['5']()
 assert(shown, 'Hyper+5 SpaceManager must be preserved')
+hyper.T()
+assert(missionControlToggled, 'Hyper+T must toggle Mission Control with space names')
+assert(hyper.U == nil, 'The old Hyper+U space changer must be unbound')
+assert(hyper.SPACE == nil, 'Hyper+Space must remain free for Raycast')
+assert(type(hyperShift.U) == 'function', 'Hyper+Shift+U music control must be preserved')
 assert(hs.window.animationDuration == 0)
 assert(grid.w == 6 and grid.h == 4)
 assert(margins.w == 0 and margins.h == 0)

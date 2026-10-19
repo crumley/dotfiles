@@ -97,7 +97,8 @@ config.key_bindings[hyper] = {
     R = function()
         hs.reload()
     end,
-    U = function()
+    T = function()
+        -- Left-hand Caps Lock+T; Hyper+Space belongs to Raycast.
         -- Mission Control with a legend of space names (hot corner: no legend)
         spoon.SpaceManager:toggleMissionControl()
     end,
