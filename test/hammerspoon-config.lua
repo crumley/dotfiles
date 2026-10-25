@@ -1,6 +1,8 @@
 -- Run from the repo root: lua test/hammerspoon-config.lua
 -- Load the real configuration without macOS or any Spoons installed.
 local grid, margins, muted, jumped, shown, missionControlToggled
+local screenId = 'primary'
+local allSpaces = { primary = { 101, 202 }, secondary = { 303 } }
 hs = {
     window = {},
     grid = {
@@ -15,13 +17,34 @@ package.preload['hs.window.filter'] = function()
         self.app, self.options = app, options
         return self
     end
+    function methods:isWindowAllowed(win)
+        return win.app == self.app and win.visible ~= false
+    end
+    function methods:getFilters()
+        return { [self.app] = self.options or {} }
+    end
     return {
         new = function(app)
-            return setmetatable({ app = app }, { __index = methods })
+            local result = setmetatable({ app = app }, { __index = methods })
+            if type(app) == 'function' then
+                result.isWindowAllowed = function(_, win) return app(win) end
+            end
+            return result
         end
     }
 end
-for _, name in ipairs({ 'hs.eventtap', 'hs.timer', 'hs.spaces', 'hs.screen' }) do
+package.preload['hs.spaces'] = function()
+    return {
+        allSpaces = function() return allSpaces end,
+        windowSpaces = function(win) return win.spaces end
+    }
+end
+package.preload['hs.screen'] = function()
+    return { primaryScreen = function()
+        return { getUUID = function() return screenId end }
+    end }
+end
+for _, name in ipairs({ 'hs.eventtap', 'hs.timer' }) do
     package.preload[name] = function() return {} end
 end
 package.preload.mutable = function()
@@ -71,9 +94,32 @@ assert(jumped == inbox, 'Hyper+1 must jump to the Inbox, not summon it')
 hyper.S()
 assert(jumped == config.appFilters.Chrome, 'Normal Chrome jump must be preserved')
 
+local ghostty = config.appFilters.GhosttySpaceOne
+hyper['2']()
+assert(jumped == ghostty, 'Hyper+2 must jump to Ghostty on Space 1, not summon it')
+assert(ghostty:getFilters().Ghostty, 'AppJump must be able to discover exposed Ghostty windows')
+assert(ghostty:isWindowAllowed({ app = 'Ghostty', spaces = { 101 } }))
+assert(ghostty:isWindowAllowed({ app = 'Ghostty', spaces = { 202, 101 } }))
+assert(not ghostty:isWindowAllowed({ app = 'Ghostty', spaces = { 202 } }))
+assert(not ghostty:isWindowAllowed({ app = 'Ghostty', spaces = { 303 } }))
+assert(not ghostty:isWindowAllowed({ app = 'Google Chrome', spaces = { 101 } }))
+assert(not ghostty:isWindowAllowed({ app = 'Ghostty', spaces = { 101 }, visible = false }))
+assert(not ghostty:isWindowAllowed({ app = 'Ghostty', spaces = {} }), 'Reject ordered-out tabs')
+assert(not ghostty:isWindowAllowed({ app = 'Ghostty' }), 'Missing window spaces must be safe')
+allSpaces.primary = { 404, 101 }
+assert(ghostty:isWindowAllowed({ app = 'Ghostty', spaces = { 404 } }), 'Resolve Space 1 dynamically')
+assert(not ghostty:isWindowAllowed({ app = 'Ghostty', spaces = { 101 } }))
+screenId = 'secondary'
+assert(ghostty:isWindowAllowed({ app = 'Ghostty', spaces = { 303 } }), 'Follow the primary display')
+screenId = 'missing'
+assert(not ghostty:isWindowAllowed({ app = 'Ghostty', spaces = { 101 } }))
+allSpaces.missing = {}
+assert(not ghostty:isWindowAllowed({ app = 'Ghostty', spaces = { 101 } }))
+hyper.D()
+assert(jumped == config.appFilters.Ghostty, 'Normal Ghostty jump must be preserved')
+
 assert(config.key_bindings[''].F18 == nil)
 assert(config.key_bindings[''].F19 == nil)
-assert(hyper['2'] == nil)
 assert(hyper['4'] == nil)
 assert(hyperShift.N == nil)
 assert(hyperShift.M == nil)

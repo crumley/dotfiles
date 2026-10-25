@@ -63,6 +63,26 @@ config.appFilters = {
     Obsidian = filter.new('Obsidian')
 }
 
+-- Resolve Space 1 at jump time: macOS space IDs can change or be reordered.
+-- Keep Ghostty in getFilters() so AppJump also checks the app's exposed tabs,
+-- rather than relying only on its cached windows.
+config.appFilters.GhosttySpaceOne = filter.new(function(win)
+    if not config.appFilters.Ghostty:isWindowAllowed(win) then
+        return false
+    end
+    local screenId = hsscreen.primaryScreen():getUUID()
+    local firstSpace = (hsspaces.allSpaces()[screenId] or {})[1]
+    if firstSpace == nil then
+        return false
+    end
+    for _, spaceId in ipairs(hsspaces.windowSpaces(win) or {}) do
+        if spaceId == firstSpace then
+            return true
+        end
+    end
+    return false
+end):setAppFilter('Ghostty')
+
 -- Space configuration: index -> default name. Only the first space is
 -- dedicated; every other space is unnamed until renamed (hyper+G).
 config.spaceConfig = {
@@ -80,6 +100,9 @@ config.key_bindings[""] = {
 config.key_bindings[hyper] = {
     ["1"] = function()
         spoon.AppJump:jump(config.appFilters.ChromeInbox)
+    end,
+    ["2"] = function()
+        spoon.AppJump:jump(config.appFilters.GhosttySpaceOne)
     end,
     ["5"] = function()
         spoon.SpaceManager:show()

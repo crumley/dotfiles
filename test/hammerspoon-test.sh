@@ -7,7 +7,7 @@ set -uo pipefail
 section "Hammerspoon config"
 if have lua; then
     if (cd "$REPO_ROOT" && lua test/hammerspoon-config.lua); then
-        pass "Inbox shortcut, removed yabai bindings, retained grid and mic mute"
+        pass "Inbox and Space 1 Ghostty shortcuts, removed yabai bindings, retained grid and mic mute"
     else
         fail "Hammerspoon config"
     fi
