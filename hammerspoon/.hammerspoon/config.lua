@@ -17,6 +17,21 @@ local hyperShift = {"ctrl", "cmd", "option", "shift"}
 
 local config = {}
 
+-- hs.spotify sends a blocking AppleScript `tell application "Spotify"`.
+-- If Spotify is not running, that launches it; when the launch turns into a
+-- self-update relaunch, the event's target exits and Hammerspoon's main
+-- thread waits out the 2-minute Apple Event timeout. Only talk to a Spotify
+-- that is already running.
+local function withSpotify(fn)
+    return function()
+        if hs.application.get("com.spotify.client") then
+            fn()
+        else
+            hs.alert.show("Spotify is not running")
+        end
+    end
+end
+
 config.appFilters = {
     -- Browser
     Arc = filter.new('Arc'),
@@ -190,21 +205,11 @@ config.key_bindings[hyper] = {
 
 config.key_bindings[hyperShift] = {
     -- Jamming to tunes...
-    Y = function()
-        hs.spotify.pause()
-    end,
-    U = function()
-        hs.spotify.playpause()
-    end,
-    I = function()
-        hs.spotify.previous()
-    end,
-    O = function()
-        hs.spotify.next()
-    end,
-    P = function()
-        hs.spotify.displayCurrentTrack()
-    end,
+    Y = withSpotify(hs.spotify.pause),
+    U = withSpotify(hs.spotify.playpause),
+    I = withSpotify(hs.spotify.previous),
+    O = withSpotify(hs.spotify.next),
+    P = withSpotify(hs.spotify.displayCurrentTrack),
 
     -- Summon windows
     Q = function()
