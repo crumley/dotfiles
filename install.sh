@@ -26,6 +26,8 @@ export DOTFILES_REPO
 . "$DOTFILES_REPO/lib/packages.sh"
 # shellcheck source=lib/stow.sh
 . "$DOTFILES_REPO/lib/stow.sh"
+# shellcheck source=lib/skills.sh
+. "$DOTFILES_REPO/lib/skills.sh"
 
 # ---------------------------------------------------------------------------
 # Options
@@ -60,9 +62,11 @@ Options:
                           DOTFILES_TARGET. When DIR is not your real home, the
                           machine-level steps below are skipped automatically.
       --stow-only         Only link packages: no Homebrew, no macOS defaults,
-                          no agent skills. Submodules are still checked out at
-                          the commits this tree pins, so a merged change is
-                          complete. This is what the post-merge hook runs.
+                          no npx skill installs (skills linked from a Ward
+                          checkout are still linked). Submodules are still
+                          checked out at the commits this tree pins, so a
+                          merged change is complete. This is what the
+                          post-merge hook runs.
       --update            git pull, and update submodules to their latest
                           remote commits, before linking.
       --skip-brew         Never install or invoke Homebrew (macOS).
@@ -110,6 +114,10 @@ Environment:
   DOTFILES_PLATFORM     Force "darwin" or "linux" instead of detecting. For
                         testing the other platform's code path.
   DOTFILES_QUIET        1 is the same as --quiet.
+  DOTFILES_SKILL_CHECKOUTS
+                        Colon-separated directories of checkouts to link agent
+                        skills from, instead of every Ward workspace's repos/
+                        (empty: never link, always copy with npx).
 
 Examples:
   ./install.sh --dry-run              # what would change
@@ -727,30 +735,16 @@ fi
 # Optional extras
 # ---------------------------------------------------------------------------
 
-# Agent skills: the bodies live untracked in ~/.agents/skills and only the
-# lockfile is stowed, so each locked skill has to be reinstalled from source.
-# (The skills CLI has no global restore yet: `skills experimental_install` is
-# project-scoped.)
+# Agent skills: the bodies live untracked in ~/.agents/skills, so each entry in
+# the tracked skills.list is linked from a Ward checkout or reinstalled with
+# npx (lib/skills.sh). The tracked list replaced reading .skill-lock.json: the
+# skills CLI rewrites skillFolderHash/updatedAt on every update, so tracking it
+# meant the repo was permanently dirty, while only the source and the name
+# were ever read. (The skills CLI has no global restore yet: `skills
+# experimental_install` is project-scoped.)
 restore_agent_skills() {
-  local list="$DOTFILES_TARGET/.agents/skills.list"
-  [ -f "$list" ] || return 0
-  if ! have npx; then
-    info "agent skills: skipped (npx missing)"
-    return 0
-  fi
   say "Restoring agent skills..."
-  # Read the tracked source list rather than .skill-lock.json. The lockfile is
-  # written by the skills CLI and rewrites skillFolderHash/updatedAt on every
-  # skill update, so tracking it meant the repo was permanently dirty -- while
-  # the only things read here were the source and the name. jq is no longer
-  # needed either, which is one fewer thing that has to be installed first.
-  while read -r src name _rest; do
-    case "$src" in ''|\#*) continue ;; esac
-    [ -n "$name" ] || { warn "skills.list: no name for '$src', skipping"; continue; }
-    # </dev/null: npx must not eat the loop's stdin, or it swallows the
-    # remaining lines and silently skips every skill after the first.
-    npx -y skills add "$src" -s "$name" -g -y </dev/null || warn "skill $name failed to install"
-  done <"$list"
+  dotfiles_sync_skills "$DOTFILES_TARGET" 1
 }
 
 # The machine's own fish config is deliberately not in the repository, so a
@@ -791,6 +785,10 @@ bootstrap_fisher() {
 if [ "$SYSTEM_STEPS" = 1 ]; then
   bootstrap_fisher
   restore_agent_skills
+elif [ "$REAL_HOME" = 1 ]; then
+  # --stow-only (the post-merge hook): links only. They are offline and
+  # cheap, and they make a skill added to skills.list live once it merges.
+  dotfiles_sync_skills "$DOTFILES_TARGET" 0
 fi
 
 say "Done."

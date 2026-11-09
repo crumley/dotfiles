@@ -4,8 +4,11 @@
 #
 # `source` is whatever `skills add` accepts (a GitHub owner/repo, or a URL);
 # `name` is the skill's directory name under ~/.agents/skills. Blank lines and
-# lines starting with # are ignored. `install.sh` walks this file and runs
-# `npx skills add <source> -s <name> -g -y` for each entry.
+# lines starting with # are ignored. `install.sh` walks this file: where a Ward
+# workspace on this machine holds the source's repository, ~/.agents/skills/<name>
+# is linked into that checkout and follows its main line; anywhere else it runs
+# `npx skills add <source> -s <name> -g -y`. Links are made by the post-merge
+# hook too, so a line added here is live on a Ward machine once it merges.
 #
 # This replaces reading `.skill-lock.json`, which is no longer tracked. The
 # lockfile is written by the skills CLI and rewrites `skillFolderHash` and
@@ -19,4 +22,5 @@
 
 crumley/b3                   b3
 crumley/intent-architecture  intent-architecture
+crumley/markup               markup
 vercel-labs/skills           find-skills

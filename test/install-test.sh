@@ -92,7 +92,7 @@ install_linux() {
 
 shellcheck_all() {
   (cd "$REPO" && shellcheck -x install.sh upgrade.sh macos/defaults.sh \
-      lib/common.sh lib/packages.sh lib/stow.sh test/install-test.sh)
+      lib/common.sh lib/packages.sh lib/stow.sh lib/skills.sh test/install-test.sh)
 }
 
 # ---------------------------------------------------------------------------
@@ -396,6 +396,113 @@ assert "with the leftover deleted, the next run is clean" install_into "$h17" -q
 refute "  ... the live file is still a real file" [ -L "$h17/.claude/settings.json" ]
 assert "  ... still holding this machine's settings" \
   grep -qF 'skipDangerousModePermissionPrompt' "$h17/.claude/settings.json"
+
+group "Agent skills: Ward checkouts are linked, the rest copied"
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=../lib/common.sh
+. "$REPO/lib/common.sh"
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=../lib/skills.sh
+. "$REPO/lib/skills.sh"
+h20=$(newhome)
+co20=$(newhome)
+bin20=$(newhome)
+# Fake Ward checkouts: one per skill layout the lookup knows, plus an impostor
+# whose name matches but whose origin is someone else's.
+mkrepo() {
+  local dir=$1 origin=$2 sub=$3
+  mkdir -p "$dir/$sub"
+  printf -- '---\nname: x\n---\n' >"$dir/$sub/SKILL.md"
+  git -C "$dir" init -q
+  git -C "$dir" remote add origin "$origin"
+}
+mkrepo "$co20/markup" https://github.com/crumley/markup.git .agents/skills/markup
+mkrepo "$co20/b3" git@github.com:crumley/b3.git skills/b3
+mkrepo "$co20/other" https://github.com/someone/other .agents/skills/other
+# A stub npx that records what it was asked to install.
+cat >"$bin20/npx" <<'STUB'
+#!/bin/sh
+printf '%s\n' "$*" >>"$NPX_LOG"
+STUB
+chmod +x "$bin20/npx"
+export NPX_LOG="$bin20/npx.log"
+mkdir -p "$h20/.agents/skills/b3" "$h20/.claude/skills"
+: >"$h20/.agents/skills/b3/SKILL.md"
+ln -s ../../.agents/skills/b3 "$h20/.claude/skills/b3"
+printf '{"version":3,"skills":{"b3":{"source":"crumley/b3"},"keep":{"source":"x/keep"}}}\n' \
+  >"$h20/.agents/.skill-lock.json"
+cat >"$h20/.agents/skills.list" <<'LIST'
+# comment
+crumley/markup   markup
+crumley/b3       b3
+crumley/other    other
+vercel-labs/skills  find-skills
+LIST
+sync20() {
+  PATH="$bin20:$PATH" DOTFILES_SKILL_CHECKOUTS="$co20" DOTFILES_QUIET=1 \
+    DOTFILES_BACKUP_ROOT="$h20/.backup" dotfiles_sync_skills "$h20" "$1"
+}
+links_to() { [ -L "$1" ] && [ "$(readlink "$1")" = "$2" ]; }
+co20_real=$(cd -- "$co20" && pwd -P)
+
+sync20 0 2>/dev/null
+assert "a skill in a Ward checkout is linked into it" \
+  links_to "$h20/.agents/skills/markup" "$co20_real/markup/.agents/skills/markup"
+assert "  ... and Claude Code sees it through ~/.agents" \
+  links_to "$h20/.claude/skills/markup" ../../.agents/skills/markup
+assert "a skills/<name> layout is found too" \
+  links_to "$h20/.agents/skills/b3" "$co20_real/b3/skills/b3"
+assert "  ... the npx copy it replaces is moved aside, not deleted" \
+  [ -f "$(find "$h20/.backup" -path '*/.agents/skills/b3/SKILL.md' | head -1)" ]
+if command -v node >/dev/null 2>&1; then
+  refute "  ... and leaves the skills lock, so an update cannot write through the link" \
+    grep -q '"b3"' "$h20/.agents/.skill-lock.json"
+  assert "  ... without dropping anything else from the lock" \
+    grep -q '"keep"' "$h20/.agents/.skill-lock.json"
+else
+  printf '  skip node is not installed (skills lock edit)\n'
+fi
+refute "a same-named checkout of another origin is not linked" [ -e "$h20/.agents/skills/other" ]
+refute "link-only mode never runs npx" [ -e "$NPX_LOG" ]
+
+before20=$(snapshot "$h20")
+sync20 0 2>/dev/null
+assert "a second run changes nothing" same "$before20" "$(snapshot "$h20")"
+
+sync20 1 2>/dev/null
+assert "with copies on, what no checkout holds goes to npx" \
+  grep -qx -- '-y skills add vercel-labs/skills -s find-skills -g -y' "$NPX_LOG"
+assert "  ... including a checkout whose origin did not match" \
+  grep -qx -- '-y skills add crumley/other -s other -g -y' "$NPX_LOG"
+refute "  ... but never a linked skill" grep -q 'crumley/markup' "$NPX_LOG"
+
+rm -rf "$co20/markup"
+: >"$NPX_LOG"
+sync20 1 2>/dev/null
+refute "a link whose checkout is gone is removed before npx writes through it" \
+  [ -L "$h20/.agents/skills/markup" ]
+assert "  ... and the skill is copied instead" grep -q 'crumley/markup -s markup' "$NPX_LOG"
+
+h21=$(newhome)
+mkdir -p "$h21/.claude/skills/b3" "$h21/.agents"
+printf 'crumley/b3  b3\n' >"$h21/.agents/skills.list"
+out21=$(DOTFILES_SKILL_CHECKOUTS="$co20" dotfiles_sync_skills "$h21" 0 2>&1)
+assert "a ~/.claude/skills entry that is not ours is left alone" real_dir "$h21/.claude/skills/b3"
+assert "  ... and said so" grep_out 'leaving ~/.claude/skills/b3 alone' "$out21"
+
+h22=$(newhome)
+mkdir -p "$h22/real"
+ln -s real "$h22/.agents"
+printf 'crumley/b3  b3\n' >"$h22/real/skills.list"
+DOTFILES_SKILL_CHECKOUTS="$co20" dotfiles_sync_skills "$h22" 0 2>/dev/null
+refute "a symlinked ~/.agents is never written into" [ -e "$h22/real/skills" ]
+
+refute "with no checkout roots, nothing is linked" \
+  [ -n "$(DOTFILES_SKILL_CHECKOUTS='' dotfiles_skill_checkout_dir crumley/b3 b3)" ]
+assert "the slug reads every spelling of a GitHub repository" same \
+  "$(dotfiles_skill_slug crumley/B3) $(dotfiles_skill_slug https://github.com/crumley/b3.git) $(dotfiles_skill_slug git@github.com:crumley/b3.git)" \
+  "crumley/b3 crumley/b3 crumley/b3"
+unset NPX_LOG
 
 group "No duplicated lines, ever"
 # shellcheck source-path=SCRIPTDIR

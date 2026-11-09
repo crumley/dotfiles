@@ -63,6 +63,7 @@ upgrade.sh          brew update/upgrade, then audit the machine against the Brew
 lib/common.sh       logging, platform detection, path helpers, append_line_once
 lib/packages.sh     THE PLATFORM MAP — discovery, exclusions, macOS-only set
 lib/stow.sh         conflict detection, takeover, pruning, the stow invocation
+lib/skills.sh       agent skills: link from a Ward checkout, else npx
 macos/defaults.sh   the `defaults write` block, guarded on Darwin
 test/run.sh         local entry point for every check CI runs
 test/b3sync-test.sh the brain sync runner, plist and Hammerspoon hooks, against stubs
@@ -331,7 +332,24 @@ unreadable dump this file replaced, and it does it silently. `upgrade.sh` runs
 ### Agent skills
 
 `agents/.agents/skills.list` is the tracked source of truth: one `<source>  <name>` per line,
-comments and blank lines ignored. `install.sh` walks it and runs `npx skills add` for each entry.
+comments and blank lines ignored. `install.sh` installs each entry one of two ways
+(`lib/skills.sh`):
+
+- **Linked from a Ward checkout.** When a Ward workspace on this machine (`ward shell candidates
+  workspaces`) holds the source's repository at `<workspace>/repos/<repo>` — its `origin`
+  compared, not just its name — `~/.agents/skills/<name>` is a symlink to the skill in it
+  (`.agents/skills/<name>`, `skills/<name>` or `.claude/skills/<name>`), and
+  `~/.claude/skills/<name>` links to that, as the skills CLI does. Ward keeps `repos/` on the main
+  line, so the skill follows main with every `ward repo refresh`. An npx copy already there is
+  moved to the backup directory and dropped from `.skill-lock.json` — left in the lock,
+  `npx skills update -g` would write a copy through the link into the checkout.
+  `DOTFILES_SKILL_CHECKOUTS` (colon-separated `repos/` directories; empty for none) replaces the
+  discovery.
+- **Copied with npx** (`npx skills add <source> -s <name> -g -y`) everywhere else.
+
+Linking is offline and cheap, so it also runs in `--stow-only` — the post-merge hook — while npx
+copies run only in a full install. On a Ward machine, a line added to `skills.list` is live once
+it merges.
 
 **`.skill-lock.json` is deliberately not tracked.** The skills CLI rewrites its
 `skillFolderHash` and `updatedAt` on every skill update, so a stowed, tracked copy left this
