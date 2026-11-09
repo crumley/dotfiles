@@ -90,7 +90,7 @@ only thing the installer deletes. `--no-prune` turns it off.
 | `-f`, `--force`, `--takeover` | move conflicts to `~/.dotfiles-backup/<timestamp>/`, then link |
 | `-t`, `--target DIR` | link into `DIR` instead of `$HOME` (also `DOTFILES_TARGET`) |
 | `--list` | print the packages this platform would install |
-| `--stow-only` | link only: no Homebrew, no macOS defaults, no agent skills; submodules still land on the commits the tree pins |
+| `--stow-only` | link only: no Homebrew, no macOS defaults, no npx skill installs (skills held by a Ward checkout are still linked); submodules still land on the commits the tree pins |
 | `--update` | `git pull` and advance submodules before linking |
 | `--brew-bundle` | install the Brewfile (macOS) |
 | `--vscode-extensions` | install `Brewfile.vscode` (separate on purpose) |
@@ -117,7 +117,7 @@ Twenty packages. All of them install on Linux except the three marked macOS-only
 
 | package | lands at | configures |
 | --- | --- | --- |
-| `agents` | `~/.agents/skills.list` | which agent skills to reinstall, and from where |
+| `agents` | `~/.agents/skills.list` | which agent skills to install, and from where — linked from a Ward checkout when this machine has one, else copied with npx |
 | `atuin` | `~/.config/atuin/config.toml` | shell history search |
 | `b3sync` | `~/bin/b3-sync-runner`, `~/.config/b3sync/` | brain sync's launchd agent and the runner it shares with Hammerspoon — **macOS only**, see "Brain sync" below |
 | `bash` | `~/.bashrc.tracked`, `~/.bash_profile.tracked` | interactive bash and login-shell layering — see the note below |
