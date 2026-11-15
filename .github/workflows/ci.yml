@@ -147,6 +147,12 @@ jobs:
       - name: b3sync suite
         run: ./test/run.sh b3sync
 
+      # Same reasoning, same interpreter: config.lua is loaded against a stubbed
+      # hs, so the keybindings are checked on both runners. This step was
+      # missing, which let a config change that broke the suite merge green.
+      - name: Hammerspoon config suite
+        run: ./test/run.sh hammerspoon
+
       # Complementary to the above: install, then actually start fish, bash and
       # sh against the result. Parsing is not loading — this is what catches a
       # config that assumes Homebrew, or that aborts when atuin is missing.

@@ -1,6 +1,10 @@
 -- Run from the repo root: lua test/hammerspoon-config.lua
 -- Load the real configuration without macOS or any Spoons installed.
 local grid, margins, muted, jumped, shown, missionControlToggled
+local spotifyRunning, spotifyCalls, alerts = false, {}, {}
+local function spotifyCommand(name)
+    return function() spotifyCalls[#spotifyCalls + 1] = name end
+end
 local screenId = 'primary'
 local allSpaces = { primary = { 101, 202 }, secondary = { 303 } }
 hs = {
@@ -8,7 +12,23 @@ hs = {
     grid = {
         setGrid = function(value) grid = value end,
         setMargins = function(value) margins = value end
-    }
+    },
+    -- config.lua reads hs.spotify.* while it loads, to wrap each command, so
+    -- the stub has to exist before the dofile below, not just before a keypress.
+    spotify = {
+        pause = spotifyCommand('pause'),
+        playpause = spotifyCommand('playpause'),
+        previous = spotifyCommand('previous'),
+        next = spotifyCommand('next'),
+        displayCurrentTrack = spotifyCommand('displayCurrentTrack')
+    },
+    application = {
+        get = function(hint)
+            assert(hint == 'com.spotify.client', 'Look Spotify up by bundle ID, got: ' .. tostring(hint))
+            return spotifyRunning and {} or nil
+        end
+    },
+    alert = { show = function(message) alerts[#alerts + 1] = message end }
 }
 
 package.preload['hs.window.filter'] = function()
@@ -132,6 +152,21 @@ assert(missionControlToggled, 'Hyper+T must toggle Mission Control with space na
 assert(hyper.U == nil, 'The old Hyper+U space changer must be unbound')
 assert(hyper.SPACE == nil, 'Hyper+Space must remain free for Raycast')
 assert(type(hyperShift.U) == 'function', 'Hyper+Shift+U music control must be preserved')
+
+-- hs.spotify launches a Spotify that is not running, which can stall
+-- Hammerspoon's main thread; the music keys must only reach a running one.
+local music = { Y = 'pause', U = 'playpause', I = 'previous', O = 'next', P = 'displayCurrentTrack' }
+for key, command in pairs(music) do
+    spotifyRunning, spotifyCalls, alerts = false, {}, {}
+    hyperShift[key]()
+    assert(#spotifyCalls == 0, 'Hyper+Shift+' .. key .. ' must not talk to a Spotify that is not running')
+    assert(#alerts == 1, 'Hyper+Shift+' .. key .. ' must say that Spotify is not running')
+    spotifyRunning, spotifyCalls, alerts = true, {}, {}
+    hyperShift[key]()
+    assert(#spotifyCalls == 1 and spotifyCalls[1] == command,
+        'Hyper+Shift+' .. key .. ' must run ' .. command .. ' when Spotify is running')
+    assert(#alerts == 0, 'Hyper+Shift+' .. key .. ' must not alert when Spotify is running')
+end
 assert(hs.window.animationDuration == 0)
 assert(grid.w == 6 and grid.h == 4)
 assert(margins.w == 0 and margins.h == 0)
