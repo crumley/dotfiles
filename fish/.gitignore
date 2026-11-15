@@ -55,8 +55,8 @@
 !/.config/fish/completions/b3.fish
 !/.config/fish/completions/d1.fish
 
-# Ours: the ward shorthands (wrr, wrcd, wwcd, wws, and the session set wsa, wso,
-# wsr, wsc), adopted as snapshots. These are not stubs and not generated at
+# Ours: the ward shorthands (wrr, wrcd, wwcd, wws, ws, and the session set wsa,
+# wso, wsr, wsc), adopted as snapshots. These are not stubs and not generated at
 # runtime -- `ward shell adopt fish --all --dir fish/.config/fish` wrote the
 # real definitions here once, and from then on they are this repository's files:
 # edit them, keep them, nothing rewrites them unless the adopt command is run
@@ -79,6 +79,7 @@
 !/.config/fish/functions/wso.fish
 !/.config/fish/functions/wsr.fish
 !/.config/fish/functions/wsc.fish
+!/.config/fish/functions/ws.fish
 !/.config/fish/functions/__ward_choose.fish
 !/.config/fish/functions/__ward_picker.fish
 !/.config/fish/functions/__ward_picker_present.fish
@@ -91,6 +92,7 @@
 !/.config/fish/completions/wso.fish
 !/.config/fish/completions/wsr.fish
 !/.config/fish/completions/wsc.fish
+!/.config/fish/completions/ws.fish
 
 # Ours: autoloaded functions. Add new ones here when you add the file.
 !/.config/fish/functions/my_*.fish
