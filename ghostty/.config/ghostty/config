@@ -36,6 +36,17 @@ window-padding-y = 2
 font-family = "Hack Nerd Font Mono"
 font-size = 14
 
+# Match Rex's terminal typography: Hack Nerd Font Mono 14pt, regular weight,
+# line height and character spacing at their defaults (so no adjust-cell-*),
+# ligatures and bold/italic rendering on (Ghostty's defaults), bar cursor with
+# normal blink, smoothed glyphs, and wide-gamut Display P3 colors.
+font-thicken = true
+cursor-style = bar
+cursor-style-blink = true
+window-colorspace = display-p3
+# Rex's "improve text contrast": nudge unreadable text against its background.
+minimum-contrast = 1.1
+
 # Alternate fonts, kept as a menu -- uncomment one block at a time.
 #
 # Atkinson Hyperlegible Mono
