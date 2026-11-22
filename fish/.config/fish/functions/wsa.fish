@@ -1,4 +1,4 @@
-# ward — adopted fish shorthand `wsa` — attach to a session — the coordinator, a floor N, or an id — opened first if none is.
+# ward — adopted fish shorthand `wsa` — attach to a session — the coordinator, a floor N's attending, or an id — opened first if none is.
 #
 # Yours now: `ward shell adopt fish wsa` wrote it, and nothing in ward
 # rewrites it unless you ask for wsa again by name. Track it, edit it,
@@ -6,18 +6,24 @@
 # `ward shell diff fish wsa` shows what changed, and re-running the
 # adopt command takes ward's version.
 
-function wsa --description 'Attach to a session: the coordinator, a floor N, or an id — opened first if none is'
-    # A floor number means that floor's own session; anything else is an id,
+function wsa --description "Attach to a session: the coordinator, a floor N's attending, or an id — opened first if none is"
+    # A floor number means that floor's attending; anything else is an id,
     # which goes straight through: attach joins a live window, and re-creates
     # one that has ended or gone, from its record.
     set -l feed coordinators
     set -l scope
     set -l label coordinator
+    set -l floor
     if test (count $argv) -gt 0
         if string match -qr '^[0-9]+$' -- $argv[1]
-            set feed coordinators --floor $argv[1]
-            set scope --floor $argv[1]
-            set label "floor $argv[1] session"
+            set floor $argv[1]
+            set feed coordinators --floor $floor
+            # Floor 0's attending is the coordinator: opening one is opening
+            # the coordinator, at workspace scope.
+            if test "$floor" -ne 0
+                set scope --floor $floor
+                set label "floor $floor attending"
+            end
         else
             command ward session attach $argv
             return $status
@@ -37,10 +43,8 @@ function wsa --description 'Attach to a session: the coordinator, a floor N, or 
         set open (command ward shell candidates $feed)
     end
     set -l id
-    if test (count $open) -eq 1; or set -q scope[1]
-        # A floor's sessions all stand in its one host, so which to join only
-        # sets the window in front: the feed lists them first window first,
-        # and the first is taken without asking.
+    if test (count $open) -eq 1; or set -q floor[1]
+        # A floor's feed is its attending alone, so it is taken without asking.
         set id (string split -m1 -f1 -- \t $open[1])
     else if test (count $open) -gt 1
         # Several coordinators open: which one is a choice, so ask for it —
